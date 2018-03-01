@@ -1,0 +1,329 @@
+
+$block: l-two-col;
+
+.#{$block} {
+
+  $col-widths: (
+    left: 906px,
+    right: 300px
+  );
+
+  @include clearfix;
+
+  &__left {
+    @include respond-to('rightrail grid and up') {
+      float: left;
+      padding-right: percentage(55px / $page-container-width);
+      box-sizing: border-box;
+      @include calc('width', '100% - #{map-get($col-widths, right)}');
+    }
+
+    &__primary {
+      @include respond-to('medium and up') {
+        float: right;
+        width: percentage(550px / map-get($col-widths, left));
+      }
+    }
+
+    &__secondary {
+      @include respond-to('medium and up') {
+        float: left;
+        width: percentage(300px / map-get($col-widths, left));   
+      }
+    }
+
+    &--wide-primary {
+
+      .#{$block}__left__secondary {
+        @include respond-to('medium and up') {
+          float: left;
+          width: percentage(220px / map-get($col-widths, left));   
+        }
+      }
+
+      .#{$block}__left__primary {
+        @include respond-to('medium and up') {
+          float: right;
+          width: percentage(660px / map-get($col-widths, left));
+        }
+      }
+    }
+    
+    .video_player{
+       max-width: 100%;
+       height: 250px;
+       margin-bottom: 10%;
+       @include respond-to('small and up') {
+        height: 400px;
+      }
+      @include respond-to('large and up') {
+        height: 517px;
+      }
+      .BrightcoveExperience {
+        height: 250px;
+         @include respond-to('small and up') {
+          height: 400px;
+        }
+        @include respond-to('large and up') {
+          height: 517px;
+        }
+      }
+    }
+    .video_player iframe {
+        @extend .video_player;
+        width: 100%;
+    }
+    
+    .player_mobile {
+      height: auto !important;
+      margin-bottom: 0px !important;
+      iframe {
+        margin-bottom: 2% !important;
+      }
+    }
+    #video_section {
+        .section-heading {
+            margin:15px 0 0 0;            
+        }
+        .subhead {
+            .subheading {
+                font-size: 1.4444rem;
+                @include font-droid-sans;
+                color: #333;
+                line-height: 1.4;
+                margin: 10px 0 0 0;
+                text-transform: uppercase;
+            }
+            .deck {
+                p{
+                    margin: 5px 0 10px 0; 
+                    color: #666;
+                    font-size: 1.2222rem;                        
+                }
+            }
+            h3 {
+                margin:0px;
+            }
+        }
+    }
+    #large_tout_section {
+        @extend #video_section;
+        .deck {
+            p{
+                margin: 5px 0 0 0;                                           
+            }
+        }
+        .grid-3-up {
+            margin-top:15px;
+        }
+    }
+    #small_tout_section{
+        @extend #large_tout_section;
+        
+    }
+  }
+
+  &__right {
+   display: block;
+   text-align: center;
+   width: 100%;
+   @include respond-to('small and up') {
+     display: block;
+     text-align: center;
+     width: 100%;
+   }
+   @include respond-to('rightrail grid and up') {
+     float: right;
+     display: block;
+     width: map-get($col-widths, right);
+   }
+   
+    &__secondary {
+    width: 100%;
+    @include respond-to('small and up') {
+          float: left;
+        text-align: left;
+        width: percentage(480px / map-get($col-widths, left));
+        }
+        @include respond-to('large and up') {
+        float: left;
+        text-align: left;
+        width: percentage(480px / map-get($col-widths, left));
+        }
+    }
+
+    &__primary {
+     width: 100%;
+    @include respond-to('small and up') {
+         float: left;
+        width: percentage(370px / map-get($col-widths, left));
+        }
+        @include respond-to('large and up') {
+        float: left;
+        width: percentage(370px / map-get($col-widths, left));
+        }
+    }
+ }
+  &--landing {
+    $col-widths: (
+      left: 920px,
+      right: 300px
+    );
+    // set padding between left and right columns
+    $padding: 40px;
+
+    .#{$block}__left {
+
+      @include respond-to('rightrail grid and up') {
+        @include calc('width', '100% - #{map-get($col-widths, right)}');
+        padding-right: percentage($padding / $page-container-width);
+      }
+    }
+
+    .#{$block}__right {
+      display: block;
+      @include respond-to('rightrail grid and up') {
+        float: right;
+         width: map-get($col-widths, right);
+      }
+    }
+  }
+}
+
+.node-type-channel-landing-page-responsive {
+  .content-carousel {
+     .video_player{
+         max-width: 100%;
+         height: 250px;
+         margin-bottom: 10%;
+         @include respond-to('small and up') {
+          height: 400px;
+        }
+        @include respond-to('large and up') {
+          height: 517px;
+        }
+        .hero-feature__content {         
+           z-index: 10000 !important;
+           margin-bottom: -44px;
+           @include respond-to('small and up') {
+            margin-bottom: -124px;
+           } 
+           @include respond-to('large and up') {
+             margin-bottom: -174px;
+           }
+         }
+        .BrightcoveExperience {
+          height: 250px;
+           @include respond-to('small and up') {
+            height: 400px;
+            left: 100px !important;
+          }
+          @include respond-to('large and up') {
+            height: 517px;
+            left: 100px !important;
+          }
+        }
+      }
+      
+      .video_player iframe {
+          @extend .video_player;
+          width: 100%;
+      }
+    }  
+ }   
+ 
+ .node-type-video {
+     .video_player{
+         max-width: 100%;
+         height: 250px;
+         margin-bottom: 5%;
+         @include respond-to('small and up') {
+          height: 400px;
+        }
+        @include respond-to('large and up') {
+          height: 517px;
+        }
+        .BrightcoveExperience {
+          height: 250px;
+           @include respond-to('small and up') {
+            height: 400px;
+            left: 100px !important;
+          }
+          @include respond-to('large and up') {
+            height: 517px;
+            left: 100px !important;
+          }
+        }
+      }
+      
+      .video_player iframe {
+          @extend .video_player;
+          width: 100%;
+      } 
+ }  
+ 
+ .node-type-category {
+   .video_player{
+         max-width: 100%;
+         height: 250px;
+         margin-bottom: 1%;
+         @include respond-to('small and up') {
+          height: 400px;
+          margin-bottom: 1%;
+        }
+        @include respond-to('large and up') {
+          height: 517px; 
+          margin-bottom: 1%;
+        }
+        .BrightcoveExperience {
+          height: 250px;
+           @include respond-to('small and up') {
+            height: 400px;
+            left: 100px !important;
+          }
+          @include respond-to('large and up') {
+            height: 517px;
+            left: 100px !important;
+          }
+        }
+      }
+      
+      .video_player iframe {
+          @extend .video_player;
+          width: 100%;
+      } 
+ }
+  
+ .node-type-blog {
+   .embedded_video_player{
+       max-width: 100%;
+       height: 250px;
+       margin-bottom: 0%;
+       padding-bottom: 20px;
+       @include respond-to('small and up') {
+        height: 400px;
+        margin-bottom: 0%;
+      }
+      @include respond-to('large and up') {
+        height: 400px; 
+        margin-bottom: 0%;
+      }
+      .BrightcoveExperience {
+        height: 250px;
+         @include respond-to('small and up') {
+          height: 400px;
+          left: 100px !important;
+        }
+        @include respond-to('large and up') {
+          height: 400px;
+          left: 100px !important;
+        }
+      }
+    }
+    
+    .embedded_video_player iframe {
+        @extend .embedded_video_player;
+        width: 100%;
+    } 
+ }
+  

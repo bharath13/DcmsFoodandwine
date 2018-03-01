@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Featured Directory Content Type feature.
+ */
+
+include_once 'ti_amg_fw_featured_directory_content_type.features.inc';

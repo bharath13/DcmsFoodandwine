@@ -1,0 +1,406 @@
+/**
+ * Block: main-menu
+ * Element: main-menu__element
+ * Modifier: main-menu--modifier
+ */
+
+$block: main-menu;
+
+.#{$block} {
+  @include clearfix;
+  $logo-width: 140px;
+  $logo-appear-animation-length: .4s;
+  $logo-appear-animation-delay: 0s;
+  $logo-disappear-animation-delay: .15s;
+  
+  float: left;
+  width: 100%;
+
+  @include respond-to('large and up') {
+    float: none;
+  }
+
+  // only displayed when header is stuck
+  &__logo {
+    @extend %header-logo;
+    display: block;
+    &, svg {
+      width: $logo-width;
+      height: 20px;
+    }
+    margin: 0 auto;
+    line-height: 1;
+    transition: width 0s ease-out $logo-appear-animation-delay + .32s,
+                opacity .3s common-ease() $logo-disappear-animation-delay;
+    
+    @include respond-to('small and up') {
+      display: inline-block;
+      float: left;
+    }
+
+    @include respond-to('large and up') {
+      width: 0;
+      opacity: 0;
+    }
+  }
+  
+  &__nav {
+    @include ui-list;
+    position: fixed;    
+    top: 0;
+    left: -330px;
+    z-index: $z-zeus;
+    width: 100%;
+    max-width: 320px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 
+                0 2px 10px 0 rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    transition: opacity .15s common-ease() .05s,
+                left .3s common-ease();
+
+    &--is-open {
+      left: 0;
+      opacity: 1;
+      transition-delay: 0s, .05s;      
+      .#{$block}__sub-menu {
+          display: block;
+          padding: 0 0 0 40px;
+          border: none;
+          background-color: #ffffff;
+          .#{$block}__sub-menu__item{
+              a{
+                  padding: 10px 20px;
+              }
+          }
+      }
+    }
+
+    @include respond-to('large and up') {
+      position: static;
+      float: right;
+      display: block;
+      max-width: none;
+      height: auto !important;
+      overflow-y: visible;
+      box-shadow: none;
+      font-size: 0.1px;
+      opacity: 1;
+      text-align: justify;
+      transition: width 
+                  $logo-appear-animation-length  
+                  common-ease() 
+                  $logo-disappear-animation-delay + .33s;
+      &:after {
+        content: '';
+        display: inline-block;
+        width: 100%;
+      }
+    }
+  }
+  
+  .is_stuck & {
+
+    &__logo {
+      &, svg {
+        width: $logo-width;
+        height: 20px;
+      }
+      opacity: 1;
+      transition-delay: $logo-appear-animation-delay + .35s;
+    }
+
+    &__nav {
+      // change width when header is stuck to accommodate logo and search icon
+      width: $page-container-width - $logo-width - 45px - 35px;
+      margin-right: 40px;
+      transition-delay: $logo-appear-animation-delay;
+    }
+  }
+
+  &__item {
+    position: relative;
+    font-size: rem(16);
+    @include font-droid-sans;
+    text-transform: uppercase;
+    vertical-align: middle;
+
+    &__link {
+      display: inline-block;
+      padding: 15px 20px;
+      color: $color-dark-grey;
+      
+      &:hover {
+        color: #000000;
+      }
+      
+      &--special {
+        color: $brand-primary;
+        
+        &:hover {
+          color: darken($brand-primary, 10%);
+        }
+      }
+    }
+
+    &--special {
+      color: $brand-primary;
+    }
+
+    &--active {
+
+      .#{$block}__sub-menu {
+        display: block;
+      }
+    }
+
+    @include respond-to('large and up') {
+      display: inline-block;
+
+      &:hover {
+
+        .#{$block}__sub-menu {
+          display: block;
+        }
+
+        // transition sub menu in on hover
+        .#{$block}__sub-menu {
+          opacity: 1;
+          top: 100%;
+          left: 50%;
+          transition-delay: 0s, 0s, 0s;
+        }
+      }
+
+      &__link {
+        padding: 0 0 10px 0;
+      }
+    }
+  }
+
+  /*-------------------------------------------- */
+  /** Social Icons */
+  /*-------------------------------------------- */
+
+  &__social {
+    @include clearfix;
+    text-align: center;
+    padding: 15px 20px;
+    list-style: none;
+
+    &-icon {
+      float: left;
+      position: relative;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      color: white;
+      background-color: $brand-primary;
+      padding: 0;
+      margin-right: 20px;
+      margin-bottom: 10px;
+      text-align: center;
+
+      &--fb {
+        background-color: #5372cc;
+
+        svg {
+          margin-top: 1px;
+          width: 26px;
+        }
+      }
+
+      &--twitter {
+        background-color: $color-twitter;
+
+        svg {
+          margin-top: 4px;
+          width: 21px;
+        }
+      }
+      
+      &--pinterest {
+
+        svg {
+          margin-top: 1px;
+          width: 27px;
+        }
+      }
+
+      &--instagram {
+        background-color: #005588;
+
+        svg {
+          margin-top: 7px;
+          width: 16px;
+        }
+      }
+      
+      &--comments {
+           width: 55px; 
+           height: 30px; 
+           background-color: $brand-primary;
+           -moz-border-radius: 20px; 
+           -webkit-border-radius: 20px; 
+           border-radius: 20px;
+           font-size: 13px;
+           img {
+             margin-top: 9px;
+           }
+           span {
+             top: -3px;
+             left: 2px;
+             height: 18px;
+             margin: 0;
+             font-size: 13px;
+             position: relative;
+           }
+          &:before {
+             content:"";
+             position: absolute;
+             width: 0;
+             height: 0;
+             border: none;
+          }
+        }
+
+      &:last-child {
+        margin-right: 0;
+      }
+      
+      &:hover {
+        color: white;
+      }
+    }
+    
+    @include respond-to('large and up') {
+      padding: 0;
+
+      &-icon {
+        float: left;
+        width: 24px;
+        height: 24px;
+        margin-right: 10px;
+
+        &--fb {
+
+          svg {
+            margin-top: 2px;
+            width: 20px;
+          }
+        }
+
+        &--twitter {
+
+          svg {
+            margin-top: 3px;
+            margin-left: 2px;
+            width: 18px;
+          }
+        }
+        
+        &--pinterest {
+
+          svg {
+            margin-top: 3px;
+            margin-left: 1px;
+            width: 19px;
+          }
+        }
+
+         &--comments {
+           width: 55px; 
+           height: 24px; 
+           background-color: $brand-primary;
+           -moz-border-radius: 20px; 
+           -webkit-border-radius: 20px; 
+           border-radius: 20px;
+           font-size: 13px;
+           img {
+             margin-top: 6px;
+           }
+           span {
+             top: -3px;
+             left: 2px;
+             height: 18px;
+             margin: 0;
+             font-size: 13px;
+             position: relative;
+           }
+          &:before {
+             content:"";
+             position: absolute;
+             width: 0;
+             height: 0;
+             border: none;
+          }
+        }
+        
+        &--instagram {
+
+          svg {
+            margin-top: 5px;
+            width: 14px;
+          }
+        }
+      }
+    }
+  }
+  
+  &__sub-menu {
+    @include ui-list;
+    display: none;
+    padding: 20px;
+    border-top: 2px solid $brand-primary;
+    box-sizing: border-box;
+    background-color: lighten($color-light-grey, 10%);
+    text-align: left;
+    transition: opacity .2s common-ease(),
+                top .2s common-ease(),
+                // delay changing left position so user can't see it happening
+                left 0s linear .25s;
+    
+    &__item {
+      margin-top: 12px;
+      padding-bottom: 4px;
+      font-size: rem(14);
+      transition: color .15s common-ease();
+      cursor: pointer;
+
+      &:hover {
+        color: $brand-primary;
+      }
+
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    @include respond-to('large and up') {
+      position: absolute;
+      top: 85%;
+      // move off screen so we aren't obscuring other elements. 
+      left: -9999px;
+      @include transform( translateX(-50%) );
+      z-index: $z-10;
+      display: block;
+      width: 220px;
+      box-shadow: 0 2px 4px rgba(#000000, .3);
+      opacity: 0;
+    }
+  }
+
+  &__menu-toggle {
+    float: left;
+    width: 29px;
+    height: 19px;
+    margin-right: 15px;
+    color: $brand-primary;
+    cursor: pointer;
+
+    @include respond-to('large and up') {
+      display: none;
+    }
+  }
+}

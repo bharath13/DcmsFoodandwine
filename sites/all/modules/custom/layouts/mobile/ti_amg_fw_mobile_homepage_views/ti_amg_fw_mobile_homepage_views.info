@@ -1,0 +1,14 @@
+name = TI AMG FW Mobile Homepage Views
+description = TI AMG FW Mobile Homepage Views
+core = 7.x
+package = Foodandwine
+version = 7.x-1.20
+project = ti_amg_fw_mobile_homepage_views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = foodandwine_mobile_search
+features[views_view][] = ti_amg_fw_mobile_blog_blocks
+features[views_view][] = ti_amg_fw_mobile_home_page_blocks
+features[views_view][] = ti_amg_fw_mobile_related_slideshows
+features[views_view][] = ti_amg_fw_mobile_standard_slideshow
+features_exclude[dependencies][views] = views

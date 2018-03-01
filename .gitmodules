@@ -1,0 +1,3 @@
+[submodule "sites/all/themes/unifiedtemplate_responsive/pattern-lab"]
+ 	path = sites/all/themes/unifiedtemplate_responsive/pattern-lab
+ 	url = git@github.com:TimeInc/ti_unified_templates.git

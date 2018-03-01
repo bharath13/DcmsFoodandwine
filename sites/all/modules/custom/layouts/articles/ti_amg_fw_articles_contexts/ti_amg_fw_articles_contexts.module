@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI_AMG_FW_ARTICLES_CONTEXTS feature.
+ */
+
+include_once 'ti_amg_fw_articles_contexts.features.inc';

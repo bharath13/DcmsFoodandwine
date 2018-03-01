@@ -1,0 +1,1233 @@
+<?php
+
+/**
+ * @file
+ * Code for the TI AMG FW RSS Feeds feature.
+ */
+include_once 'ti_amg_fw_rss_feeds.features.inc';
+
+define('FEED_LIMIT_END_DAYS', 30);
+define('FEED_LIMIT_START_DAYS', 3);
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fw_rss_feeds_menu() {
+    $items = array();
+    $items['home.atom'] = array(
+      'title' => t('F&W Homepage Feed'),
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'ti_amg_fw_homepage_feed',
+      'access callback' => TRUE,
+    );
+    $items['rss'] = array(
+      'title' => t('Feeds'),
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'ti_amg_fw_rss_feeds_page_display',
+      'access callback' => TRUE,
+    );
+    $items['rebelmouse/%'] = array(
+      'title' => t('Rebelmouse Feed'),
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'ti_amg_fw_rebelmouse_feed',
+      'access callback' => TRUE,
+    );
+    $items['rebelmouse'] = array(
+      'title' => t('Rebelmouse Feed'),
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'ti_amg_fw_rebelmouse_feed',
+      'access callback' => TRUE,
+    );
+    $items['fw-yahoo-blogs-feed.rss'] = array(
+      'title' => t('Yahoo Blogs Feed'),
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'ti_amg_fw_rss_feeds_yahoo_blogs_feed',
+      'access callback' => TRUE,
+    );
+    $items['fw-msn-gallery-feed.rss'] = array(
+      'title' => t('Foodandwine MSN Gallery Feed'),
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'ti_amg_fw_rss_feeds_msn_gallery_feed',
+      'access callback' => TRUE,
+    );
+    $items['fw-yahoo-gallery-feed.rss'] = array(
+      'title' => t('Food&Wine Yahoo Gallery Feed'),
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'ti_amg_fw_rss_feeds_yahoo_gallery_feed',
+      'access callback' => TRUE,
+    );
+    $items['fw-msn-recipe-feed.rss'] = array(
+      'title' => t('Foodandwine MSN Recipe Feed'),
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'ti_amg_fw_rss_feeds_msn_recipe_feed',
+      'access callback' => TRUE,
+    );
+    $items['fw-yahoo-recipe-feed.rss'] = array(
+      'title' => t('Foodandwine Yahoo Recipe Feed'),
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'ti_amg_fw_rss_feeds_yahoo_recipe_feed',
+      'access callback' => TRUE,
+    );
+
+    return $items;
+}
+
+/**
+ * Implements RSS Feeds Page
+ */
+function ti_amg_fw_rss_feeds_page_display() {
+    return theme('ti_amg_fw_rss_feed');
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fw_rss_feeds_theme() {
+    return array(
+      'ti_amg_fw_rss_feed' => array(
+        'template' => 'ti_amg_fw_rss_feed',
+      ),
+      'ti_amg_fw_rebel_mouse_feed' => array(
+        'variables' => array('feed_content' => NULL, 'rblm_feed_page_info' => NULL),
+        'template' => 'ti_amg_fw_rebel_mouse_feed',
+      ),
+      'ti_amg_fw_rebel_mouse_feed_row' => array(
+        'variables' => array('feed' => NULL, 'rebelmouse_tag' => NULL),
+        'template' => 'ti_amg_fw_rebel_mouse_feed_row',
+      ),
+      'ti_amg_fw_feed_container' => array(
+        'variables' => array('feed_container_values' => NULL, 'feed_content' => NULL),
+        'template' => 'ti_amg_fw_feed_container',
+      ),
+      'ti_amg_fw_yahoo_feed_row' => array(
+        'variables' => array('row_content' => NULL),
+        'template' => 'ti_amg_fw_yahoo_feed_row',
+      ),
+      'ti_amg_fw_msn_feed_row' => array(
+        'variables' => array('row_content' => NULL),
+        'template' => 'ti_amg_fw_msn_feed_row',
+      ),
+      'ti_amg_fw_yahoo_feed_gallery_row' => array(
+        'variables' => array('row_content' => NULL),
+        'template' => 'ti_amg_fw_yahoo_feed_gallery_row',
+      ), 
+      'ti_amg_fw_msn_recipe_feed_row' => array(
+        'variables' => array('row_content' => NULL),
+        'template' => 'ti_amg_fw_msn_recipe_feed_row',
+      ), 
+      'ti_amg_fw_yahoo_recipe_feed_row' => array(
+        'variables' => array('row_content' => NULL),
+        'template' => 'ti_amg_fw_yahoo_recipe_feed_row',
+      ), 
+    );
+}
+
+/**
+ * Implements Homepage Rss Feed page.
+ */
+function ti_amg_fw_homepage_feed() {
+    global $base_url, $language;
+    // Declaring empty array values for home page sections
+    $mad_genious_tips_revision_ids = array();
+    $editor_pick_revision_ids = array();
+    $recipe_guides_revision_ids = array();
+    $editor_pick_titles = array();
+    $mad_genious_tips_titles = array();
+    $recipe_guides_titles = array();
+    $home_items = array();
+
+
+    // Declaring the xml namespaces for rss feed
+    $namespaces = array('xmlns:dc' => 'http://purl.org/dc/elements/1.1/',
+      'xmlns:content' => 'http://purl.org/rss/1.0/modules/content/',
+      'xmlns:foaf' => 'http://xmlns.com/foaf/0.1/', 'xmlns:og' => 'http://ogp.me/ns#',
+      'xmlns:rdfs' => 'http://www.w3.org/2000/01/rdf-schema#', 'xmlns:sioc' => 'http://rdfs.org/sioc/ns#',
+      'xmlns:sioct' => 'http://rdfs.org/sioc/ns#', 'xmlns:skos' => 'http://www.w3.org/2004/02/skos/core#',
+      'xmlns:xsd' => 'http://www.w3.org/2001/XMLSchema#', 'xmlns:owl' => 'http://www.w3.org/2002/07/owl#',
+      'xmlns:rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'xmlns:rss' => 'http://purl.org/rss/1.0/',
+      'xmlns:site' => $base_url . '/ns#',
+    );
+    $output = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+    $output .= "<rss version=\"2.0\" xml:base=\"" . $base_url . "\" " . drupal_attributes($namespaces);
+
+    $output .= ">\n";
+
+    $output .= "<channel>";
+    $output .= "<title>Food and Wine Homepage</title>";
+    $output .= "<link>" . $base_url . "</link>";
+    $output .= "<description></description>";
+    $output .= "<language>" . $language->language . "</language>";
+
+    // Fetching the Top 5 blogs in the site.
+    $blog_query = "SELECT field_data_field_deck.field_deck_value, node.title AS node_title, node.nid AS nid, node.created AS node_created, publication_date.published_at AS publication_date_published_at
+FROM {node} node LEFT JOIN {publication_date} publication_date ON node.nid = publication_date.nid
+LEFT JOIN {field_data_field_deck} field_data_field_deck ON node.nid = field_data_field_deck.entity_id
+WHERE (( (node.status = '1') AND (node.type IN  ('blog')) ))
+ORDER BY publication_date_published_at DESC
+LIMIT 5 OFFSET 0";
+    // Output the Top 5 blogs information to the homepage feed
+    $top_five_blogs = db_query($blog_query)->fetchAll();
+    if (isset($top_five_blogs) && !empty($top_five_blogs)) {
+        foreach ($top_five_blogs as $blog) {
+            $output .= "<item><title>" . htmlspecialchars(drupal_html_to_text($blog->node_title)) . "</title>";
+            $output .= "<link>" . $base_url . "/" . drupal_get_path_alias('node/' . $blog->nid) . "</link>";
+            $output .= "<description>" . htmlspecialchars(drupal_html_to_text($blog->field_deck_value)) . "</description>";
+            $output .= "<pubDate>" . date('D, d M Y H:i:s O', $blog->publication_date_published_at) . "</pubDate>";
+            $output .= "<dc:creator>" . date('D, d M Y H:i:s O', $blog->node_created) . "</dc:creator>";
+            $output .= "<guid isPermaLink=\"false\">" . $blog->nid . "</guid></item>";
+        }
+    }
+    // Fetching the nid of home page which was published on the site.
+    $node_type = 'home_page';
+    $home_nid = db_query('SELECT nid FROM {node} WHERE type = :type and status=:status', array(':type' => $node_type, ':status' => 1))->fetchField();
+
+    if ($home_nid != NULL && !empty($home_nid)) {
+        $home_array = node_load($home_nid);
+        $created_at = date('D, d M Y H:i:s O', $home_array->created);
+        $published_at = date('D, d M Y H:i:s O', $home_array->published_at);
+
+        // Fetching Editor Picks Titles and URL's
+        $editor_pick_revision_array = isset($home_array->field_hp_editor_picks[LANGUAGE_NONE]) ? $home_array->field_hp_editor_picks[LANGUAGE_NONE] : '';
+
+        if (isset($editor_pick_revision_array) && !empty($editor_pick_revision_array)) {
+
+            foreach ($editor_pick_revision_array as $revision) {
+                $editor_pick_revision_ids[] = $revision['revision_id'];
+            }
+
+            $editor_pick_titles = db_query('SELECT field_editor_pick_title_title as title, field_editor_pick_title_url as url  FROM `field_data_field_editor_pick_title` WHERE revision_id in (:rids)', array(':rids' => array_values($editor_pick_revision_ids)))->fetchAll();
+        }
+
+        // Fetching Mad Genious Tips Titles and URL's
+        $mad_genious_tips_revision_array = isset($home_array->field_hp_mad_genious_tips[LANGUAGE_NONE]) ? $home_array->field_hp_mad_genious_tips[LANGUAGE_NONE] : '';
+        if (isset($mad_genious_tips_revision_array) && !empty($mad_genious_tips_revision_array)) {
+
+            foreach ($mad_genious_tips_revision_array as $revision) {
+                $mad_genious_tips_revision_ids[] = $revision['revision_id'];
+            }
+            $mad_genious_tips_titles = db_query('SELECT field_mad_genious_tip_title_title as title, field_mad_genious_tip_title_url as url  FROM `field_data_field_mad_genious_tip_title` WHERE revision_id in (:rids)', array(':rids' => array_values($mad_genious_tips_revision_ids)))->fetchAll();
+        }
+
+        // Fetching Recipe Guides Titles and URL's
+        $recipe_guides_revision_array = isset($home_array->field_hp_recipe_guides[LANGUAGE_NONE]) ? $home_array->field_hp_recipe_guides[LANGUAGE_NONE] : '';
+        if (isset($recipe_guides_revision_array) && !empty($recipe_guides_revision_array)) {
+
+            foreach ($recipe_guides_revision_array as $revision) {
+                $recipe_guides_revision_ids[] = $revision['revision_id'];
+            }
+            $recipe_guides_titles = db_query('SELECT field_recipe_guide_title_title as title, field_recipe_guide_title_url as url  FROM `field_data_field_recipe_guide_title` WHERE revision_id in (:rids)', array(':rids' => array_values($recipe_guides_revision_ids)))->fetchAll();
+        }
+
+        $home_items = array_merge($editor_pick_titles, $mad_genious_tips_titles, $recipe_guides_titles);
+    }
+
+    //Output the editor picks, Mad genious tips and Recipe Guides Titles and URL's
+    if (!empty($home_items)) {
+        foreach ($home_items as $item) {
+            if (preg_match('/http/', $item->url)) {
+                $item_url = $item->url;
+            }
+            else {
+                $item_url = $base_url . '/' . $item->url;
+            }
+            if (!preg_match('/http/', $item->url) && preg_match('/www/', $item->url)) {
+                $item_url = 'http://' . $item->url;
+            }
+            $output .= "<item><title>" . $item->title . "</title>";
+            $output .= "<link>" . $item_url . "</link>";
+            $output .= "<description></description>";
+            $output .= "<pubDate>" . $published_at . "</pubDate>";
+            $output .= "<dc:creator>" . $created_at . "</dc:creator>";
+            $output .= "<guid isPermaLink=\"false\">" . $item_url . "</guid></item>";
+        }
+    }
+
+    $output .= "</channel></rss>";
+    // Adding http header to the page.
+    drupal_add_http_header('Content-Type', 'application/rss+xml; charset=utf-8');
+    print $output;
+    drupal_exit();
+}
+
+/*
+ * Building Rebelmouse Feed
+ */
+
+function ti_amg_fw_rebelmouse_feed() {
+    global $base_url;
+    $rebelmouse_tag = '';
+    if (arg(1)) {
+        $tid = get_tid_from_label(array(arg(1)), 'field_taxo_rebelmouse_tag_label');
+        $tag_id = $tid[0];
+        $rebelmouse_tag = taxonomy_term_load($tag_id)->name;
+    }
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node');
+    $query->entityCondition('bundle', array('blog', 'recipe'));
+    $query->propertyCondition('status', 1);
+    if (arg(1)) {
+        $query->fieldCondition('field_rebelmouse_tag', 'tid', $tag_id);
+    }
+    else {
+        $query->fieldCondition('field_rebelmouse_tag', 'tid', 'NULL', '!=');
+    }
+    $result = $query->execute();
+    $feed_content = '';
+    if (isset($result['node']) && !empty($result['node'])) {
+        $rebelmouse_nids = array_keys($result['node']);
+        $query = db_select('node', 'node');
+        $query->leftJoin('field_data_body', 'field_data_body', 'field_data_body.entity_id = node.nid');
+        $query->leftJoin('field_data_field_deck', 'deck_tab', 'deck_tab.entity_id = node.nid');
+        $query->leftJoin('publication_date', 'pub_date', 'pub_date.nid = node.nid');
+        $query->leftJoin('field_data_field_author', 'author_tab', 'author_tab.entity_id = node.nid');
+        $query->leftJoin('field_data_field_chefs_author', 'chefs_author', 'chefs_author.entity_id = node.nid');
+        $query->leftJoin('field_data_field_source_author', 'source_author', 'source_author.entity_id = node.nid');
+        $query->leftJoin('field_data_field_related_videos', 'related_videos_tab', 'related_videos_tab.entity_id = node.nid');
+        $query->leftJoin('field_data_field_blog_video', 'blog_video', 'blog_video.entity_id = node.nid');
+        $query->leftJoin('field_data_field_images', 'field_images', 'field_images.entity_id = node.nid');
+        if (!arg(1)) {
+            $query->leftJoin('field_data_field_rebelmouse_tag', 'rebelmouse_tags', 'rebelmouse_tags.entity_id = node.nid');
+        }
+
+        $query->fields('node', array('title', 'type', 'nid'));
+        $query->fields('field_data_body', array('body_value'));
+        $query->addField('pub_date', 'published_at', 'published_at');
+        $query->addField('deck_tab', 'field_deck_value', 'field_deck_value');
+        $query->addField('blog_video', 'field_blog_video_value', 'main_video');
+        $query->addField('field_images', 'field_images_target_id', 'image_id');
+
+        $query->addExpression('GROUP_CONCAT(related_videos_tab.field_related_videos_target_id)', 'related_videos');
+        $query->addExpression('GROUP_CONCAT(author_tab.field_author_target_id)', 'author_ids');
+        $query->addExpression('GROUP_CONCAT(chefs_author.field_chefs_author_target_id)', 'chef_authors');
+        $query->addExpression('GROUP_CONCAT(source_author.field_source_author_target_id)', 'source_authors');
+        if (!arg(1)) {
+            $query->addExpression('GROUP_CONCAT(rebelmouse_tags.field_rebelmouse_tag_tid)', 'rebelmouse_tags');
+        }
+        $query->groupBy('node.nid');
+        $query->Condition('node.nid', $rebelmouse_nids, 'IN');
+        $query->orderBy('pub_date.published_at', 'DESC');
+        $result = $query->execute()->fetchAll();
+
+        $rblm_feed = array();
+        $rblm_feed = get_feed_details($result, $rebelmouse_tag);
+        foreach ($rblm_feed as $feed) {
+            //Calling the row tpl for every node
+            $feed_content .= theme('ti_amg_fw_rebel_mouse_feed_row', array('feed' => $feed, 'rebelmouse_tag' => $rebelmouse_tag));
+        }
+    }
+    $rblm_feed_page_info = get_feed_page_info();
+
+    // Merging the every row into one tpl and adding the header page information
+    return theme('ti_amg_fw_rebel_mouse_feed', array('feed_content' => $feed_content, 'rblm_feed_page_info' => $rblm_feed_page_info));
+}
+
+/*
+ * Loading the page info for feed
+ */
+
+function get_feed_page_info() {
+    $page_info = array();
+    global $base_url, $language;
+    $page_info['title'] = 'Food and Wine';
+    $page_info['link'] = $base_url . request_uri();
+    $page_info['description'] = '';
+    $page_info['language'] = $language->language;
+
+    return $page_info;
+}
+
+/**
+ * Getting the node details like title, body, deck, image, video * 
+ * @param type is nodes details
+ * @param type is rebel mouse tag name
+ * @return whole rebel mouse feed array
+ */
+function get_feed_details($nodes_data, $tag_name = '') {
+    $feed_array = array();
+    global $base_url, $conf;
+    foreach ($nodes_data as $key => $node_item) {
+        $feed_array[$key]['title'] = $node_item->title;
+        $feed_array[$key]['description'] = '';
+        //Fetching the Body content, in else fetching Deck content
+        if (isset($node_item->body_value) && $node_item->body_value != '') {
+            $feed_array[$key]['description'] = $node_item->body_value;
+        }
+        elseif (isset($node_item->field_deck_value) && $node_item->field_deck_value != '') {
+            $feed_array[$key]['description'] = $node_item->field_deck_value;
+        }
+        $feed_array[$key]['published_at'] = date('D, d M Y H:i:s O', $node_item->published_at);
+        $feed_array[$key]['link'] = $base_url . '/' . drupal_get_path_alias('node/' . $node_item->nid);
+
+        //Fetching the rebelmouse tags
+        if ($tag_name != '') {
+            $feed_array[$key]['category'] = $tag_name;
+        }
+        else {
+
+            $rebel_mouse_tags_tids = array();
+            $rebel_mouse_tags_names = array();
+            if (isset($node_item->rebelmouse_tags) && $node_item->rebelmouse_tags != '') {
+                $rebel_mouse_tags_tids = array_unique(explode(',', $node_item->rebelmouse_tags));
+            }
+            $rebelmouse_taxonomy = taxonomy_term_load_multiple($rebel_mouse_tags_tids);
+            foreach ($rebelmouse_taxonomy as $term)
+                $rebel_mouse_tags_names[] = $term->name;
+            $feed_array[$key]['category'] = $rebel_mouse_tags_names;
+        }
+
+        $feed_array[$key]['guid'] = $node_item->nid;
+        $feed_array[$key]['creator'] = '';
+        $feed_array[$key]['video'] = '';
+        $feed_array[$key]['image'] = '';
+        //Fetching the image for blog/recipe
+        if (isset($node_item->image_id) && $node_item->image_id != '') {
+            $image_node_id = $node_item->image_id;
+            $query = db_select('file_managed', 'file_managed');
+            $query->addField('file_managed', 'uri');
+            $query->leftJoin('field_data_field_image', 'field_data_field_image', 'field_data_field_image.field_image_fid = file_managed.fid');
+            $query->condition('field_data_field_image.entity_id', $image_node_id, '=');
+            $image_uri = $query->execute()->fetchField();
+            $image_path = file_create_url($image_uri);
+            $feed_array[$key]['image'] = theme('image', array('path' => $image_path,
+              'alt' => check_plain($node_item->title)));
+        }
+
+        // Fetching Blogs default image, video, authors informations
+        if ($node_item->type == 'blog' || $node_item->type == 'article') {
+            $blog_authors = array();
+            if (isset($node_item->author_ids) && $node_item->author_ids != '') {
+                $blog_authors = array_unique(explode(',', $node_item->author_ids));
+            }
+            if (count($blog_authors) >= 1) {
+                $query = db_select('node', 'node');
+                $query->fields('node', array('title'));
+                $query->condition('nid', $blog_authors, 'IN');
+                $result = $query->execute()->fetchAll();
+
+                foreach ($result as $row) {
+                    if ($feed_array[$key]['creator'] == '') {
+                        $feed_array[$key]['creator'] = $row->title;
+                    }
+                    else {
+                        $feed_array[$key]['creator'] .= ', ' . $row->title;
+                    }
+                }
+            }
+
+            if (isset($node_item->related_videos) && $node_item->related_videos != '') {
+                $video_ids = explode(',', $node_item->author_ids);
+                $feed_array[$key]['video'] = ti_amg_fw_custom_get_video($video_ids[0], '');
+            }
+            elseif (isset($node_item->main_video) && $node_item->main_video != '') {
+                $feed_array[$key]['video'] = $node_item->main_video;
+            }
+            // Loading default image if no image for blog
+            if ($feed_array[$key]['image'] == '') {
+                $feed_array[$key]['image'] = theme('image', array('path' => $base_url . $conf['ti_amg_fw_blog_default_image'],
+                  'alt' => check_plain($node_item->title)));
+            }
+        }
+        elseif ($node_item->type == 'recipe') {
+            // Fetching the recipe author, image informations
+            $recipe_authors = array();
+            if (isset($node_item->chef_authors) && $node_item->chef_authors != '') {
+                $recipe_authors = array_unique(explode(',', $node_item->chef_authors));
+            }
+            elseif (isset($node_item->source_authors) && $node_item->source_authors != '') {
+                $recipe_authors = array_unique(explode(',', $node_item->source_authors));
+            }
+            if (count($recipe_authors) >= 1) {
+                $query = db_select('node', 'node');
+                $query->fields('node', array('title'));
+                $query->condition('nid', $recipe_authors, 'IN');
+                $result = $query->execute()->fetchAll();
+
+                foreach ($result as $row) {
+                    if ($feed_array[$key]['creator'] == '') {
+                        $feed_array[$key]['creator'] = $row->title;
+                    }
+                    else {
+                        $feed_array[$key]['creator'] .= ', ' . $row->title;
+                    }
+                }
+            }
+            // Loading default image if no image for recipe
+            if ($feed_array[$key]['image'] == '') {
+                $feed_array[$key]['image'] = theme('image', array('path' => $base_url . '/sites/all/themes/foodandwine/images/recipe-placeholder.gif',
+                  'alt' => check_plain($node_item->title)));
+            }
+        }
+    }
+    return $feed_array;
+}
+
+/**
+ * Implements hook_views_pre_render().
+ * Hide Image from Blog Details Page, If image and video are uploaded
+ */
+function ti_amg_fw_rss_feeds_views_pre_render(&$view) {
+    global $base_url, $conf;
+    //To update the msn blogs feed image fields to image path
+    if ($view->name == 'ti_amg_fw_msn_blogs_feed') {
+        foreach ($view->result as $key => $value) {
+            if (isset($value->field_field_image[0]['raw']['uri'])) {
+                $image_uri = $value->field_field_image[0]['raw']['uri'];
+                $image_url = file_create_url($image_uri);
+                $value->field_field_image[0]['rendered'] = $image_url;
+            }
+        }
+    }
+}
+
+/**
+ * Implements hook_rdf_namespaces()
+ */
+function ti_amg_fw_rss_feeds_rdf_namespaces() {
+    if (arg(0) == 'fw-msn-feed.rss') {
+        return array(
+          'dcterms' => 'http://purl.org/dc/terms/',
+          'media' => 'http://search.yahoo.com/mrss/',
+        );
+    }
+}
+
+/**
+ * Implements template_preprocess_views_view_row_rss(&$vars)
+ */
+function ti_amg_fw_rss_feeds_preprocess_views_view_row_rss(&$vars) {
+    global $conf, $base_url, $multiple_images_info;
+    if ($vars['view']->name == 'ti_amg_fw_blogs_flipboard') {        
+        $result = explode('~~', $vars['row']->description);
+        $image_url = trim($result[0]);
+        $image_credit = trim($result[1]);
+        $image_caption = trim($result[2]);
+        $image_alt_text = trim($result[3]);
+        $description = trim($result[4]);
+        $main_video = trim($result[5]);
+        $blog_video_id = trim($result[6]);
+
+        // Removing the related links from blog body
+        $broken_description = explode('Related:', html_entity_decode($description));
+        $vars['row']->blog_body = ti_amg_fw_custom_remove_unclosed_tags($broken_description[0]);
+
+        // Creating iframe tag from brightcove video id
+        $vars['row']->video = '';
+        if ($blog_video_id != '') {
+            $video_src = ti_amg_fw_custom_get_feedvideo_url($blog_video_id);
+            $vars['row']->video = "<iframe src='$video_src' width='480' height='450'/>";
+        }
+        else {
+            // Assigning the blog main video
+            $vars['row']->video = html_entity_decode($main_video);
+        }
+
+        //Assigning the blog default image
+        $vars['row']->image = theme('image', array('path' => $base_url . $conf['ti_amg_fw_blog_default_image'],
+          'alt' => $image_alt_text));
+        //Assigning blog featured image if it exists
+        if ($image_url != '') {
+            $vars['row']->image = html_entity_decode($image_url);
+            $vars['row']->image_caption = strip_tags(html_entity_decode($image_caption));
+            $vars['row']->image_credit = strip_tags(html_entity_decode($image_credit));
+        }
+
+        $vars['row']->title = strip_tags(html_entity_decode($vars['row']->title));
+
+        /* generate UUID */
+        $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+        /* Replace NID by UUID */
+        preg_match('/<guid.*?>(.*?)<\/guid>/', $vars['item_elements'], $res);
+        $vars['item_elements'] = preg_replace('/' . $res[1] . '/', $uuid, $vars['item_elements']);
+    }
+    elseif ($vars['view']->name == 'ti_amg_fw_msn_blogs_feed') {
+        static $item_row = 0;
+        $vars['row']->image_path = '';
+        $vars['row']->img_credit = '';
+        $vars['row']->img_cptn = '';
+        $vars['row']->img_alttxt = '';
+        $vars['row']->last_modified = '';
+        $dflt_image = $base_url . $conf['ti_amg_fw_blog_default_image'];
+        $result = explode('!IMAGE-ENDS!', $vars['row']->description);
+        $broken_description = '';
+        if ($result[0] != '') {
+            $imgres = explode('~~', $result[0]);
+        }
+
+        if ($result[1] != '') {
+            $vars['row']->blog_body = $result[1];
+            // Removing the related links from blog body
+            $broken_description = explode('Related:', $vars['row']->blog_body);
+            $vars['row']->blog_body = ti_amg_fw_custom_remove_unclosed_tags($broken_description[0]);
+            $rlink = '<p>[%related]</p>';
+            $vars['row']->blog_body = str_replace($rlink, '', $vars['row']->blog_body);
+        }
+        $vars['row']->multiple_images = $multiple_images_info[$item_row];
+        $image_positions = array();
+        if (!empty($vars['row']->multiple_images)) {
+          foreach($vars['row']->multiple_images as $key => $item) {
+            $search = '<p>[%image' . ($key + 1) . ']</p>';
+            $image_positions[strpos($vars['row']->blog_body, $search)] = $key;
+            $vars['row']->blog_body = str_replace($search, '', $vars['row']->blog_body);
+          }
+          ksort($image_positions);
+        }
+        $vars['row']->image_positions = $image_positions;
+        if ($imgres[0] != '') {
+            $vars['row']->image_path = $imgres[0];
+        }
+        else {
+            $vars['row']->image_path = $dflt_image;
+        }
+        if ($imgres[1] != '') {
+           $vars['row']->img_credit = $imgres[1];
+        }
+        if ($imgres[2] != '') {
+            $vars['row']->img_cptn = $imgres[2];
+        }
+        if ($imgres[3] != '') {
+           $vars['row']->img_alttxt = $imgres[3];
+        }
+        if ($imgres[4] != '') {
+            $vars['row']->last_modified = date('Y-m-d\TH:i:sP', strtotime($imgres[4]));
+        }
+        ++$item_row;
+    }
+}
+
+/*
+ * To build yahoo feed for food and wine blogs.
+ */
+function ti_amg_fw_rss_feeds_yahoo_blogs_feed() {
+  global $base_url, $conf;
+  $content_types = array('blog', 'article');
+  // Getting the top blog content.
+  $items_nids = ti_amg_fw_rss_feeds_get_latest_content($content_types);
+  $items_content = node_load_multiple($items_nids);
+  $feed_content = '';
+  foreach($items_content as $item) {
+    $row_content['title'] = html_entity_decode(mb_convert_encoding(ti_amg_fw_custom_remove_accents(strip_tags($item->title)), 'UTF-8', 'auto'), ENT_QUOTES, 'UTF-8');    
+    $row_content['link'] = $base_url . "/" . drupal_get_path_alias('node/' . $item->nid);
+    $row_content['description'] = '';
+    $exclude = 0;
+    if (!empty($item->body[LANGUAGE_NONE])) {
+      // Replace "%related" token from body content with related links
+      $search = '<p>[%related]</p>';
+      if (isset($item->body[LANGUAGE_NONE][0]['value'])) {
+        $body = $item->body[LANGUAGE_NONE][0]['value'];
+        if (strpos($body, $search) != FALSE) { 
+          $istoken = TRUE; 
+          if (isset($item->field_related_content[LANGUAGE_NONE])) {
+            $related_content = _ti_amg_fwrd_feature_preprocess_related_links($item, $istoken);
+            $body = _ti_amg_fwrd_feature_replace_single_related_links_token($related_content, $body);
+          }
+          else {
+            // Remove related links token if there is no link attached.
+            $body = str_replace($search, '', $body);
+          } 
+        }
+      }
+      $row_content['description'] = mb_convert_encoding($body, 'UTF-8', 'auto');
+      if (!empty($row_content['description'])) {
+        if (preg_match('/<object.+?<\/object>/im', $row_content['description'], $match)) {
+          $exclude = 1;
+        }
+        else if (preg_match('/<iframe.+?<\/iframe>/im', $row_content['description'], $match)) {
+          $exclude = 1;
+        }
+        else if (preg_match('/<embed.+?<\/embed>/im', $row_content['description'], $match)) {
+          $exclude = 1;
+        }
+      }
+    }
+    if (!empty($item->field_multiple_images[LANGUAGE_NONE])) {
+        $multiple_images = $item->field_multiple_images[LANGUAGE_NONE];
+        $row_content['description'] = ti_amg_fw_rss_feeds_replace_multiple_images($multiple_images, $row_content['description']);
+    }
+    $row_content['pubdate'] = date('D, d M Y H:i:s O', $item->published_at);
+    $row_content['guid'] = $row_content['link'];
+    $author_nids = array();
+    if (!empty($item->field_author[LANGUAGE_NONE])) {
+      foreach($item->field_author[LANGUAGE_NONE] as $selected_author) {
+        array_push($author_nids, $selected_author['target_id']);
+      }
+      array_unique($author_nids);
+    }
+    if (count($author_nids) > 0) {
+      $row_content['author'] = htmlentities(ti_amg_fw_rss_feeds_get_author_names($author_nids));
+    } else {
+      $row_content['author'] = 'FoodandWine';
+    }
+    $row_content['image_info'] = '';
+    if (!empty($item->field_images[LANGUAGE_NONE])) {
+      $image_nid = $item->field_images[LANGUAGE_NONE][0]['target_id'];
+      $row_content['image_info'] = ti_amg_fw_rss_feeds_get_image_path($image_nid);
+    }
+    else {
+      $row_content['image_info']['image_path'] = $base_url . $conf['ti_amg_fw_blog_default_image'];
+      $row_content['image_info']['mime_type'] = 'image/jpeg';
+    }
+    
+    // Building the feed row.
+    if ($exclude == 0) {
+      $feed_content .= theme('ti_amg_fw_yahoo_feed_row', array('row_content' => $row_content));
+    }
+  }
+  $feed_title  = t('Food and Wine Blogs');
+  $feed_description = t('FoodandWine Yahoo Blogs Feed');
+  $date_format = 'D, d M Y H:i:s O';  
+  $feed_container_values = ti_amg_fw_rss_feeds_get_feed_container_values($feed_title, $feed_description, $date_format, '');
+  // Build the whole feed content.
+  $output = theme('ti_amg_fw_feed_container', array('feed_container_values' => $feed_container_values,
+    'feed_content' => $feed_content));
+  // Adding http header to the page.
+  drupal_add_http_header('Content-Type', 'application/rss+xml; charset=utf-8');
+  print $output;
+  drupal_exit();  
+}
+
+/*
+ * Building MSN Gallery Feeds
+ */
+function ti_amg_fw_rss_feeds_msn_gallery_feed() {
+  global $base_url;
+  $output = ti_amg_fw_rss_feeds_get_gallery_feed_content('msn');
+  $feed_content = '';
+  foreach($output as $row) {
+    $feed_content .= theme('ti_amg_fw_msn_feed_row', array('row_content' => $row));
+  }
+  $feed_title  = t('Food and Wine Gallery Feed');
+  $feed_description = t('Food and Wine Gallery Feed');    
+  $feed_container_values = ti_amg_fw_rss_feeds_get_feed_container_values($feed_title, $feed_description, '', '');  
+  // Build the whole feed content.
+  $output = theme('ti_amg_fw_feed_container', array('feed_container_values' => $feed_container_values,
+    'feed_content' => $feed_content));
+  // Adding http header to the page.
+  drupal_add_http_header('Content-Type', 'application/rss+xml; charset=utf-8');
+  print $output;
+  drupal_exit();  
+}
+
+
+function ti_amg_fw_rss_feeds_get_gallery_feed_content($type) {
+  global $base_url, $language;
+  $gallery = array();
+  $gallery_nids = array();
+  $related_content_image_style = RELATED_CONTENT_IMAGE_STYLE;  
+  $content_types = array('gallery');
+  // To Get the latest gallery contents.
+  $gallery_nids = ti_amg_fw_rss_feeds_get_latest_content($content_types);
+  $gallery_node_contents = node_load_multiple($gallery_nids);
+  
+  foreach($gallery_node_contents as $key => $gallery_item) {
+    $slide_nids = array();
+    $slide_ordered_list = array();   
+    $gallery_type_label = ''; 
+    if (isset($gallery_item->field_gallery_type[LANGUAGE_NONE])) {
+      $gallery_type_tid = $gallery_item->field_gallery_type[LANGUAGE_NONE][0]['tid'];
+      $gallery_type_label = _ti_amg_fwrd_custom_get_label_from_tid($gallery_type_tid, 'field_taxo_gallery_type_label');
+    }
+    $slide_link_text = ($gallery_type_label == 'recipes') ? 'GO TO RECIPE' : 'SEE MORE';
+    $gallery[$key]['title'] = html_entity_decode(mb_convert_encoding(ti_amg_fw_custom_remove_accents(strip_tags($gallery_item->title)), 'UTF-8', 'auto'), ENT_QUOTES, 'UTF-8');
+    $gallery[$key]['link'] = $base_url . '/' . drupal_get_path_alias('node/' . $gallery_item->nid);
+    $gallery[$key]['guid'] = $gallery[$key]['link'];
+    $gallery[$key]['description'] = (isset($gallery_item->field_deck[LANGUAGE_NONE])) ? mb_convert_encoding(ti_amg_fw_custom_remove_accents($gallery_item->field_deck[LANGUAGE_NONE][0]['value']), 'UTF-8', 'auto') : '';
+    $gallery[$key]['author'] = 'FoodandWine';
+    if ($type == 'yahoo') {
+      $gallery[$key]['published_date'] = (!empty($gallery_item->published_at)) ? date('D, d M Y H:i:s O', $gallery_item->published_at) : '';
+    }
+    elseif ($type == 'msn') {
+      $gallery[$key]['published_date'] = (!empty($gallery_item->published_at)) ? date(DATE_RSS, $gallery_item->published_at) : '';
+    }
+    if (!empty($gallery_item->field_slide_info[LANGUAGE_NONE])) {
+      foreach ($gallery_item->field_slide_info[LANGUAGE_NONE] as $slide) {
+        $slide_nids[] = $slide['value'];
+      }
+      $slide_list = entity_load('field_collection_item', array($slide_nids));
+      // Order the slides as it rendered from field collection
+      foreach ($slide_nids as $each_nid) {
+        $slide_ordered_list[$each_nid] = $slide_list[$each_nid];
+      }
+      foreach ($slide_ordered_list as $slide_key => $slide) {
+        if (isset($slide->field_slide_image[LANGUAGE_NONE][0]['target_id'])) {
+          $slide_image_nid = $slide->field_slide_image[LANGUAGE_NONE][0]['target_id'];
+          $slide_image = ti_amg_fwrd_custom_get_image($slide_image_nid, '550x550');           
+          $gallery[$key]['slides'][$slide_key]['alt'] = (isset($slide_image['alt'])) ? 
+              strip_tags(mb_convert_encoding(ti_amg_fw_custom_remove_accents($slide_image['alt']), 'UTF-8', 'auto')) : '';
+          $gallery[$key]['slides'][$slide_key]['credit'] = (isset($slide_image['credit'])) ? 
+              strip_tags(mb_convert_encoding(ti_amg_fw_custom_remove_accents($slide_image['credit']), 'UTF-8', 'auto')) : '';
+          $gallery[$key]['slides'][$slide_key]['caption'] = (isset($slide_image['caption'])) ? 
+              strip_tags(mb_convert_encoding(ti_amg_fw_custom_remove_accents($slide_image['caption']), 'UTF-8', 'auto')) : '';
+          $gallery[$key]['slides'][$slide_key]['imgUrl'] = $slide_image['uri'];
+          $gallery[$key]['slides'][$slide_key]['img_original_url'] = '';
+          $gallery[$key]['slides'][$slide_key]['mime_type'] = '';
+          if ($slide_image['img_original_uri'] != '') {
+           $gallery[$key]['slides'][$slide_key]['img_original_url'] = file_create_url($slide_image['img_original_uri']);
+           $gallery[$key]['slides'][$slide_key]['mime_type'] = file_get_mimetype($slide_image['img_original_uri']);
+          }
+        }
+        $gallery[$key]['slides'][$slide_key]['title'] = (isset($slide->field_slide_title[LANGUAGE_NONE][0]['value'])) ? html_entity_decode(mb_convert_encoding(ti_amg_fw_custom_remove_accents($slide->field_slide_title[LANGUAGE_NONE][0]['value']), 'UTF-8', 'auto'), ENT_QUOTES, 'UTF-8') : '';
+        $gallery[$key]['slides'][$slide_key]['description'] = (isset($slide->field_slide_deck[LANGUAGE_NONE][0]['value'])) ? mb_convert_encoding(ti_amg_fw_custom_remove_accents($slide->field_slide_deck[LANGUAGE_NONE][0]['value']), 'UTF-8', 'auto') : '';        
+        $slide_link_url = (isset($slide->field_slide_link_url[LANGUAGE_NONE][0]['url'])) ? mb_convert_encoding(ti_amg_fw_custom_remove_accents($slide->field_slide_link_url[LANGUAGE_NONE][0]['url']), 'UTF-8', 'auto') : '';
+        $gallery[$key]['slides'][$slide_key]['slide_see_more'] =  ($slide_link_url != '') ? '<p><a href="'.$slide_link_url.'" target="_blank">'.$slide_link_text.'</a></p>' : '';
+      }
+    }
+  }
+  return $gallery;
+}
+
+/*
+ * To get the related slideshow details with the first slide image inforamtion.
+ */
+function ti_amg_fw_rss_feeds_get_related_slideshow_detail($node, $image_style) {
+  global $base_url;
+  $content = array();
+  $slide_image = array();
+  $content['title'] = html_entity_decode(mb_convert_encoding(ti_amg_fw_custom_remove_accents($node->title), 'UTF-8', 'auto'), ENT_QUOTES, 'UTF-8');
+  $content['url'] = $base_url . '/' . drupal_get_path_alias('node/' . $node->nid);
+  $image_style = (isset($image_style)) ? $image_style : LANDING_TOUT_IMAGE_STYLE;
+  if (isset($node->field_slide_info[LANGUAGE_NONE][0])) {
+    $first_slide_nid = $node->field_slide_info[LANGUAGE_NONE][0]['value'];
+    $slide_entity = entity_load('field_collection_item', array($first_slide_nid));
+    if (isset($slide_entity[$first_slide_nid]->field_slide_image[LANGUAGE_NONE][0]['target_id'])) {
+      $slide_image_nid = $slide_entity[$first_slide_nid]->field_slide_image[LANGUAGE_NONE][0]['target_id'];
+      $slide_image = ti_amg_fwrd_custom_get_image($slide_image_nid, $image_style);
+       
+      $content['slide_image']['alt'] = (isset($slide_image['alt'])) ?
+          strip_tags(mb_convert_encoding(ti_amg_fw_custom_remove_accents($slide_image['alt']), 'UTF-8', 'auto')) : '';
+      $content['slide_image']['credit'] = (isset($slide_image['credit'])) ?
+          strip_tags(mb_convert_encoding(ti_amg_fw_custom_remove_accents($slide_image['credit']), 'UTF-8', 'auto')) : '';
+      $content['slide_image']['caption'] = (isset($slide_image['caption'])) ?
+          strip_tags(mb_convert_encoding(ti_amg_fw_custom_remove_accents($slide_image['caption']), 'UTF-8', 'auto')) : '';
+      $content['slide_image']['imgUrl'] = $slide_image['uri'];
+      $content['slide_image']['img_original_url'] = '';
+      $content['slide_image']['mime_type'] = '';
+      if ($slide_image['img_original_uri'] != '') {
+        $content['slide_image']['img_original_url'] = file_create_url($slide_image['img_original_uri']);
+        $content['slide_image']['mime_type'] = file_get_mimetype($slide_image['img_original_uri']);
+      }
+    }
+  }
+  return $content;
+}
+
+/*
+ * To Fetch the latest content nids.
+ * 
+ * @param $node_types
+ *   Node type of the content.
+ * @param $count
+ *   Count of the fetching content.
+ * @param $nids_excempt
+ *   Nids which need to exclude in the content fetching.
+ * 
+ * @return The latest content node ids based on content types
+ */
+
+function ti_amg_fw_rss_feeds_get_latest_content($node_types = array()) {
+  $node_ids = array();
+  if (!empty($node_types)) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node');
+    $query->entityCondition('bundle', $node_types);
+    $query->addTag('publication_date_latest');
+    $query->propertyCondition('status', 1);
+    $result = $query->execute();
+    if (isset($result['node'])) {
+      $node_ids = array_keys($result['node']);
+    }
+  }
+  return $node_ids;
+}
+
+/**
+ * 
+ * Altering the entity query and adding the published date sort criteria
+ */
+function ti_amg_fw_rss_feeds_query_publication_date_latest_alter(QueryAlterableInterface $query) {
+  $feed_url = arg(0); 
+  if ($feed_url == 'fw-msn-gallery-feed.rss' || $feed_url == 'fw-msn-recipe-feed.rss') {
+    // Pull content after 30 mins from published
+    $start = (60 * 30); 
+  } 
+  else {
+    $start = (60 * 60 * 24 * FEED_LIMIT_START_DAYS);
+  } 
+  $end = (60 * 60 * 24 * FEED_LIMIT_END_DAYS);
+  $query->join('publication_date', 'pd', 'pd.nid = node.nid');
+  $query->condition('pd.published_at', array((REQUEST_TIME - $end), (REQUEST_TIME - $start)), 'BETWEEN');
+  $query->orderBy('pd.published_at', 'DESC');
+}
+
+/*
+ * To get the author names in string format.
+ *
+ * @param1 $author_nids
+ *   Array of author nids.
+ *
+ * @return $authors
+ *   Author names in string format.
+ */
+function ti_amg_fw_rss_feeds_get_author_names($author_nids = array()) {
+  $authors = '';
+  if (!empty($author_nids)) {
+    $query = db_select('node', 'node');
+    $query->fields('node', array('title'));
+    $query->condition('nid', $author_nids, 'IN');
+    $result = $query->execute()->fetchAll();
+    foreach ($result as $row) {
+      if ($authors == '') {
+        $authors = mb_convert_encoding($row->title, 'UTF-8', 'auto');
+      }
+      else {
+        $authors .= ', ' . mb_convert_encoding($row->title, 'UTF-8', 'auto');
+      }
+    }
+  }
+  return $authors;
+}
+
+/*
+ * To get the image path of particular image nid.
+ *
+ * @param1 $image_nid
+ *   Node id of image.
+ *
+ * @return $image_info
+ *   Contain image original path and mime type.
+ */
+function ti_amg_fw_rss_feeds_get_image_path($image_nid = '') {
+  //Fetching the image for blog/recipe
+  $image_info = array();
+  if ($image_nid != '') {
+    $query = db_select('file_managed', 'file_managed');
+    $query->addField('file_managed', 'uri');
+    $query->leftJoin('field_data_field_image', 'field_data_field_image', 'field_data_field_image.field_image_fid = file_managed.fid');
+    $query->condition('field_data_field_image.entity_id', $image_nid, '=');
+    $image_uri = $query->execute()->fetchField();
+    $image_info['image_path'] = file_create_url($image_uri);
+    $image_info['mime_type'] = file_get_mimetype($image_uri);
+  }
+  return $image_info;
+}
+
+/*
+ * To get the Yahoo Gallery Feed.
+ */
+
+function ti_amg_fw_rss_feeds_yahoo_gallery_feed() {
+  global $base_url;
+  $gallery_content = ti_amg_fw_rss_feeds_get_gallery_feed_content('yahoo');
+  $feed_content = '';
+  foreach ($gallery_content as $row_content) {
+    $feed_content .= theme('ti_amg_fw_yahoo_feed_gallery_row', array('row_content' => $row_content));
+  }
+  $feed_title  = t('Food and Wine Yahoo Slideshow Feed');
+  $feed_description = t('Food and Wine Yahoo Slideshow Feed');
+  $date_format = 'D, d M Y H:i:s O';  
+  $feed_container_values = ti_amg_fw_rss_feeds_get_feed_container_values($feed_title, $feed_description, $date_format, '');  
+  // Build the whole feed content.
+  $output = theme('ti_amg_fw_feed_container', array('feed_container_values' => $feed_container_values,
+    'feed_content' => $feed_content));
+  // Adding http header to the page.
+  drupal_add_http_header('Content-Type', 'application/rss+xml; charset=utf-8');
+  print $output;
+  drupal_exit();
+}
+
+/*
+ * To get Brightcove id of particular video node.
+ * 
+ * @param1 $video_id
+ *   Node id of one video.
+ * 
+ * @return $brightcove_id
+ *   Brightcove id of video node.
+ */
+function ti_amg_fw_rss_feeds_get_brightcove_id($video_id = '') {
+  $brightcove_id = '';
+  if (!empty($video_id)) {
+    $video = node_load($video_id);
+    if (!empty($video->field_video_id[LANGUAGE_NONE])) {
+      $brightcove_id = $video->field_video_id[LANGUAGE_NONE][0]['value'];
+    }
+  }
+  return $brightcove_id;
+}
+
+/*
+ * Building MSN Recipe Feeds
+ */
+function ti_amg_fw_rss_feeds_msn_recipe_feed() {
+  global $base_url;
+  $output = ti_amg_fw_rss_feeds_get_recipe_feed_content('msn');
+  $feed_content = '';
+  foreach($output as $row) {
+    $feed_content .= theme('ti_amg_fw_msn_recipe_feed_row', array('row_content' => $row));
+  }
+  $feed_title  = t('FoodandWine MSN Recipes Feed');
+  $feed_description = t('FoodandWine MSN Recipes Feed');   
+  $feed_container_values = ti_amg_fw_rss_feeds_get_feed_container_values($feed_title, $feed_description, '', 'en-us');  
+  // Build the whole feed content.
+  $output = theme('ti_amg_fw_feed_container', array('feed_container_values' => $feed_container_values,
+    'feed_content' => $feed_content));
+  // Adding http header to the page.
+  drupal_add_http_header('Content-Type', 'application/rss+xml; charset=utf-8');
+  print $output;
+  drupal_exit();  
+}
+
+/*
+ * Building Yahoo Recipe Feeds
+ */
+function ti_amg_fw_rss_feeds_yahoo_recipe_feed() {
+  global $base_url;
+  $output = ti_amg_fw_rss_feeds_get_recipe_feed_content('yahoo');
+  $feed_content = '';
+  foreach($output as $row) {
+    $feed_content .= theme('ti_amg_fw_yahoo_recipe_feed_row', array('row_content' => $row));
+  }
+  $feed_title  = t('FoodandWine Yahoo Recipes Feed');
+  $feed_description = t('FoodandWine Yahoo Recipes Feed');
+  $date_format = 'D, d M Y H:i:s O';  
+  $feed_container_values = ti_amg_fw_rss_feeds_get_feed_container_values($feed_title, $feed_description, $date_format, '');  
+  // Build the whole feed content.
+  $output = theme('ti_amg_fw_feed_container', array('feed_container_values' => $feed_container_values,
+    'feed_content' => $feed_content));
+  // Adding http header to the page.
+  drupal_add_http_header('Content-Type', 'application/rss+xml; charset=utf-8');
+  print $output;
+  drupal_exit();  
+}
+
+function ti_amg_fw_rss_feeds_get_recipe_feed_content($type) {
+  global $base_url, $language;
+  $recipe = array();
+  $recipe_nids = array();
+  $content_types = array('recipe');
+  // To Get the latest gallery contents.
+  $recipe_nids = ti_amg_fw_rss_feeds_get_latest_content($content_types);
+  $recipe_node_contents = node_load_multiple($recipe_nids);
+  foreach ($recipe_node_contents as $key => $recipe_item) {
+    $recipe_description = '';
+    $recipe_ingredients_details = '';
+    $recipe_instructions_details = '';
+    $recipe_notes = '';
+    $recipe_time_details = '';    
+    $recipe[$key]['title'] = html_entity_decode(mb_convert_encoding(ti_amg_fw_custom_remove_accents($recipe_item->title), 'UTF-8', 'auto'), ENT_QUOTES, 'UTF-8');
+    $recipe[$key]['link'] = $base_url . '/' . drupal_get_path_alias('node/' . $recipe_item->nid);
+    $recipe[$key]['guid'] = $recipe[$key]['link'];
+    $recipe_description  = (isset($recipe_item->field_deck[LANGUAGE_NONE])) ? html_entity_decode(mb_convert_encoding(ti_amg_fw_custom_remove_accents($recipe_item->field_deck[LANGUAGE_NONE][0]['value']), 'UTF-8', 'auto'), ENT_QUOTES, 'UTF-8') : '';
+    $author_nids = array();
+    if (!empty($recipe_item->field_chefs_author[LANGUAGE_NONE])) {
+      foreach($recipe_item->field_chefs_author[LANGUAGE_NONE] as $selected_author) {
+        array_push($author_nids, $selected_author['target_id']);
+      }
+      array_unique($author_nids);
+    }
+    if (count($author_nids) > 0) {
+      $recipe[$key]['author'] = htmlentities(ti_amg_fw_rss_feeds_get_author_names($author_nids));
+    } else {
+      $recipe[$key]['author'] = 'FoodandWine';
+    }
+    if ($type == 'yahoo') {
+      $recipe[$key]['published_date'] = (!empty($recipe_item->published_at)) ? date('D, d M Y H:i:s O', $recipe_item->published_at) : '';
+    }
+    elseif ($type == 'msn') {
+      $recipe[$key]['published_date'] = (!empty($recipe_item->published_at)) ? date(DATE_RSS, $recipe_item->published_at) : '';
+      $recipe[$key]['modified_date'] = (!empty($recipe_item->changed)) ? date(DATE_RSS, $recipe_item->changed) : '';
+    }
+    // To get the recipe image with credit information.
+    $recipe[$key]['recipe_image'] = ti_amg_fw_rss_feeds_get_recipe_image_details($recipe_item);
+    // To get the recipe ingredients information.
+    $recipe_ingredients = _ti_amg_fwrd_custom_ingredients($recipe_item); 
+    if (!empty($recipe_ingredients)) {
+      $recipe_ingredients_title = '<h3 class="recipe__section-heading">Ingredients</h3>';
+      $recipe_ingredients_details = $recipe_ingredients_title . theme('ingredients-list', array('items' => $recipe_ingredients));
+    }
+    // To get the recipe instructions.
+    $recipe_instructions = _ti_amg_fwrd_custom_instructions($recipe_item); 
+    if (!empty($recipe_instructions)) {
+      $recipe_instructions_title = '<h2 class="recipe__section-heading">How to make this recipe</h2>';
+      $recipe_instructions_details = $recipe_instructions_title . theme('steps-list', array('steps' => $recipe_instructions));
+    }
+    // Constructing Recipe Notes.
+    $recipe_make_ahead = 
+      (isset($recipe_item->field_make_ahead[LANGUAGE_NONE][0]['value'])) ?
+        ti_amg_fwrd_custom_convert_accented_char($recipe_item->field_make_ahead[LANGUAGE_NONE][0]['value']) : '';
+    $recipe_pairing_notes = 
+      (isset($recipe_item->field_pairing_notes[LANGUAGE_NONE][0]['value'])) ?
+        ti_amg_fwrd_custom_convert_accented_char($recipe_item->field_pairing_notes[LANGUAGE_NONE][0]['value']) : '';
+    $recipe_serve_notes = 
+      (isset($recipe_item->field_serve_notes[LANGUAGE_NONE][0]['value'])) ?
+        ti_amg_fwrd_custom_convert_accented_char($recipe_item->field_serve_notes[LANGUAGE_NONE][0]['value']) : '';
+    $recipe_serve_with = 
+      (isset($recipe_item->field_serve_with[LANGUAGE_NONE][0]['value'])) ?
+        ti_amg_fwrd_custom_convert_accented_char($recipe_item->field_serve_with[LANGUAGE_NONE][0]['value']) : '';
+    $recipe_notes = theme('recipe-notes', array(
+                      'make_ahead' => $recipe_make_ahead,
+                      'pairing_notes' => $recipe_pairing_notes,
+                      'serve_notes' => $recipe_serve_notes,
+                      'serve_with' => $recipe_serve_with
+                    ));
+    // Constructing Recipe Time Information.
+    $recipe_time = _ti_amg_fwrd_custom_preprocessing_time($recipe_item);
+    $recipe_active_time = _ti_amg_fwrd_custom_preprocessing_active_time($recipe_item);
+    $recipe_other_time = _ti_amg_fwrd_custom_preprocessing_other_time($recipe_item);
+    $recipe_servings = 
+        (isset($recipe_item->field_yield[LANGUAGE_NONE][0]['safe_value'])) ?
+        strip_tags($recipe_item->field_yield[LANGUAGE_NONE][0]['safe_value']) : '';
+    $recipe_time_details =  theme('recipe-details', array(
+                              'time' => $recipe_time,
+                              'active_time' => $recipe_active_time,
+                              'other_time' => $recipe_other_time,
+                              'servings' => $recipe_servings
+                            ));
+    
+    $recipe[$key]['description'] = $recipe_description . $recipe_time_details . $recipe_ingredients_details . $recipe_instructions_details . $recipe_notes;
+    // Constructing Recipe Video URL.
+    $recipe_video = _ti_amg_fwrd_custom_top_video_tout($recipe_item, 'desktop');
+    if (!empty($recipe_video['video']['video_id']) && $type == 'msn') {
+      $recipe[$key]['recipe_video'] = ti_amg_fw_rss_feeds_get_video_url_by_id($recipe_video['video']['video_id']);
+    }
+    elseif (!empty($recipe_video['video']['video_id']) && $type == 'yahoo') {
+      $recipe[$key]['recipe_video'] = $recipe_video['video']['video_id'];
+    }
+  }
+  return $recipe;
+}
+
+/*
+ * To get the recipe image details
+ * 
+ * @param1 $image_nid
+ *   Node id of image.
+ *
+ * @return $image_info
+ *   Contain image original path, mime type and credit information.
+ */
+function ti_amg_fw_rss_feeds_get_recipe_image_details($node) {
+  global $base_url, $conf;
+  // Set the recipe default image conf variable
+  $recipe_default_img = "/sites/all/themes/foodandwine/images/recipe-placeholder.gif";
+  $image = array();
+  $image['caption'] = '';
+  $image['credit'] = '';
+  $image['alt_text'] = '';
+  if (isset($node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value'])) {
+    $image['alt_text'] = 
+      mb_convert_encoding($node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value'], 'UTF-8', 'auto');
+  }
+  if (isset($node->field_overwrite_image_caption[LANGUAGE_NONE][0]['value'])) {
+      $image['caption'] = 
+        mb_convert_encoding($node->field_overwrite_image_caption[LANGUAGE_NONE][0]['value'], 'UTF-8', 'auto');
+  }
+  if (isset($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['value'])) {
+      $image['credit'] = 
+        mb_convert_encoding(strip_tags($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['value']), 'UTF-8', 'auto');
+  }
+  if (isset($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+    $image_id = $node->field_images[LANGUAGE_NONE][0]['target_id'];    
+    $image_obj = node_load($image_id);
+    if (isset($image_obj->field_image[LANGUAGE_NONE][0]['uri'])) {
+      $image_uri = $image_obj->field_image[LANGUAGE_NONE][0]['uri'];
+      $image['image_mime'] = $image_obj->field_image[LANGUAGE_NONE][0]['filemime'];
+      $image['org_image_path'] = file_create_url($image_uri);
+      $image['recipe_carousel_img'] = image_style_url('200x250', $image_uri);
+    }
+    if (isset($image_obj->field_large_image[LANGUAGE_NONE][0]['uri'])) {
+    	$large_image_uri = $image_obj->field_large_image[LANGUAGE_NONE][0]['uri'];
+      $image['image_mime'] = $image_obj->field_large_image[LANGUAGE_NONE][0]['filemime'];
+    	$image['org_image_path'] = file_create_url($large_image_uri);
+      $image['recipe_carousel_img'] = image_style_url('551x551', $large_image_uri);
+    }
+    if ($image['alt_text'] == '') {
+      $image['alt_text'] = htmlspecialchars(mb_convert_encoding($image_obj->field_alt_text[LANGUAGE_NONE][0]['value'], 'UTF-8', 'auto'));
+    }
+    if ($image['caption'] == '') {
+      $image['caption'] = htmlspecialchars(mb_convert_encoding($image_obj->field_caption[LANGUAGE_NONE][0]['value'], 'UTF-8', 'auto'));
+    }
+    if ($image['credit'] == '') {
+      $image['credit'] = mb_convert_encoding(strip_tags($image_obj->field_credit[LANGUAGE_NONE][0]['value']), 'UTF-8', 'auto');
+    }
+  }
+  else {
+    // Asigning default recipe image.
+    $image['org_image_path'] = $base_url.$recipe_default_img;
+    $image['recipe_carousel_img'] = $base_url.$recipe_default_img;
+    $image['image_mime'] = 'image/gif';
+    $image['alt_text'] = 'FoodandWine';
+    $image['credit'] = 'FoodandWine';
+    $image['caption'] = 'FoodandWine';
+  }
+  if (!empty($image['credit'])) {
+    $image['credit'] = ti_amg_fwrd_custom_convert_accented_char($image['credit']);
+  }
+  return $image;
+ }
+ 
+ // To Get Brightcove mp4 video URL.
+ function ti_amg_fw_rss_feeds_get_video_url_by_id($video_id) {
+  $video = array();
+  $url = FW_BRIGHTCOVE_VIDEO_URL . '?command=find_videos_by_ids&video_ids=' .$video_id. '&media_delivery=http&token=G0WAHddcP6XZOG9rNsyKkIyiDCGh9C7gfIxjRADssc0.';
+  $output = drupal_http_request(url($url));
+  if ($output->code == 200) {
+    $brighcove_response =  json_decode($output->data);
+    foreach ($brighcove_response->items as $key => $video_data) {
+      $video['video_url'] = !empty($video_data->videoFullLength->url) ? $video_data->videoFullLength->url : '';
+      $video['video_type'] = !empty($video_data->videoFullLength->videoContainer) ? 'video/' . strtolower($video_data->videoFullLength->videoContainer) : ''; 
+      $video['video_duration'] = !empty($video_data->length) ? $video_data->length : '';
+      $video['video_thumbnail_url'] = !empty($video_data->thumbnailURL) ? $video_data->thumbnailURL : '';
+      $video['video_title'] = !empty($video_data->name) ? $video_data->name : '';
+      $video['video_description'] = !empty($video_data->shortDescription) ? $video_data->shortDescription : '';
+    }
+  }
+  return $video;
+}
+
+function ti_amg_fw_rss_feeds_replace_multiple_images($mltpl_images, $body_cnt) {
+  $replaced_content = '';
+  if (count($mltpl_images) > 0) {
+    // Define Multiple Images Array
+    $multi_imgs = array();
+    //Define Body Image Styles:
+    $img_style = '500x500';
+    foreach ($mltpl_images as $jkey => $imgres) {
+      if ($imgres['target_id'] != '') {
+        //Get the corresponding image style with attributes and 
+        //load it to multi_imgs array
+        $multi_imgs[] = ti_amg_fw_custom_get_image_style(
+            $imgres['target_id'], $img_style);
+      }
+    }
+    //Assigning tagged body content to views result body field
+    $replaced_content = ti_amg_fw_custom_replace_multi_img_tokens(
+        $multi_imgs, $body_cnt);
+  }
+  return $replaced_content;
+}
+
+/**
+ * Fetching Feed Container values.
+ */
+function ti_amg_fw_rss_feeds_get_feed_container_values($title, $description, $date_format, $lang) {
+  global $base_url;  
+  $feed = array();
+  $feed['title'] = $title;
+  $feed['description'] = $description;
+  $feed['link'] = $base_url . request_uri();
+  $feed['pubdate'] = '';
+  if ($date_format != '') {
+    $feed['pubdate'] = date($date_format);
+  }
+  $feed['language'] = $lang;
+  $namespaces = array('xmlns:dc' => 'http://purl.org/dc/elements/1.1/', 
+    'xmlns:content' => 'http://purl.org/rss/1.0/modules/content/', 
+    'xmlns:foaf' => 'http://xmlns.com/foaf/0.1/', 
+    'xmlns:rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',     
+    'xmlns:rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 
+    'xmlns:rss' => 'http://purl.org/rss/1.0/', 
+    'xmlns:media' => 'http://search.yahoo.com/mrss/',     
+    'xml:base' => $base_url . request_uri(), 'xmlns:dcterms' => 'http://purl.org/dc/terms/',);
+  $feed['namespaces'] = drupal_attributes($namespaces);
+
+  return $feed;
+}

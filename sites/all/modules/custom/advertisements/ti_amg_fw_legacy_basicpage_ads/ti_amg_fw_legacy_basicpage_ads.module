@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Legacy Basicpage Ads feature.
+ */
+
+include_once 'ti_amg_fw_legacy_basicpage_ads.features.inc';

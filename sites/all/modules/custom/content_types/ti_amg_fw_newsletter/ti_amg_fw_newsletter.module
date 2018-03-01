@@ -1,0 +1,582 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Newsletter feature.
+ */
+
+include_once 'ti_amg_fw_newsletter.features.inc';
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function ti_amg_fw_newsletter_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes'] += array(
+    'newsletter' => array(
+      'label' => t('Newsletter'),
+      'custom settings' => FALSE,
+    ),
+    'just_in' => array(
+      'label' => t('Just In'),
+      'custom settings' => FALSE,
+    ),
+    'daily' => array(
+      'label' => t('NL Daily And Dish'),
+      'custom settings' => FALSE,
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_entity_view_mode_alter().
+ */
+function ti_amg_fw_newsletter_entity_view_mode_alter(&$view_mode, $context) {
+  // For nodes, change the view mode when it is Newsletter Type.
+  $newsletter_type = (isset($context['entity']->field_newsletter_type)) ? $context['entity']->field_newsletter_type[LANGUAGE_NONE][0]['value'] : '';
+  if ($context['entity_type'] == 'node' && $context['entity']->type == 'newsletter' && $view_mode == 'full' && $newsletter_type !== 'daily' && $newsletter_type !== 'dish') {
+    $view_mode = 'just_in';
+  }
+  else if ($context['entity_type'] == 'node' && $context['entity']->type == 'newsletter' && $view_mode == 'full' && ($newsletter_type === 'daily' || $newsletter_type === 'dish')) {
+    $view_mode = 'daily';
+  }
+}
+
+/**
+ * Returns xid for newsletter.
+ */
+function ti_amg_fw_newsletter_xid($newsletter_node = NULL) {
+  $output = '';
+  $formatted_date = '';
+  if (!empty($newsletter_node->field_display_date[LANGUAGE_NONE])) {
+    $newsletter_date = $newsletter_node->field_display_date[LANGUAGE_NONE][0]['value'];
+    $formatted_date = date('mdy', $newsletter_date);
+  }
+  if (!empty($newsletter_node->field_newsletter_type[LANGUAGE_NONE])) {
+    $newsletter_type = $newsletter_node->field_newsletter_type[LANGUAGE_NONE][0]['value'];
+
+    switch ($newsletter_type) {
+      case 'dish':
+           $ns_type = 'NL_DISH';
+        break;
+
+      case 'fwx':
+           $ns_type = 'NL_FWx';
+        break;
+
+      case 'daily':
+           $ns_type = 'NL_DAILY';
+        break;
+
+      case 'wine_list':
+           $ns_type = 'NL_WINELIST';
+        break;
+
+      case 'top_10':
+           $ns_type = 'NL_TopTen';
+        break;
+      
+      case 'travel_tips':
+           $ns_type = 'NL_TTIPS';
+        break;
+    }
+    $output = $ns_type . $formatted_date;
+  }
+  return $output;
+}
+
+/**
+ * Returns utm_campaign for newsletter.
+ */
+function ti_amg_fw_newsletter_utm_campaign($newsletter_type = '') {
+  $output = '';
+  switch ($newsletter_type) {
+    case 'dish':
+         $utm_type = 'the-dish';
+      break;
+
+    case 'fwx':
+         $utm_type = 'fwx';
+      break;
+
+    case 'daily':
+         $utm_type = 'daily';
+      break;
+
+    case 'wine_list':
+         $utm_type = 'wine-list';
+      break;
+
+    case 'top_10':
+         $utm_type = 'top-10';
+      break;
+    
+    case 'travel_tips':
+         $utm_type = 'travel-tips';
+      break;
+  }
+  $output = $utm_type;
+  return $output;
+}
+
+/**
+ * Returns UTM code for newsletter.
+ */
+function ti_amg_fw_newsletter_utm($newsletter_node = NULL, $xid = '') {
+  global $base_url;
+  $output = array();
+  $formatted_date = '';
+  $formatted_date = '%%=v(@dateToday)=%%';     
+  if (!empty($newsletter_node->field_newsletter_type[LANGUAGE_NONE])) {
+    $newsletter_type = $newsletter_node->field_newsletter_type[LANGUAGE_NONE][0]['value'];
+  }
+  $domain_name_content = explode(".", $base_url);
+  $domain_name_link = $domain_name_content[1] . '.' . $domain_name_content[2];
+  $output['xid'] = $xid;
+  $output['utm_source'] = $domain_name_link;
+  $output['utm_medium'] = 'email';
+  $output['utm_campaign'] = ti_amg_fw_newsletter_utm_campaign($newsletter_type);
+  $output['utm_content'] = $formatted_date;
+  return $output;
+}
+
+function ti_amg_fw_newsletter_url_decode($link) {
+  if (!empty($link)) {
+    $link_explode = explode('?', $link);
+    if (!empty($link_explode[1])) {
+     $url[0] = $link_explode[0];
+     $query_explode = explode('&', $link_explode[1]);
+     $query = array();
+     foreach ($query_explode as $key => $value) {
+        $query[] = rawurldecode($value);
+     }
+     $url[1] = implode('&', $query);
+
+     $link_output = implode('?', $url);
+      return $link_output;
+    }
+  }
+  return $link;
+}
+ 
+/**
+ * Implements hook_field_formatter_info().
+ */
+function ti_amg_fw_newsletter_field_formatter_info() {
+  return array(
+    'newsletter_entity_reference' => array(
+      'label' => t('Newsletter Entity Reference'),
+      'field types' => array('entityreference'),
+      'settings' => array(
+        'backfill_field' => '',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function ti_amg_fw_newsletter_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  switch ($display['type']) {
+    case 'newsletter_entity_reference':
+      $instance['display'][$view_mode]['type'] = 'entityreference_entity_view';
+      $instances = field_info_instances($instance['entity_type'], $instance['bundle']);
+
+      foreach ($instances as $instance) {
+        $available_fields[$instance['field_name']] = $instance['field_name'];
+      }
+
+      $entity_info = entity_get_info('node');
+      $view_modes = array();
+      foreach ($entity_info['view modes'] as $mode => $info) {
+        $view_modes[$mode] = $info['label'];
+      }
+
+      $form['backfill_field'] = array(
+        '#title' => t('Backfill field'),
+        '#description' => t('Backfill field to be displayed'),
+        '#type' => 'select',
+        '#options' => array('' => '--Select--') + $available_fields,
+        '#default_value' => !empty($settings['backfill_field']) ? $settings['backfill_field'] : NULL,
+      );
+
+      break;
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function ti_amg_fw_newsletter_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $summary = '';
+  if ($display['type'] == 'newsletter_entity_reference') {
+    $instance['display'][$view_mode]['type'] = 'entityreference_entity_view';
+    $summary = entityreference_field_formatter_settings_summary($field, $instance, $view_mode);
+  }
+  return $summary;
+}
+
+/**
+ * Implements hook_field_formatter_prepare_view().
+ */
+function ti_amg_fw_newsletter_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays) {
+  $display = reset($displays);
+  $entity = reset($entities);
+ 
+  $empty_field_value = FALSE;
+  if ($display['type'] == 'newsletter_entity_reference') {
+    $item = reset($items);
+    if (empty($item) && !empty($display['settings']['backfill_field'])) {
+      $empty_field_value = TRUE;
+      $field_name = $display['settings']['backfill_field'];
+      $field = field_info_field($field_name);
+      $items[array_shift(array_keys($instances))] = field_get_items($entity_type, $entity, $field_name);
+      $instances[array_shift(array_keys($instances))] = field_info_instance($entity_type, $field_name, $entity->type);
+    }
+    entityreference_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, $items, $displays);
+  }
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function ti_amg_fw_newsletter_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $settings = $display['settings'];
+  $newsletter_type = $entity->field_newsletter_type[LANGUAGE_NONE][0]['value'];
+  $element = array();
+  if ($display['type'] == 'newsletter_entity_reference') {
+    if (empty($items)) {
+      $field_name = $settings['backfill_field'];
+      $field = field_info_field($field_name);
+    }
+    $display['type'] = 'entityreference_entity_view';
+    $display['settings'] = array(
+      'view_mode' => $settings['view_mode'],
+      'links' => 0,
+    );
+    $display['module'] = 'entityreference';
+    // Constructing custom newsletter tout.
+    $newsletter_touts = array();
+    $newsletter_lead_touts = array();
+    global $base_path;
+    $node = menu_get_object();
+    // Fetching the xid value by node object.
+    $xid = ti_amg_fw_newsletter_xid($node);
+    // Fetch newsletter type ad zone value by node object.
+    $fwnl_adzone = _get_newsletter_type_adzone($node);
+
+    // Fetch newsletter type by node object.
+    $fwnl_type = ti_amg_fw_newsletter_get_nl_type($node);
+
+    // Select content tout Image style based on newsletter type
+    $img_style = '310x235';
+    $button_icon['button_arrow_path'] = $base_path . drupal_get_path('module', 'ti_amg_fw_newsletter') . '/images/arrow-small.png';
+    $button_icon['button_arrow_uri'] = url($button_icon['button_arrow_path'], array('absolute' => TRUE));
+    if (!empty($items)) {
+      foreach ($items as $key=>$item) {
+        if ($field['field_name'] == 'field_content_touts') {
+          if ($newsletter_type === 'daily' || $newsletter_type === 'dish') {
+             $img_style = 'fwrd_300x300';
+          }
+          $nl_content = _ti_amg_fwrd_homepage_get_content($item['target_id'], $img_style);
+          $newsletter_touts[$key]['tout_deck'] = '';
+        }
+        elseif ($field['field_name'] == 'field_lead_touts') {
+          $nl_content = _ti_amg_fwrd_homepage_get_content($item['target_id'], '550x550');
+        }
+        elseif ($field['field_name'] == 'field_bottom_content_touts') {
+          if ($newsletter_type === 'daily' || $newsletter_type === 'dish') {
+            $bottom_content_image_style = 'fwrd_300x300';   
+            $newsletter_touts[$key]['height'] = '300';
+            $newsletter_touts[$key]['width'] = '300';
+          }
+          else {  
+            $bottom_content_image_style = '270x288'; 
+            $newsletter_touts[$key]['height'] = '288';
+            $newsletter_touts[$key]['width'] = '270';
+          }  
+          $nl_content = _ti_amg_fwrd_homepage_get_content($item['target_id'], $bottom_content_image_style);
+          $newsletter_touts[$key]['tout_deck'] = !empty($nl_content['deck']) ? _ti_amg_fwrd_custom_remove_broken_deck_image($nl_content['deck']) : '';
+        }
+        elseif ($field['field_name'] == 'field_newsletter_banner_1') {
+          $nl_content = _ti_amg_fwrd_homepage_get_content($item['target_id'], 'fw_newsletter_banner_800x118');
+          $newsletter_touts[$key]['tout_deck'] = '';
+        }
+        elseif ($field['field_name'] == 'field_newsletter_banner_2') {
+          $nl_content = _ti_amg_fwrd_homepage_get_content($item['target_id'], 'fw_newsletter_banner_800x118');
+          $newsletter_touts[$key]['tout_deck'] = '';
+        }
+        $newsletter_touts[$key]['sponsored_text'] = !empty($nl_content['sponsored_text']) ? $nl_content['sponsored_text'] : '';
+        $newsletter_touts[$key]['tout_headline'] = !empty($nl_content['title']) ? $nl_content['title'] : '';
+        $newsletter_touts[$key]['tout_deck'] = !empty($nl_content['deck']) ? _ti_amg_fwrd_custom_remove_broken_deck_image($nl_content['deck']) : '';
+        $newsletter_touts[$key]['tout_url'] = '';
+        $utmcode = ti_amg_fw_newsletter_utm($node, $xid);
+        if($nl_content['url']) {
+          // Fetching the UTM Codes value by node object.
+          $newsletter_touts[$key]['tout_url'] = ti_amg_fw_newsletter_url_decode(url($nl_content['url'], array('query' => $utmcode)));
+        }
+        $newsletter_touts[$key]['tout_image_uri'] = !empty($nl_content['image']['uri']) ? $nl_content['image']['uri'] : '';
+        $newsletter_touts[$key]['tout_image_alt'] = !empty($nl_content['image']['alt']) ? $nl_content['image']['alt'] : $newsletter_touts[$key]['tout_headline'];
+        $newsletter_touts[$key]['tout_more_text'] = !empty($nl_content['more_text']) ? $nl_content['more_text'] : 'Read More';
+        $newsletter_touts[$key]['related_links'] = ''; 
+        if (!empty($nl_content['related_links'])) {
+          $related_content_links = array();
+          foreach ($nl_content['related_links'] as $related_link) {
+            $related_link_content = array();
+            $related_link_content = $related_link;
+            if (isset($related_link['nid'])) {
+               $related_link_content = _ti_amg_fwrd_homepage_get_content($related_link['nid'], $img_style);
+            }
+             $related_link_url = ti_amg_fw_newsletter_url_decode(url($related_link_content['url'], array('query' => $utmcode)));
+             $related_content_links[] = array('title' => $related_link_content['title'], 'url' => $related_link_url);
+          }
+          $newsletter_touts[$key]['related_links'] = $related_content_links;
+        } 
+        
+        if (empty($newsletter_touts[$key]['tout_image_uri'])) {
+          if ($field['field_name'] == 'field_content_touts') {
+            $content_touts_style = ($newsletter_type === 'daily' || $newsletter_type === 'dish') ? 'fwrd_300x300' : '270x288'; 
+            $newsletter_touts[$key]['tout_image_uri'] = image_style_url($content_touts_style, DEFAULT_IMAGE_URI);
+          }
+          elseif ($field['field_name'] == 'field_bottom_content_touts') {
+            if ($newsletter_type === 'daily' || $newsletter_type === 'dish') {
+              $newsletter_touts[$key]['tout_image_uri'] = image_style_url('300x300', DEFAULT_IMAGE_URI);
+              $newsletter_touts[$key]['height'] = '300';
+              $newsletter_touts[$key]['width'] = '300';
+            }
+            else {
+              $newsletter_touts[$key]['tout_image_uri'] = image_style_url('270x288', DEFAULT_IMAGE_URI);
+              $newsletter_touts[$key]['height'] = '288';
+              $newsletter_touts[$key]['width'] = '270';
+            }  
+          }
+          elseif ($field['field_name'] == 'field_lead_touts') {
+            $newsletter_touts[$key]['tout_image_uri'] = image_style_url('550x550', DEFAULT_IMAGE_URI);
+          }
+        }
+      }
+      if (!empty($newsletter_touts) && $field['field_name'] == 'field_content_touts') {
+        if ($newsletter_type === 'daily' || $newsletter_type === 'dish') {
+          $newsletter_top_first_touts = array_slice($newsletter_touts, 0, 1);
+          $newsletter_rest_array = array_slice($newsletter_touts, 1);
+          $newsletter_top_rest_touts = array_chunk($newsletter_rest_array, 2);
+          $newsletter_top_touts = $newsletter_touts;
+          $element[0] = array(
+            '#theme' => 'newsletter_top_touts',
+            '#newsletter_top_first_touts' => $newsletter_top_first_touts,
+            '#newsletter_top_rest_touts' => $newsletter_top_rest_touts,
+            '#button_icon' => $button_icon,
+            '#fwnl_adzone' => $fwnl_adzone,
+            '#fwnl_type' => $fwnl_type,
+          );
+        }
+        else {
+          $newsletter_tout_section_one = array_slice($newsletter_touts, 0, 6);
+          $newsletter_tout_section_two = array_slice($newsletter_touts, 6);
+       
+          $element[0] = array(
+            '#theme' => 'newsletter_tout_sections',
+            '#newsletter_tout_section_one' => $newsletter_tout_section_one,
+            '#newsletter_tout_section_two' => $newsletter_tout_section_two,
+            '#button_icon' => $button_icon,
+            '#fwnl_adzone' => $fwnl_adzone,
+            '#fwnl_type' => $fwnl_type,
+          );
+        }  
+      }
+      elseif (!empty($newsletter_touts) && $field['field_name'] == 'field_lead_touts') {
+        $newsletter_lead_touts = array_chunk($newsletter_touts, 2);
+        $element[0] = array(
+          '#theme' => 'newsletter_lead_touts',
+          '#newsletter_lead_touts' => $newsletter_lead_touts,
+          '#button_icon' => $button_icon,
+        );
+      }
+      elseif (!empty($newsletter_touts) && $field['field_name'] == 'field_bottom_content_touts') {
+        $newsletter_bottom_touts = array_chunk($newsletter_touts, 2);
+        $element[0] = array(
+          '#theme' => 'newsletter_bottom_touts',
+          '#newsletter_bottom_touts' => $newsletter_bottom_touts,
+          '#button_icon' => $button_icon,
+        );
+      }
+      elseif (!empty($newsletter_touts) && $field['field_name'] == 'field_newsletter_banner_1') {
+        $element[0] = array(
+          '#theme' => 'newsletter_banner_1',
+          '#newsletter_banner_1' => $newsletter_touts,
+        );
+      }
+      elseif (!empty($newsletter_touts) && $field['field_name'] == 'field_newsletter_banner_2') {
+        $element[0] = array(
+          '#theme' => 'newsletter_banner_2',
+          '#newsletter_banner_2' => $newsletter_touts,
+        );
+      }
+    }
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fw_newsletter_theme($existing, $type, $theme, $path) {
+  return array(
+    'newsletter_lead_touts' => array(
+      'variables' => array(
+        'newsletter_lead_touts' => array(),
+        'button_icon' => NULL,
+      ),
+      'template' => 'newsletter-lead-touts',
+      'path' => $path . '/templates',
+    ),
+    'newsletter_top_touts' => array(
+      'variables' => array(
+        'newsletter_top_first_touts' => array(),
+        'newsletter_top_rest_touts' => array(),
+        'button_icon' => NULL,
+        'fwnl_adzone' => NULL,
+        'fwnl_type' => NULL,
+      ),
+      'template' => 'newsletter-top-touts',
+      'path' => $path . '/templates',
+    ),
+    'newsletter_tout_content' => array(
+      'variables' => array(
+        'newsletter_touts' => array(),
+        'button_icon' => NULL,
+      ),
+      'template' => 'newsletter-tout-content',
+      'path' => $path . '/templates',
+    ),
+    'newsletter_tout_sections' => array(
+      'variables' => array(
+        'newsletter_tout_section_one' => array(),
+        'newsletter_tout_section_two' => array(),
+        'button_icon' => NULL,
+        'fwnl_adzone' => NULL,
+        'fwnl_type' => NULL,
+      ),
+      'template' => 'newsletter-tout-sections',
+      'path' => $path . '/templates',
+    ),
+    'newsletter_bottom_touts' => array(
+      'variables' => array(
+        'newsletter_bottom_touts' => array(),
+        'button_icon' => NULL,
+      ),
+      'template' => 'newsletter-bottom-touts',
+      'path' => $path . '/templates',
+    ),
+    'newsletter_banner_1' => array(
+      'variables' => array(
+        'newsletter_banner_1' => array(),
+      ),
+      'template' => 'newsletter-banner-1',
+      'path' => $path . '/templates',
+    ),
+    'newsletter_banner_2' => array(
+      'variables' => array(
+        'newsletter_banner_2' => array(),
+      ),
+      'template' => 'newsletter-banner-2',
+      'path' => $path . '/templates',
+    ),
+  );
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function ti_amg_fw_newsletter_token_info() {
+  $info['tokens']['node']['newsletter_type'] = array(
+    'name' => t('Newsletter Type'),
+    'description' => t('Pulling Newsletter Type'),
+  );
+  $info['tokens']['node']['newsletter_display_date'] = array(
+    'name' => t('Newsletter Display date'),
+    'description' => t('Pulling Newsletter Display date'),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function ti_amg_fw_newsletter_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $replacements = array();
+  if ($type == 'node' && !empty($data['node'])) {
+    $node = $data['node'];
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'newsletter_type':
+          $newsletter_type = '';
+          if ($newsletter_type_items = field_get_items('node', $node, 'field_newsletter_type')) {
+            $newsletter_type_item = reset($newsletter_type_items);
+            if (!empty($newsletter_type_item['value'])) {
+              switch ($newsletter_type_item['value']) {
+                case 'dish':
+                  $newsletter_type = 'dish';
+                  break;
+                case 'fwx':
+                  $newsletter_type = 'fwx';
+                  break;
+                case 'daily':
+                  $newsletter_type = 'daily';
+                  break;
+                case 'wine_list':
+                  $newsletter_type = 'winelist';
+                  break;
+                case 'top_10':
+                  $newsletter_type = 'topten';
+                  break;
+                case 'travel_tips':
+                  $newsletter_type = 'ttips';
+                  break;
+              }
+            }
+          }
+          $replacements[$original] = $newsletter_type;
+          break;
+
+        case 'newsletter_display_date':
+          $newsletter_display_date = '';
+          if ($newsletter_date_items = field_get_items('node', $node, 'field_display_date')) {
+            $newsletter_date_item = reset($newsletter_date_items);
+            if (!empty($newsletter_date_item['value'])) {
+              $timezone = variable_get('date_default_timezone');
+              $newsletter_display_date = format_date($newsletter_date_item['value'], 'custom', 'mdy', $timezone);
+            }
+          }
+          $replacements[$original] = $newsletter_display_date;
+          break;
+      }
+    }
+  }
+  return $replacements;
+}
+
+/*
+ * To get the newsletter type.
+ *
+ * @param $node
+ *    node array
+ *
+ * @return a type of newsletter.
+ */
+function ti_amg_fw_newsletter_get_nl_type($node = array()) {
+  $newsletter_type = '';
+  if (!empty($node)) {
+    if ($newsletter_types = field_get_items('node', $node, 'field_newsletter_type')) {
+      $newsletter_type = reset($newsletter_types);
+      if (!empty($newsletter_type['value'])) {
+        $newsletter_type = $newsletter_type['value'];
+      }
+    }
+  }
+  return $newsletter_type;
+}

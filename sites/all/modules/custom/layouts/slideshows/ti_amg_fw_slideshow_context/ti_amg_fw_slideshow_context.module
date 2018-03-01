@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Slideshow Context feature.
+ */
+
+include_once 'ti_amg_fw_slideshow_context.features.inc';

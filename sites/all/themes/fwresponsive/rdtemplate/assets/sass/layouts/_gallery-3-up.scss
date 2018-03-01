@@ -1,0 +1,19 @@
+.gallery-3-up {
+  @include clearfix;
+  
+  @include with-layout((gutters: 17/117, columns: 3)) {
+    &__item {
+      @include span(1);
+      margin-bottom: gutter();
+      
+      img {
+        width: 100%;
+        vertical-align: bottom;
+      }
+
+      &:nth-child(3n) {
+        @include last;
+      }  
+    }
+  }
+}

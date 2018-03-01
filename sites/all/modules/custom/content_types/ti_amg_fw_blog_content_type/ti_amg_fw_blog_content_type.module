@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Blog Content Type feature.
+ */
+
+include_once 'ti_amg_fw_blog_content_type.features.inc';

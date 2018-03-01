@@ -1,0 +1,11 @@
+name = TI AMG FW TOUT VIEWS
+core = 7.x
+package = FoodandWine DCMS
+version = 7.x-1.12
+project = ti_amg_fw_tout_views
+dependencies[] = ctools
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = ti_amg_fw_right_rail_top_chef
+mtime = 1427670373

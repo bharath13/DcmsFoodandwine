@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW TOUT VIEWS feature.
+ */
+
+include_once 'ti_amg_fw_tout_views.features.inc';

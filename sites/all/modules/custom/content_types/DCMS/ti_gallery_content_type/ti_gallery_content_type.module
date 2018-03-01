@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the ti_gallery_content_type feature.
+ */
+
+include_once 'ti_gallery_content_type.features.inc';

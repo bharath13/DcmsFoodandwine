@@ -1,0 +1,6 @@
+name = TI AMG FW Pronto Component Title
+description = Pronto component for title with subheader
+package = Pronto Component
+version = 7.x-1.0
+core = 7.x
+dependencies[] = ti_pronto_field_formatters

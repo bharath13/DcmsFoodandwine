@@ -1,0 +1,1032 @@
+<?php
+
+/**
+ * @file
+ * To create custom functionalities for person page.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fwrd_person_theme($existing, $type, $theme, $path) {
+  return array(
+    'related-content-section' => array(
+      'template' => 'related-content-section',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'output' => array(),
+        'content' => array(),
+        'type' => array(),
+        'paginated_recipes' => NULL,
+        'total_touts_count' => NULL,
+      ),
+    ),
+    'more-info' => array(
+      'template' => 'more-info',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'links' => array(),
+        'person_name' => array(),
+      ),
+    ),
+    'author_pager' => array(
+      'variables' => array(
+        'tags' => array(),
+        'element' => 0,
+        'parameters' => array(),
+        'quantity' => 10,
+      ),
+    ),
+  );
+}
+
+/**
+ * Add variables on the page level.
+ */
+function ti_amg_fwrd_person_preprocess_page(&$vars) {
+  if (isset($vars['node']->type)) {
+    if ($vars['node']->type == 'person') {
+      $vars['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+      if (isset($vars['detect_device'])) {
+        $vars['device_leaderboard_ad'] = _ti_amg_fwrd_custom_device_leaderboard_ad($vars['detect_device']);
+        if ($vars['detect_device'] == "desktop") {
+          drupal_add_css(
+              drupal_get_path('module', 'ti_amg_fwrd_custom')
+              . '/css/newsletters-signup.css');
+          drupal_add_js(
+              drupal_get_path('module', 'ti_amg_fwrd_custom')
+              . '/js/newsletters-signup.js');
+        }
+      }
+
+      $ads_manager = <<<EOD
+       <script type="text/javascript">
+          (function($) {
+          $(document).ready(function() {
+            if (detect_device != 'desktop') {
+              var newsletters_el = document.getElementById("newsletters-section");
+              if (typeof(newsletters_el) != 'undefined' && newsletters_el != null) {
+                newsletters_el.style.display = 'none';
+              }
+              var outbrain_el = document.getElementById("outbrain-wrapper");
+              if (typeof(outbrain_el) != 'undefined' && outbrain_el != null) {
+                outbrain_el.style.display = 'none';
+              }
+            }
+          });
+        }(jQuery));
+       </script>
+EOD;
+      $vars['ads_manager'] = $ads_manager;
+    }
+  }
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function ti_amg_fwrd_person_node_view($node, $view_mode, $langcode) {
+  global $base_url, $conf, $og_img_path, $_ti_amg_fwrd_person_nids_exempted, $person_total_paginated_items;
+  $_ti_amg_fwrd_person_nids_exempted = array();
+  if (isset($node)) {
+    if ($node->type == 'person') {
+      $person_content = array();
+      $node->content['page_template'] = 'person';
+      $person_page = 'person';
+      if (count(arg()) > 2) {
+        $person_page = (is_numeric(strpos(arg(2), 'page'))) ? 'tag_template' : 'person';
+        $node->content['page_template'] = $person_page;
+      }
+      $person_content['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+      $current_page_path = url('node/' . $node->nid, array('absolute' => TRUE));
+      $person_content['title'] = $node->title;
+      $person_content['related_links'] = '';
+      $istoken = FALSE;
+      $range = TI_AMG_FWRD_CATEGORY_TERM_PAGE_TOUT_RANGE;
+      $person_content['related_content'] = _ti_amg_fwrd_person_get_person_related_content($node);
+      $current_page = ti_amg_fwrd_category_get_page_number();
+      $node_types = array('recipe');
+      $person_total_paginated_items = ti_amg_fwrd_person_paginated_items($node->nid, $node_types, 0, $current_page);
+      // Adding +1 for firtpage calculation.
+      $total_pages = ($person_total_paginated_items / TI_AMG_FWRD_CATEGORY_TERM_PAGE_TOUT_RANGE) + 1;
+      //To load only for the person paginated pages.
+      if ($person_page == 'tag_template') {
+        $person_content['pagination_content'] = ti_amg_fwrd_person_get_pagination_content($node->nid, $node_types);
+        $node->content['pager'] = theme('author_pager');
+      }      
+      if (isset($node->field_related_links[LANGUAGE_NONE])) {
+        $search = '<p>[%related]</p>';
+        if (isset($node->field_biography[LANGUAGE_NONE][0]['value'])) {
+          $body = $node->field_biography[LANGUAGE_NONE][0]['value'];
+          if (strpos($body, $search) != FALSE) {
+            $istoken = TRUE;
+          }
+          else {
+            $istoken = FALSE;
+            $person_content['related_links'] = _ti_amg_fwrd_person_preprocess_related_links($node, $istoken);
+          }
+        }
+        else {
+          $person_content['related_links'] = _ti_amg_fwrd_person_preprocess_related_links($node, $istoken);
+        }
+      }
+      $person_content['body'] = _ti_amg_fwrd_person_body($node, $istoken);
+      $person_content['path'] = $base_url . '/' .
+          drupal_get_path_alias('node/' . $node->nid);
+      $person_content['deck'] = ti_amg_fwrd_custom_get_field_value('node', $node, 'field_deck');
+      // Hide deck if the content was created before the cut date.
+      $cut_date = mktime(0, 0, 0, 10, 12, 2015);
+      $content_published_date = $node->changed;
+      if ($content_published_date < $cut_date) {
+        $person_content['deck'] = '';
+      }
+      $person_content['hero_image'] = '';
+      $person_content['insert_image'] = '';                   
+                         
+      $social_share_img_path = url($conf['social_share_default_img'], array('absolute' => TRUE));
+      if (!empty($node->field_person_hero_image[LANGUAGE_NONE][0]['target_id'])) {
+        $person_content['hero_image'] = _ti_amg_fwrd_person_preprocess_hero_image_content($node);
+        $hero_image_tid = $node->field_person_hero_image[LANGUAGE_NONE][0]['target_id'];
+        $hero_image = _ti_amg_fwrd_person_get_image($hero_image_tid, LARGE_VIDEO_TOUT_STYLE);
+        $social_share_img_path = $hero_image['uri'];
+      }
+      elseif (!empty($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $person_content['insert_image'] = _ti_amg_fwrd_person_preprocess_image_content($node);
+        if (!empty($person_content['insert_image']['main_image']['uri'])) {
+          $social_share_img_path = $person_content['insert_image']['main_image']['uri'];
+        }
+      }
+      $og_img_path = $social_share_img_path;
+      $person_content['social_share_section'] = _ti_amg_fwrd_person_social_share_section($node->title, $social_share_img_path, $person_content['path']);
+      $person_content['byline'] = _ti_amg_fwrd_person_preprocess_byline_content($node);
+
+      $person_content['right_rail_block2'] = '';
+      $person_content['newsletters'] = '';
+      if ($person_content['detect_device'] != 'mobile') {
+        if ($person_content['detect_device'] == 'desktop') {
+          $person_content['right_rail_block2'] = theme('ti_amg_fw_outbrain_redesign', array(
+            'widget_id' => 'SB_4',
+            'title' => '',
+          )
+          );
+        }
+      }
+
+      if ($person_content['detect_device'] == 'desktop') {
+        $person_content['newsletters'] = theme('ti_amg_fw_custom_newsletter');
+      }
+      // Showing Classic Aspen Menu if enabled.
+      if (!empty($node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value']) &&
+          $node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value'] == 1) {
+        $person_content['sub_header'] = module_invoke('ti_amg_fwrd_generic_page', 'block_view', 'classic_aspen_header');
+      }
+      if (!empty($person_content['related_content']['more_links'])) {
+        $person_content['more_links'] = _ti_amg_fwrd_person_more_links($person_content['related_content']['more_links'], $person_content['title']);
+      }
+      $node->content['person_content'] = $person_content;
+      if ($person_page == 'tag_template') {
+        // Adding meta tag robots noindex, follow to the paginated pages.
+        $meta_element = array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'name' => 'robots',
+            'content' => 'noindex, follow',
+          ),
+        );
+        drupal_add_html_head($meta_element, 'robots');
+        // Adding meta tag next and prev links to the page.
+        if ($total_pages > 1) {
+          if ($current_page < $total_pages) {
+            $next_page = $current_page + 1;
+            $next_element = array(
+              '#tag' => 'link',
+              '#attributes' => array(
+                'rel' => 'next',
+                'href' => $current_page_path . '/page' . $next_page,
+              ),
+            );
+            drupal_add_html_head($next_element, 'next');
+          }
+          if ($current_page > 1) {
+            $prev_page = $current_page - 1;
+            $prev_page_url = $current_page_path . '/page' . $prev_page;
+            if ($current_page == 2) {
+              $prev_page_url = $current_page_path;
+            }
+            $prev_element = array(
+              '#tag' => 'link',
+              '#attributes' => array(
+                'rel' => 'prev',
+                'href' => $prev_page_url,
+              ),
+            );
+            drupal_add_html_head($prev_element, 'prev');
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Callback for author_pager().
+ */
+function theme_author_pager($variables) {
+  $element = $variables['element'];
+  $parameters = $variables['parameters'];
+  $quantity = $variables['quantity'];
+  global $pager_page_array, $pager_total;
+
+  // Calculate various markers within this pager piece:
+  // Middle is used to "center" pages around the current page.
+  $pager_middle = ceil($quantity / 2);
+  // Current is the page we are currently paged to.
+  $pager_current = $pager_page_array[$element] + 1;
+  // First is the first page listed by this pager piece (re quantity).
+  $pager_first = $pager_current - $pager_middle + 1;;
+  // Last is the last page listed by this pager piece (re quantity).
+  $pager_last = $pager_current + $quantity - $pager_middle;
+  // Max is the maximum page number.
+  $pager_max = $pager_total[$element];
+  // End of marker calculations.
+  // Prepare for generation loop.
+  $i = $pager_first;
+  if ($pager_last > $pager_max) {
+    // Adjust "center" if at end of query.
+    $i = $i + ($pager_max - $pager_last);
+    $pager_last = $pager_max;
+  }
+  if ($i <= 0) {
+    // Adjust "center" if at start of query.
+    $pager_last = $pager_last + (1 - $i);
+    $i = 1;
+  }
+  $base_url_path = url('node/' . arg(1));
+  
+  // End of generation loop preparation.
+  $li_first = l(t('« first'), $base_url_path, array('attributes' => array('title' => 'Go to first page')));
+  $li_previous = l(t('‹ previous'), $base_url_path . '/page' . ($pager_current - 1), array('attributes' => array('title' => 'Go to previous page')));
+  $li_next = l(t('next ›'), $base_url_path . '/page' . ($pager_current + 1), array('attributes' => array('title' => 'Go to next page')));
+  $li_last = l(t('last »'), $base_url_path . '/page' . $pager_last, array('attributes' => array('title' => 'Go to last page')));
+
+  if ($pager_total[$element] > 1) {
+    if ($li_previous) {
+      $items[] = array(
+        'class' => array('pager-previous'),
+        'data' => $li_previous,
+      );
+    }
+
+    // When there is more than one page, create the pager list.
+    if ($i != $pager_max) {
+      if ($i > 1) {
+        $items[] = array(
+          'class' => array('pager-ellipsis'),
+          'data' => '…',
+        );
+      }
+      // Now generate the actual pager piece.
+      for (; $i <= $pager_last && $i <= $pager_max; $i++) {
+        if ($i < $pager_current) {
+          if ($i == 1) {
+            $items[] = array(
+              'class' => array('pager-item'),
+              'data' => l($i, $base_url_path, array('attributes' => array('title' => 'Go to first page'))),
+            );
+          }
+          else {
+            $items[] = array(
+              'class' => array('pager-item'),
+              'data' => l($i, $base_url_path . '/page' . $i, array('attributes' => array('title' => 'Go to page ' . $i))),
+            );
+          }
+          
+        }
+        elseif ($i == $pager_current) {
+          $items[] = array(
+            'class' => array('pager-current'),
+            'data' => $i,
+          );
+        }
+        elseif ($i > $pager_current) {
+          $items[] = array(
+            'class' => array('pager-item'),
+            'data' => l($i, $base_url_path . '/page' . $i, array('attributes' => array('title' => 'Go to page ' . $i))),
+          );
+        }
+      }
+      if ($i < $pager_max) {
+        $items[] = array(
+          'class' => array('pager-ellipsis'),
+          'data' => '…',
+        );
+      }
+    }
+    // End generation.
+    if ($li_next) {
+      $items[] = array(
+        'class' => array('pager-next'),
+        'data' => $li_next,
+      );
+    }
+    
+    return theme('item_list', array(
+      'items' => $items,
+      'attributes' => array('class' => array('pager')),
+    ));
+  }
+}
+
+function ti_amg_fwrd_person_get_pagination_content ($nid = NULL, $node_types = array()) {
+  global $person_total_paginated_items;
+  $nids = array();
+  $output = '';
+  $range = TI_AMG_FWRD_CATEGORY_TERM_PAGE_TOUT_RANGE;
+  $current_page = ti_amg_fwrd_category_get_page_number();
+  $nids = ti_amg_fwrd_person_paginated_items($nid, $node_types, $range, $current_page);
+  if (!empty($nids)) {
+    $touts_count = count($term_node_ids);
+    $output = ti_amg_fwrd_category_construct_touts($nids);
+  }
+  if (!empty($output) && count($output) > 0) {
+    $category_content_touts = theme('tag-tout-list', array(
+      'touts' => $output,
+      'type' => 'page',
+    ));
+  }
+  else {
+    $category_content_touts = t('There is currently no content associated with this term.');
+  }
+
+  // Making the custom pager for contributor pages.
+  _ti_amg_fwrd_category_pager_default_initialize($person_total_paginated_items + $range, $range, 0, $current_page - 1);
+
+  return $category_content_touts;
+}
+
+/**
+ * Same as pager_default_initialize except $page is passed as a param.
+ */
+function _ti_amg_fwrd_person_pager_default_initialize($total, $limit, $element = 0, $page = 1) {
+  global $pager_page_array, $pager_total, $pager_total_items, $pager_limits;
+  $pager_total_items[$element] = $total;
+  $pager_total[$element] = ceil($pager_total_items[$element] / $limit);
+  $pager_page_array[$element] = max(0, min($page, ((int) $pager_total[$element]) - 1));
+  $pager_limits[$element] = $limit;
+  $current_page = pager_default_initialize($total, $limit);
+
+  return $pager_page_array[$element];
+}
+
+
+/**
+ * Function to get contributor paginated items.
+ *
+ * @param string $nid
+ *   Array of node id's.
+ * @param array $types
+ *   Array of content types.
+ * @param string $range
+ *   How many number of items to fetch.
+ * @param string $current_page
+ *   To know on which page we are landing.
+ *
+ * @return mixed
+ *   when $range = 0, it will return the total number of item count.
+ *   when $range != 0, it will give the nids as per the range.
+ */
+function ti_amg_fwrd_person_paginated_items($nid = NULL, $types = array(), $range = 0, $current_page = 0) {
+  global $_ti_amg_fwrd_person_nids_exempted;
+  if (!empty($nid)) {
+    $query = db_select('node', 'n');
+    $query->leftjoin('field_data_field_chefs_author', 'chefs_author', 'n.nid = chefs_author.entity_id');
+    $query->leftJoin('field_data_field_person_type', 'person_type', 'chefs_author.field_chefs_author_target_id = person_type.entity_id');
+    $query->leftJoin('publication_date', 'pub_date', 'n.nid = pub_date.nid');
+    $query->fields('n', array('nid'));
+    $query->condition('n.type', $types, 'IN');
+    $query->condition('n.status', '1', '=');
+    $query->condition('chefs_author.entity_type', 'node', '=');
+    $query->condition('chefs_author.deleted', 0, '=');
+    $query->condition('person_type.entity_type', 'node', '=');
+    $query->condition('person_type.deleted', 0, '=');
+    $query->condition('person_type.field_person_type_value', 'p', '=');
+    $query->condition('person_type.entity_id', $nid, '=');
+    // Excluding the contributor page contents in the paginated pages.
+    if (!empty($_ti_amg_fwrd_person_nids_exempted)) {
+      $query->condition('n.nid', $_ti_amg_fwrd_person_nids_exempted, 'NOT IN');
+    }
+    $query->groupBy('n.nid');
+    $query->orderBy('pub_date.published_at', 'DESC');
+    if (!empty($range) && $range > 0) {
+      $current_page = $current_page - 2;
+      $query->range($current_page * $range, $range);
+    }
+
+    $results = $query->execute()->fetchAll();  
+    if (!empty($results) && count($results) > 0) {
+      foreach ($results as $result) {
+        $nids[] = $result->nid;
+      }
+    }      
+  }
+  if ($range == 0) {
+    return count($nids);
+  }
+  else {
+    return $nids;
+  }
+}
+
+/**
+ * Body: construct with multiple mbedded images and singular pull quote.
+ */
+function _ti_amg_fwrd_person_body($node, $istoken = '') {
+  $body = ti_amg_fwrd_custom_get_field_value('node', $node, 'field_biography');
+  if (!empty($body)) {
+    if (isset($node->field_related_cnt_links[LANGUAGE_NONE])) {
+      $related_content = _ti_amg_fwrd_person_preprocess_related_links($node, $istoken);
+      if ($istoken) {
+        $body = _ti_amg_fwrd_person_replace_single_related_links_token($related_content, $body['#markup']);
+      }
+    }
+  }
+
+  return $body;
+}
+
+/**
+ * Replacing Single Related Links token with the correspoding related links.
+ */
+function _ti_amg_fwrd_person_replace_single_related_links_token($related_links_content = '', $body_cnt = '') {
+  $search = '<p>[%related]</p>';
+  if (strpos($body_cnt, $search) != FALSE) {
+    $body_cnt = str_replace($search, $related_links_content, $body_cnt);
+  }
+  return $body_cnt;
+}
+
+/**
+ * Social Sharing Block for Feature pages.
+ *
+ * @param1 string $node_title
+ *   Title of particular page.
+ * @param2 string $social_share_img_path
+ *   Image path for social share icons.
+ * @param3 string $page_alias
+ *   Alias of current page.
+ *
+ * @return array
+ *   A rederable array of social share icons for feature page.
+ */
+function _ti_amg_fwrd_person_social_share_section($node_title = '', $social_share_img_path = '', $page_alias = '') {
+  global $base_url;
+  $current_url = $page_alias;
+  $img_path = url(drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/spritemap.svg', array('absolute' => TRUE));
+  $social_share_content['title'] = urlencode($node_title);
+  $site_name = variable_get('site_name');
+  $social_share_content['pinit_title'] = $node_title . ' | ' . $site_name;
+  $social_share_content['social_share_img_path'] = $social_share_img_path;
+  $social_share_content['mail_subject'] = urlencode($node_title . ' on ' . $site_name);
+  $social_share_content['mail_body'] = urlencode($node_title) . '%0A' . urlencode($current_url);
+  $social_share_content['twitter_text'] = 'original_referer=' . urlencode($current_url) . '&amp;text=' . rawurlencode($node_title) . ' on' . rawurlencode($site_name) . '&amp;url=' . urlencode($current_url) . '%3Fxid%3Dtwsharebar&amp;via=foodandwine';
+  $social_share_content['fb_data'] = '';
+  if ($_COOKIE['TI_PREFS'] == 'phone') {
+    $fb_params = array(
+      'u' => $current_url,
+      'images' => array($social_share_content['social_share_img_path']),
+      't' => $social_share_content['title'],
+    );
+    $social_share_content['fb_data'] = 'http://m.facebook.com/sharer.php?' .
+        http_build_query($fb_params);
+  }
+  else {
+    // Desktop.
+    $fb_params = array(
+      's' => 100,
+      'p' => array(
+        'url' => $current_url,
+        'images' => array($social_share_img_path),
+        'title' => $social_share_content['title'],
+      ),
+    );
+    $social_share_content['fb_data'] = 'http://www.facebook.com/sharer/sharer.php?' .
+        http_build_query($fb_params);
+  }
+  $social_share_content['twitter_data'] = '';
+  $twitter_params = array(
+    'url' => $current_url,
+    'text' => html_entity_decode($node_title),
+    'via' => 'foodandwine',
+    'related' => 'foodandwine',
+  );
+  $social_share_content['twitter_data'] = 'https://twitter.com/intent/tweet?' .
+      http_build_query($twitter_params);
+  $pinterest_params = array(
+    'description' => $social_share_content['pinit_title'],
+    'url' => $current_url,
+    media => $social_share_img_path,
+  );
+  $social_share_content['pinterest_data'] = 'http://pinterest.com/pin/create/linkshare/?' .
+      http_build_query($pinterest_params);
+  return theme('social-share-gallery-mobile', array(
+    'url' => $current_url,
+    'img_path' => $img_path,
+    'social_content' => $social_share_content,
+  ));
+}
+
+/**
+ * Byline Section: author image, name, social, published date.
+ * */
+function _ti_amg_fwrd_person_preprocess_byline_content($node) {
+  global $base_url;
+  $byline = array();
+  $contrib_authors = '';
+  $image_style = LANDING_TOUT_IMAGE_STYLE;
+  $authors_list = array();
+  if (isset($node->field_author[LANGUAGE_NONE])) {
+    if (count($node->field_author[LANGUAGE_NONE]) > 1) {
+      $source_authors = $node->field_author[LANGUAGE_NONE];
+      foreach ($source_authors as $source_author) {
+        $author_tid = $source_author['target_id'];
+        $author_url = $base_url . '/' .
+            drupal_get_path_alias('node/' . $author_tid);
+        $author = node_load($author_tid);
+        $author_last_name = $author->field_last_name[LANGUAGE_NONE][0]['value'];
+        $author_first_name = $author->field_given_name[LANGUAGE_NONE][0]['value'];
+        $author_link = l(t($author_first_name . ' ' . $author_last_name), $author_url, array(
+          'html' => TRUE,
+          'attributes' => array(
+            'target' => '_blank',
+            'class' => 'author__info-link',
+          ),
+        )
+        );
+        $authors_list[] = $author_link;
+      }
+      $total_authors = count($authors_list);
+      foreach ($authors_list as $key => $author) {
+        $separator = ($key == ($total_authors - 1)) ? '' : ', ';
+        $contrib_authors .= trim($author) . $separator;
+      }
+      $byline['links'] = $contrib_authors;
+    }
+    // Multiple authors.
+    else {
+      $author_tid = $node->field_author[LANGUAGE_NONE][0]['target_id'];
+      $author_url = $base_url . '/' .
+          drupal_get_path_alias('node/' . $author_tid);
+      $author = node_load($author_tid);
+      $author_last_name = $author->field_last_name[LANGUAGE_NONE][0]['value'];
+      $author_first_name = $author->field_given_name[LANGUAGE_NONE][0]['value'];
+      $author_link = l(t($author_first_name . ' ' . $author_last_name), $author_url, array(
+        'html' => TRUE,
+        'attributes' => array(
+          'target' => '_blank',
+          'class' => 'author__info-link',
+        ),
+      )
+      );
+      $byline['links'] = $author_link;
+      if (isset($author->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $author_image_tid = $author->field_images[LANGUAGE_NONE][0]['target_id'];
+        $byline['image'] = _ti_amg_fwrd_person_get_image($author_image_tid, $image_style);
+      }
+    } // the only one author
+  }
+  return theme('byline_section', array(
+    'byline' => $byline,
+  ));
+}
+
+/**
+ * Hero Image.
+ */
+function _ti_amg_fwrd_person_preprocess_hero_image_content($node, $content_url) {
+  $hero_image = array();
+  if (!empty($node->field_person_hero_image[LANGUAGE_NONE][0]['target_id'])) {
+    $hero_image_tid = $node->field_person_hero_image[LANGUAGE_NONE][0]['target_id'];
+    $hero_image = _ti_amg_fwrd_person_get_image($hero_image_tid, LARGE_VIDEO_TOUT_STYLE);
+    if ($content_url) {
+      $hero_image['content_url'] = $content_url;
+      if (empty($hero_image['alt'])) {
+        $hero_image['alt'] = $node->title;
+      }
+      $hero_image['link'] = l('<div class="image-insert__wrap"><img src="' . $hero_image['uri'] . '" alt="Food &amp; Wine: ' . $hero_image['alt'] . '"></div>', $content_url, array(
+        'html' => TRUE,
+        'attributes' => array(
+          'target' => '_blank',
+        ),
+      )
+      );
+    }
+  }
+  if (empty($hero_image['alt'])) {
+    $hero_image['alt'] = $node->title;
+  }
+  return array(
+    'image' => $hero_image,
+    'hero_img_content' => theme('hero-image', array(
+      'image' => $hero_image,
+      'classes_list' => 'feature__image',
+      'is_hero' => TRUE,
+    )),
+  );
+}
+
+/**
+ * Content Image.
+ */
+function _ti_amg_fwrd_person_preprocess_image_content($node) {
+  $lead_image = array();
+  $image_style = 'rd_home_hero_slide';
+  if (!empty($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+    $image_tid = $node->field_images[LANGUAGE_NONE][0]['target_id'];
+    $lead_image = _ti_amg_fwrd_person_get_image($image_tid, $image_style);
+    if (!empty($node->field_overwrite_image_credit)) {
+      $lead_image['credit'] = strip_tags($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['value']);
+    }
+    if (!empty($node->field_overwrite_image_caption)) {
+      $lead_image['caption'] = strip_tags($node->field_overwrite_image_caption[LANGUAGE_NONE][0]['value']);
+    }
+    if (!empty($node->field_overwrite_image_alt_text)) {
+      $lead_image['alt'] = strip_tags($node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value']);
+    }
+  }
+  if (empty($lead_image['alt'])) {
+    $lead_image['alt'] = $node->title;
+  }
+  return array(
+    'main_image' => $lead_image,
+    'main_img_content' => theme('image-insert', array(
+      'image' => $lead_image,
+      'classes_list' => 'feature__image',
+    )),
+  );
+}
+
+/**
+ * Related Links: manual contents.
+ */
+function _ti_amg_fwrd_person_preprocess_related_links($node, $istoken = '') {
+  $related_links = array();
+  if (isset($node->field_related_links[LANGUAGE_NONE])) {
+    foreach ($node->field_related_links[LANGUAGE_NONE] as $entity_id) {
+      $item = array();
+      $item['title'] = $entity_id['title'];
+      $item['url'] = $entity_id['url'];
+      $item['link'] = l($item['title'], $item['url'], array(
+        'html' => TRUE,
+      )
+      );
+      $related_links[] = $item;
+    }
+    $class_list = 'feature__related related-content';
+
+    if (isset($istoken) && ($istoken)) {
+      $class_list = 'feature__related related-content divider';
+    }
+    return theme('related-section', array(
+      'related_contents' => $related_links,
+      'classes_list' => $class_list,
+    ));
+  }
+}
+
+/**
+ * To get related contents of a person for Element.
+ *
+ * @param object $node
+ *   Node Object.
+ *
+ * @return array
+ *   Related Contents of a person.
+ */
+function ti_amg_fwrd_person_element_get_person_related_content($node) {
+  $related_contents = array();
+  $person_nid = $node->nid;
+  $links = array();
+  // Get recipe contents by the current person.
+  $types = ['article'];
+  $query = db_select('node', 'n');
+  $query->leftjoin('field_data_field_author', 'author', 'n.nid = author.entity_id');
+  $query->leftJoin('field_data_field_person_type', 'person_type', 'author.field_author_target_id = person_type.entity_id');
+  $query->leftJoin('field_data_field_images', 'field_data_field_images', 'field_data_field_images.entity_id = n.nid');
+  $query->leftJoin('publication_date', 'pub_date', 'n.nid = pub_date.nid');
+  $query->fields('n', array('nid', 'title'));
+  $query->fields('field_data_field_images', array('field_images_target_id'));
+  $query->condition('n.type', $types, 'IN');
+  $query->condition('n.status', '1', '=');
+  $query->condition('author.entity_type', 'node', '=');
+  $query->condition('author.deleted', 0, '=');
+  $query->condition('person_type.entity_type', 'node', '=');
+  $query->condition('person_type.deleted', 0, '=');
+  $query->condition('person_type.field_person_type_value', 'p', '=');
+  $query->condition('person_type.entity_id', $person_nid, '=');
+  $query->groupBy('n.nid');
+  $query->orderBy('pub_date.published_at', 'DESC');
+  $query->range(0,3);
+  $related_articles = $query->execute()->fetchAll();
+  if (isset($related_articles) && !empty($related_articles)) {
+    $links[] = 'articles';
+    $section_name = 'Articles by ' . $node->title;
+    $section = array();
+    $output = array();
+    $section['topic'] = $section_name;
+    $section['series_headline'] = "";
+    $section['articles']['topic'] = $section_name;
+    $section['articles']['content'] = ti_amg_fwrd_person_get_element_contents($related_articles);
+  }
+  return $section;
+}    
+
+/**
+ * Get content for element related section.
+ */
+function ti_amg_fwrd_person_get_element_contents($related_contents) {
+  global $base_url, $base_path;
+  $image_style = 'rd_home_hero_slide';
+  $output = array();
+  $image_style = RELATED_CONTENT_IMAGE_STYLE;
+  $default_image_url = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+  $contributor_path = $base_path . request_path() . '/page2';
+  $contributor_path_alias = url($contributor_path, array('absolute' => TRUE));
+  foreach ($related_contents as $item) {
+    $content = array();
+    $content['id'] = $item->nid;
+    $content['title'] = $item->title;
+    $content['path'] = $base_url . '/' .
+        drupal_get_path_alias('node/' . $item->nid);
+    if (isset($item->field_images_target_id)) {
+      $content['image'] = _ti_amg_fwrd_homepage_get_image($item->field_images_target_id, $image_style);
+    }
+    else {
+      $content['image']['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+      $content['image']['credit'] = '';
+      $content['image']['alt'] = '';
+    }
+    $output[] = $content;
+  }
+  return $output;
+}
+
+/**
+ * To get related contents of a person.
+ *
+ * @param object $node
+ *   Node Object.
+ *
+ * @return array
+ *   Related Contents of a person.
+ */
+function _ti_amg_fwrd_person_get_person_related_content($node) {
+  global $_ti_amg_fwrd_person_nids_exempted;
+  $related_contents = array();
+  $person_nid = $node->nid;
+  $links = array();
+  $related_recipes_query = "SELECT node.nid AS nid, node.title AS node_title, field_data_field_images.field_images_target_id AS node_primary_image FROM {node} node LEFT JOIN {field_data_field_chefs_author} field_data_field_chefs_author ON node.nid = field_data_field_chefs_author.entity_id AND (field_data_field_chefs_author.entity_type = 'node' AND field_data_field_chefs_author.deleted = '0') LEFT JOIN {node} node_field_data_field_chefs_author ON field_data_field_chefs_author.field_chefs_author_target_id = node_field_data_field_chefs_author.nid LEFT JOIN {field_data_field_images} field_data_field_images ON field_data_field_images.entity_id = node.nid INNER JOIN {field_data_field_person_type} node_field_data_field_chefs_author__field_data_field_person_type ON node_field_data_field_chefs_author.nid = node_field_data_field_chefs_author__field_data_field_person_type.entity_id AND (node_field_data_field_chefs_author__field_data_field_person_type.entity_type = 'node' AND node_field_data_field_chefs_author__field_data_field_person_type.deleted = '0') WHERE (( (node_field_data_field_chefs_author.nid = '" . $person_nid . "' ) )AND(( (node.status = '1') AND (node_field_data_field_chefs_author__field_data_field_person_type.field_person_type_value = 'p') AND (node.type IN ('recipe')) ))) ORDER BY node_title ASC LIMIT 15";
+  $related_recipes = db_query($related_recipes_query)->fetchAll();
+  if (isset($related_recipes) && !empty($related_recipes)) {
+    if (count($related_recipes > 0)) {
+      foreach($related_recipes as $related_recipe) {
+        $_ti_amg_fwrd_person_nids_exempted[] = $related_recipe->nid;
+      }
+    }
+    $total_touts_count = count($related_recipes);
+    $links[] = 'recipes';
+    $section_name = 'Recipes by ' . $node->title;
+    $section = array();
+    $output = array();
+    $section['topic'] = $section_name;
+    $section['series_headline'] = "";
+    $output = _ti_amg_fwrd_person_get_series_content_pager($related_recipes);
+    $related_contents['series'] .= theme('related-content-section', array(
+      'classes_list' => '',
+      'output' => $output,
+      'content' => $section,
+      'type' => 'recipes',
+      'paginated_recipes' => TRUE,
+      'total_touts_count' => $total_touts_count,
+    ));
+  }
+
+  $related_blogs_query = "SELECT node.nid AS nid, node.title AS node_title, field_data_field_images.field_images_target_id AS node_primary_image FROM {node} node LEFT JOIN {field_data_field_author} field_data_field_author ON node.nid = field_data_field_author.entity_id AND (field_data_field_author.entity_type = 'node' AND field_data_field_author.deleted = '0') LEFT JOIN {node} node_field_data_field_author ON field_data_field_author.field_author_target_id = node_field_data_field_author.nid LEFT JOIN {field_data_field_images} field_data_field_images ON field_data_field_images.entity_id = node.nid WHERE (( (node_field_data_field_author.nid = '" . $person_nid . "' ) )AND(( (node.status = '1') AND (node.type IN ('blog', 'article')) ))) ORDER BY node_title ASC LIMIT 3";
+  $related_blogs = db_query($related_blogs_query)->fetchAll();
+  if (isset($related_blogs) && !empty($related_blogs)) {
+    $links[] = 'features';
+    $section_name = 'Features by ' . $node->title;
+    $section = array();
+    $output = array();
+    $section['topic'] = $section_name;
+    $section['series_headline'] = "";
+    $output = _ti_amg_fwrd_person_get_series_content($related_blogs);
+    $related_contents['series'] .= theme('related-content-section', array(
+      'classes_list' => '',
+      'output' => $output,
+      'content' => $section,
+      'type' => 'features',
+    ));
+  }
+
+  $related_articles_query = "SELECT node.nid AS nid, node.title AS node_title , field_data_field_images.field_images_target_id AS node_primary_image FROM {node} node LEFT JOIN {field_data_field_author} field_data_field_author ON node.nid = field_data_field_author.entity_id AND (field_data_field_author.entity_type = 'node' AND field_data_field_author.deleted = '0') LEFT JOIN {node} node_field_data_field_author ON field_data_field_author.field_author_target_id = node_field_data_field_author.nid LEFT JOIN {field_data_field_images} field_data_field_images ON field_data_field_images.entity_id = node.nid WHERE (( (node_field_data_field_author.nid = '" . $person_nid . "' ) )AND(( (node.status = '1') AND (node.type IN ('article')) ))) ORDER BY node_title ASC LIMIT 3";
+  $related_articles = db_query($related_articles_query)->fetchAll();
+  if (isset($related_articles) && !empty($related_articles)) {
+    $links[] = 'articles';
+    $section_name = 'Articles by ' . $node->title;
+    $section = array();
+    $output = array();
+    $section['topic'] = $section_name;
+    $section['series_headline'] = "";
+    $output = _ti_amg_fwrd_person_get_series_content($related_articles);
+    $related_contents['series'] .= theme('related-content-section', array(
+      'classes_list' => '',
+      'output' => $output,
+      'content' => $section,
+      'type' => 'articles',
+    ));
+  }
+  $related_contents['more_links'] = $links;
+  return $related_contents;
+}
+
+/**
+ * Get content for carousel: collection of video contents.
+ */
+function _ti_amg_fwrd_person_get_series_content_pager($related_contents) {
+  global $base_url, $base_path;
+  $image_style = 'rd_home_hero_slide';
+  $output = array();
+  $image_style = RELATED_CONTENT_IMAGE_STYLE;
+  $default_image_url = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+  $contributor_path = $base_path . request_path() . '/page2';
+  $contributor_path_alias = url($contributor_path, array('absolute' => TRUE));
+  $content = array();
+  $total = count($related_contents);
+
+  $count = 1;
+  $row_count = 1;
+  foreach ($related_contents as $item) {
+    $content = array();
+    $content['title'] = $item->node_title;
+    $content['url'] = $base_url . '/' .
+        drupal_get_path_alias('node/' . $item->nid);
+    if (isset($item->node_primary_image)) {
+      $content['image'] = _ti_amg_fwrd_homepage_get_image($item->node_primary_image, $image_style);
+    }
+    else {
+      $content['image']['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+      $content['image']['credit'] = '';
+      $content['image']['alt'] = '';
+    }
+
+    $default_image_url = url(DEFAULT_VIDEO_IMAGE_URI, array('absolute' => TRUE));
+    $story_card = theme('story-card', array(
+      'type' => 'feature',
+      'title' => $content['title'],
+      'url' => $content['url'],
+      'image_url' => $content['image']['uri'],
+      'image_alt' => $content['title'],
+      'classes_list' => 'grid-3-up__item',
+    ));
+
+    if ($row_count > 2 &&  $row_count <= 5) {
+      $class = "grid-row-latest-$row_count";
+      $style = 'style="display: none;"';
+    }
+    if ($count % 3 == 1) {
+      $beginning = '<div class="grid-row ' .$class.'" '.$style.'>';
+      $row_count ++;
+    }
+    else {
+      $beginning = '';
+    }
+    if (($count % 3 == 0) || ($count == $total)) {
+      $ending = '</div>';
+    }
+    else {
+      $ending = '';
+    }
+    if (!empty ($row_count)) {
+      drupal_add_js(array('tout_row_count_latest' => $row_count-1), array('type' => 'setting'));
+    }
+    if (!empty($contributor_path_alias)) {
+      drupal_add_js(array('term_path_alias' => $contributor_path_alias), array('type' => 'setting'));
+    }
+    $small_tout = $beginning . $story_card . $ending;
+    $output['small_video_touts'] .= $small_tout;
+    $count++;
+  }
+  return $output;
+}
+
+/**
+ * Get content for carousel: collection of video contents.
+ */
+function _ti_amg_fwrd_person_get_series_content($related_contents) {
+  global $base_url;
+  $image_style = 'rd_home_hero_slide';
+  $output = array();
+  $image_style = RELATED_CONTENT_IMAGE_STYLE;
+  $default_image_url = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+  $content = array();
+  $total = count($related_contents);
+  $count = 1;
+  foreach ($related_contents as $item) {
+    $content = array();
+    $content['title'] = $item->node_title;
+    $content['url'] = $base_url . '/' .
+        drupal_get_path_alias('node/' . $item->nid);
+    if (isset($item->node_primary_image)) {
+      $content['image'] = _ti_amg_fwrd_homepage_get_image($item->node_primary_image, $image_style);
+    }
+    else {
+      $content['image']['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+      $content['image']['credit'] = '';
+      $content['image']['alt'] = '';
+    }
+
+    $default_image_url = url(DEFAULT_VIDEO_IMAGE_URI, array('absolute' => TRUE));
+    $story_card = theme('story-card', array(
+      'type' => 'feature',
+      'title' => $content['title'],
+      'url' => $content['url'],
+      'image_url' => $content['image']['uri'],
+      'image_alt' => $content['title'],
+      'classes_list' => 'grid-3-up__item',
+      'placeholder_url' => $default_image_url,
+    ));
+    if ($count % 3 == 1) {
+      $beginning = '<div class="grid-row">';
+    }
+    else {
+      $beginning = '';
+    }
+    if (($count % 3 == 0) || ($count == $total)) {
+      $ending = '</div>';
+    }
+    else {
+      $ending = '';
+    }
+    $small_tout = $beginning . $story_card . $ending;
+    $output['small_video_touts'] .= $small_tout;
+    $count++;
+  }
+  return $output;
+}
+
+/**
+ * Get links for related contents.
+ */
+function _ti_amg_fwrd_person_more_links($links, $person_name) {
+  return theme('more-info', array(
+    'links' => $links,
+    'person_name' => $person_name,
+  ));
+}
+
+/**
+ * Preprocessing image, required param: image node id.
+ */
+function _ti_amg_fwrd_person_get_image($node_id, $image_style) {
+  $image = array();
+  $image_node = node_load($node_id);
+  $image_style = (isset($image_style)) ? $image_style : LANDING_TOUT_IMAGE_STYLE;
+  // Load the image_uri from large image field.
+  if (!empty($image_node->field_large_image)) {
+    $image_file = $image_node->field_large_image[LANGUAGE_NONE][0];
+    $image['uri'] = image_style_url($image_style, $image_file['uri']);
+  }
+  // Load the image_uri from image field.
+  elseif (!empty($image_node->field_image)) {
+    $image_file = $image_node->field_image[LANGUAGE_NONE][0];
+    $image['uri'] = image_style_url($image_style, $image_file['uri']);
+  }
+  // Load the default recipe image.
+  else {
+    $image['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+  }
+  // Load the image_credit.
+  if (!empty($image_node->field_credit)) {
+    $image['credit'] = $image_node->field_credit[LANGUAGE_NONE][0]['value'];
+  }
+  else {
+    $image['credit'] = '';
+  }
+  // Load the image_caption.
+  if (!empty($image_node->field_caption)) {
+    $image['caption'] = $image_node->field_caption[LANGUAGE_NONE][0]['value'];
+  }
+  else {
+    $image['caption'] = '';
+  }
+  // Load the image_alt.
+  if (!empty($image_node->field_alt_text)) {
+    $image['alt'] = $image_node->field_alt_text[LANGUAGE_NONE][0]['value'];
+  }
+  else {
+    $image['alt'] = '';
+  }
+  return $image;
+}

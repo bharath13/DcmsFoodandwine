@@ -1,0 +1,1647 @@
+<?php
+
+/**
+ * @file
+ * Custom functionalities to category taxonomy page and category term page.
+ */
+
+define('TI_AMG_FWRD_CATEGORY_TERM_PAGE_TOUT_RANGE', '15');
+define('TI_AMG_FWRD_CATEGORY_CATEGORY_PAGE_TOUT_RANGE', '15');
+define('TI_AMG_FWRD_CATEGORY_CACHE_EXPIRE_HOURS', '3');
+
+/**
+ * Add variables on the page level.
+ */
+function ti_amg_fwrd_category_preprocess_page(&$vars) {
+  $vars['taxonomy_fw_category'] = '';
+  if (arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2))) {
+    $term_obj = taxonomy_term_load(arg(2));
+    if ((!empty($term_obj)) && (!empty($term_obj->vocabulary_machine_name)) && ($term_obj->vocabulary_machine_name == 'fw_category')) {
+      $vars['taxonomy_fw_category'] = $term_obj->vocabulary_machine_name;
+      if (!empty($vars['page']['fwrd_content']['system_main']['nodes'])) {
+        unset($vars['page']['fwrd_content']['system_main']['nodes']);
+        unset($vars['page']['fwrd_content']['system_main']['pager']);
+      }
+      if (!empty($vars['page']['fwrd_content']['system_main']['no_content'])) {
+        unset($vars['page']['fwrd_content']['system_main']['no_content']);
+      }
+    }
+  }
+
+  // Updating robots meta tag noindex, follow on taxonomy term pages.
+  if ((!empty($vars['taxonomy_fw_category'])) && ($vars['taxonomy_fw_category'] == 'fw_category')) {
+    $meta_element = array(
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'name' => 'robots',
+        'content' => 'noindex, follow',
+      ),
+    );
+    drupal_add_html_head($meta_element, 'robots');
+  }
+
+  $cat_inlne_css = 'a.load-more-touts-latest {display: none;} a.load-more-touts-recipe {display: none;}';
+  drupal_add_css($cat_inlne_css, array('type' => 'inline'));
+  $noscript = array(
+    '#theme' => 'html_tag',
+    '#tag' => 'noscript',
+    '#value' => '<style type="text/css"> a.nojs-see-more-touts-latest {display: inline-block;} a.nojs-see-more-touts-recipe {display: inline-block;} </style>',
+  );
+  drupal_add_html_head($noscript, 'noscript');
+
+  if (count(arg()) > 2) {
+    $page_template = (is_numeric(strpos(arg(2), 'page'))) ? 'tag_template' : 'category';
+
+    if (isset($vars['node']->type) && ($vars['node']->type == 'category') && ($page_template == 'tag_template')) {
+      $meta_element = array(
+        '#tag' => 'meta',
+        '#attributes' => array(
+          'name' => 'robots',
+          'content' => 'noindex, follow',
+        ),
+      );
+      drupal_add_html_head($meta_element, 'robots');
+    }
+  }
+
+  if (((isset($vars['node']->type) && ($vars['node']->type == 'category'))) || ((!empty($vars['taxonomy_fw_category'])) && ($vars['taxonomy_fw_category'] == 'fw_category'))) {
+    $vars['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+    if (isset($vars['detect_device'])) {
+      $vars['device_leaderboard_ad'] = _ti_amg_fwrd_custom_device_leaderboard_ad($vars['detect_device']);
+      if ($vars['detect_device'] == "desktop") {
+        drupal_add_css(
+            drupal_get_path('module', 'ti_amg_fwrd_custom')
+            . '/css/newsletters-signup.css');
+        drupal_add_js(
+            drupal_get_path('module', 'ti_amg_fwrd_custom')
+            . '/js/newsletters-signup.js');
+      }
+    }
+    drupal_add_css(
+        drupal_get_path('module', 'ti_amg_fwrd_custom')
+        . '/css/hero-carousel-video-tout.css');
+    $videoHandler = _ti_amg_fwrd_custom_get_video_handler();
+    // Add it to the footer of the page.
+    if (!empty($videoHandler)) {
+      drupal_add_js($videoHandler, array(
+        'type' => 'inline',
+        'scope' => 'footer',
+        'weight' => -130,
+        'group' => JS_THEME,
+      ));
+    }
+    $ads_manager = <<<EOD
+     <script type="text/javascript">
+        (function($) {
+        $(document).ready(function() {
+          if (detect_device != 'desktop') {
+            var newsletters_el = document.getElementById("newsletters-section");
+            if (typeof(newsletters_el) != 'undefined' && newsletters_el != null) {
+              newsletters_el.style.display = 'none';
+            }
+            var outbrain_el = document.getElementById("outbrain-wrapper");
+            if (typeof(outbrain_el) != 'undefined' && outbrain_el != null) {
+              outbrain_el.style.display = 'none';
+            }
+          }
+        });
+      }(jQuery));
+     </script>
+EOD;
+    $vars['ads_manager'] = $ads_manager;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fwrd_category_theme($existing, $type, $theme, $path) {
+  return array(
+    'text-link-row' => array(
+      'template' => 'text-link-row',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'tags' => array(),
+      ),
+    ),
+    'text-links' => array(
+      'template' => 'text-links',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'text_links' => array(),
+        'title' => NULL,
+      ),
+    ),
+    'tag-tout-list' => array(
+      'template' => 'tag-tout-list',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes_list' => array(),
+        'touts' => array(),
+        'title' => array(),
+        'type' => array(),
+        'touts_count' => NULL,
+        'nojs_seemore_link' => NULL,
+      ),
+    ),
+    'hero-section-video' => array(
+      'template' => 'hero-section-video',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'hero_content' => array(),
+      ),
+    ),
+    'category-header' => array(
+      'template' => 'category-header',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'title' => NULL,
+        'deck' => NULL,
+        'show_more' => NULL,
+      ),
+    ),
+    'sf_pager' => array(
+      'variables' => array(
+        'tags' => array(),
+        'element' => 0,
+        'parameters' => array(),
+        'quantity' => 10,
+      ),
+    ),
+    'tag_page' => array(
+      'template' => 'tag-page',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'header' => array(),
+        'touts' => array(),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function ti_amg_fwrd_category_node_view($node, $view_mode, $langcode) {
+  global $_ti_amg_fwrd_category_hero_section_nid, $_ti_amg_fwrd_category_nids_exempted, $total_paginated_items, $base_url, $exclude_latest_term_ids;
+  $_ti_amg_fwrd_category_nids_exempted = array();
+  if (isset($node) && arg(0) == 'node') {
+    if ($node->type == 'category' && $view_mode == 'full') {
+      $category_content = array();
+      $node->content['page_template'] = 'category';
+      if (count(arg()) > 2) {
+        $node->content['page_template'] = (is_numeric(strpos(arg(2), 'page'))) ? 'tag_template' : 'category';
+      }
+      else {
+        $node->content['page_template'] = 'category';
+      }
+      $category_content['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+      $current_page_path = url('node/' . $node->nid, array('absolute' => TRUE));
+      $category_content['header'] = ti_amg_fwrd_category_get_header($node);
+      $category_content['breadcrumbs'] = ti_amg_fwrd_category_get_breadcrumbs($node);
+      if ($node->content['page_template'] == 'category') {
+        $category_content['hero_section'] = ti_amg_fwrd_category_get_hero_section($node);
+        $category_content['latest_touts'] = ti_amg_fwrd_category_get_touts_by_category_term($node, 'latest');
+        $category_content['recipe_touts'] = ti_amg_fwrd_category_get_touts_by_category_term($node, 'recipe');
+      }
+      $current_page = ti_amg_fwrd_category_get_page_number();
+      $tid = ti_amg_fwrd_category_get_category_tid($node);
+      $childrens = array_keys(ti_amg_fwrd_category_taxonomy_get_children_all($tid));
+      array_push($childrens, $tid);
+      $node_types = array('blog', 'article', 'gallery', 'recipe', 'video');
+      $total_paginated_items = ti_amg_fwrd_category_paginated_items($childrens, $node_types, 0, $current_page, FALSE);
+      // Adding +1 for firtpage calculation.
+      $total_pages = ($total_paginated_items / TI_AMG_FWRD_CATEGORY_TERM_PAGE_TOUT_RANGE) + 1;
+      if ($node->content['page_template'] == 'tag_template') {
+        $category_content['pagination_content'] = ti_amg_fwrd_category_get_pagination_content($childrens, $node_types);
+        $node->content['pager'] = theme('sf_pager');
+      }
+      $category_content['text_link_section'] = ti_amg_fwrd_category_get_text_link_section($node);
+
+      if ($category_content['detect_device'] == 'desktop') {
+        $category_content['newsletters'] = theme('ti_amg_fw_custom_newsletter');
+      }
+      // Showing Classic Aspen Menu if enabled.
+      if (!empty($node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value']) &&
+          $node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value'] == 1) {
+        $category_content['sub_header'] = module_invoke('ti_amg_fwrd_generic_page', 'block_view', 'classic_aspen_header');
+      }
+
+      // Invoking newsletters and subscribtion tout.
+      if ($category_content['detect_device'] != 'mobile') {
+        $module_path = drupal_get_path('module', 'ti_amg_fwrd_custom');
+        $news_letter_img = url($module_path . '/img/the-dish.png', array('absolute' => TRUE));
+        $subscriber_img = url($module_path . '/img/subscribe-new.png', array('absolute' => TRUE));
+        $category_content['newsletters_opt'] = theme('newsletters-opt', array(
+          'class' => array('grid__item'),
+          'newsletter_image' => $news_letter_img,
+        ));
+        $category_content['subscribe_opt'] = theme('subscribe-opt', array(
+          'class' => array('grid__item'),
+          'sub_logo_image' => url($module_path . '/img/logo.png', array('absolute' => TRUE)),
+          'sub_image' => $subscriber_img,
+          'sub_color_hex' => '#e71f3d',
+        ));
+      }
+      else {
+        $category_content['newsletters_opt'] = '';
+        $category_content['subscribe_opt'] = '';
+      }
+
+      $node->content['category_content'] = $category_content;
+      // Adding meta tag next and prev links to the page.
+      if ($total_pages > 1) {
+        if ($current_page < $total_pages) {
+          $next_page = $current_page + 1;
+          $next_element = array(
+            '#tag' => 'link',
+            '#attributes' => array(
+              'rel' => 'next',
+              'href' => $current_page_path . '/page' . $next_page,
+            ),
+          );
+          drupal_add_html_head($next_element, 'next');
+        }
+        if ($current_page > 1) {
+          $prev_page = $current_page - 1;
+          $prev_page_url = $current_page_path . '/page' . $prev_page;
+          if ($current_page == 2) {
+            $prev_page_url = $current_page_path;
+          }
+          $prev_element = array(
+            '#tag' => 'link',
+            '#attributes' => array(
+              'rel' => 'prev',
+              'href' => $prev_page_url,
+            ),
+          );
+          drupal_add_html_head($prev_element, 'prev');
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function ti_amg_fwrd_category_preprocess_node(&$vars) {
+
+}
+
+/**
+ * Implements  hook_flush_caches().
+ */
+function ti_amg_fwrd_category_flush_caches() {
+  return array('cache-home', 'categorypg-cache');
+}
+
+/**
+ * Call back functin to get breadcrumbs of category page.
+ *
+ * @param object $node
+ *   Node object.
+ *
+ * @return array
+ *   Rendered array of breadcrumb section.
+ */
+function ti_amg_fwrd_category_get_breadcrumbs($node) {
+  $breadcrumbs = array();
+  $breadcrumbs = ti_amg_fwrd_category_get_manual_breadcrumbs($node);
+  if (count($breadcrumbs) == 1) {
+    // Dynamically pulling the breadcrumbs.
+    $tid = ti_amg_fwrd_category_get_category_tid($node);
+    if ($tid != '') {
+      $breadcrumbs = ti_amg_fwrd_custom_category_breadcrumb_items($tid, TRUE);
+    }
+  }
+
+  return theme('breadcrumbs-section', array(
+    'links' => $breadcrumbs,
+  ));
+}
+
+/**
+ * To get manual breadcrumb items of a node.
+ *
+ * @param object $node
+ *   Node Object.
+ *
+ * @return array
+ *   Rendered array of breadcrumbs.
+ */
+function ti_amg_fwrd_category_get_manual_breadcrumbs($node) {
+  global $base_url;
+  $breadcrumbs = array();
+  $home['label'] = 'Home';
+  $home['url'] = $base_url;
+  if (isset($node->field_breadcrumbs[LANGUAGE_NONE])) {
+    $breadcrumbs_set_ids = array();
+    foreach ($node->field_breadcrumbs[LANGUAGE_NONE] as $breadcrumb_id) {
+      $breadcrumbs_set_ids[] = $breadcrumb_id['value'];
+    }
+    $breadcrumb_entity = entity_load('field_collection_item', $breadcrumbs_set_ids);
+    foreach ($breadcrumb_entity as $breadcrumb) {
+      $breadcrumb_unit = array();
+      if (!empty($breadcrumb->field_breadcrumb_title[LANGUAGE_NONE][0]['value'])) {
+        $breadcrumb_unit['label'] = $breadcrumb->field_breadcrumb_title[LANGUAGE_NONE][0]['value'];
+      }
+      if (!empty($breadcrumb->field_section_url[LANGUAGE_NONE][0]['value'])) {
+        $breadcrumb_unit['url'] = $breadcrumb->field_section_url[LANGUAGE_NONE][0]['value'];
+      }
+
+      $breadcrumbs[] = $breadcrumb_unit;
+    }
+  }
+  // Prepending the Home link to the breadcrumbs.
+  array_unshift($breadcrumbs, $home);
+
+  return $breadcrumbs;
+}
+
+/**
+ * To get path aliases of NIDs.
+ *
+ * @param array $nids
+ *   array of NIDS.
+ *
+ * @return array
+ *   array of Path aliases of respective NIDs.
+ */
+function ti_amg_fwrd_category_get_category_page_paths($nids = array()) {
+  global $base_url;
+  $content = array();
+  if (count($nids) >= 1) {
+    foreach ($nids as $key => $item) {
+      $content[$key]['label'] = $item['name'];
+      $content[$key]['url'] = $base_url . '/' . drupal_get_path_alias('node/' . $item['nid']);
+    }
+  }
+  return $content;
+}
+
+/**
+ * Implements hook_custom_theme().
+ */
+function ti_amg_fwrd_category_custom_theme() {
+  if (!path_is_admin(current_path())) {
+    if (arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2))) {
+      $term_obj = taxonomy_term_load(arg(2));
+      if ((!empty($term_obj)) && (!empty($term_obj->vocabulary_machine_name)) && ($term_obj->vocabulary_machine_name == 'fw_category')) {
+        return 'fwresponsive';
+      }
+    }
+  }
+}
+
+/**
+ * To construct category page tout section.
+ */
+function ti_amg_fwrd_category_get_touts_by_category_term($node, $section = NULL) {
+  global $base_path,$exclude_latest_term_ids;
+  $category_content_touts = '';
+  $cat_children_tids = array();
+  $tags_term_node_ids = array();
+  $term_node_ids = array();
+  $node_types = array();
+  $sec = $section;
+  $pager = '';
+  $range = TI_AMG_FWRD_CATEGORY_CATEGORY_PAGE_TOUT_RANGE;
+  $tid = ti_amg_fwrd_category_get_category_tid($node);
+  $term_name = ti_amg_fwrd_category_get_term_name($tid);
+  $vid = ti_amg_fwrd_category_get_term_vid($tid);
+  $touts_count = '';
+  if (!empty($section) && $section == 'latest') {
+    $node_types = array('blog', 'article', 'gallery', 'video');
+    if (!empty($node->field_latest_section_title[LANGUAGE_NONE])) {
+      $section_title = $node->field_latest_section_title[LANGUAGE_NONE][0]['value'];
+    }
+    else {
+      $section_title = 'The Best ' . $term_name . ' Ideas';
+    }
+  }
+  if (!empty($section) && $section == 'recipe') {
+    $field_other_bundles = field_get_items('node',$node,'field_enable_other_bundles');
+    if ($field_other_bundles) {
+      $field_other_bundles_value = reset($field_other_bundles)['value'];
+    }
+    if (!empty($field_other_bundles_value)) {
+      $node_types = array('blog', 'article', 'gallery', 'video' , 'recipe');
+    }
+    else {
+      $node_types = array('recipe');
+    }
+    if (!empty($node->field_popular_recipes_title[LANGUAGE_NONE])) {
+      $section_title = $node->field_popular_recipes_title[LANGUAGE_NONE][0]['value'];
+    }
+    else {
+      $section_title = 'Easy ' . $term_name . ' Recipes';
+    }
+  }
+  // Get tids from FW tags field.
+  $flat_tags = ti_amg_fwrd_category_get_fw_tags_tids($node, $section);
+  if (!empty($tid)) {
+    $category_feed_path = $base_path . request_path() . '/page2';
+    $term_path_alias = url($category_feed_path, array('absolute' => TRUE));
+    if (!empty($term_path_alias)) {
+      drupal_add_js(array('term_path_alias' => $term_path_alias), array('type' => 'setting'));
+    }
+    $cat_children_tids = array_keys(ti_amg_fwrd_category_taxonomy_get_children_all($tid, $vid));
+    if (!empty($cat_children_tids)) {
+      $tag_ids = array_merge(array($tid), $cat_children_tids);
+    }
+    else {
+      $tag_ids = array($tid);
+    }
+
+    if (!empty($section) && $section == 'latest') {
+      // To get cached category latest section nids.
+      $category_latest_section_cache = cache_get("category_latest_section_cache" . $node->nid, 'categorypg-cache');
+      if (!$category_latest_section_cache || empty($category_latest_section_cache->data)) {
+        // If no cache, getting data from below function.
+        $term_node_ids = ti_amg_fwrd_category_get_latest_nids_from_tid($tag_ids, $node_types, $pager, $range, $sec, $flat_tags, $node->nid);
+
+        // Setting the cache for 12 hours.
+        cache_set("category_latest_section_cache" . $node->nid, $term_node_ids, 'categorypg-cache', time() + 3600 * TI_AMG_FWRD_CATEGORY_CACHE_EXPIRE_HOURS);
+      }
+      else {
+        // Fetching the cached category latest section nids.
+        $term_node_ids = $category_latest_section_cache->data;
+      }
+      //Store it in a global variable.
+      $exclude_latest_term_ids = $term_node_ids;
+    }
+    elseif (!empty($section) && $section == 'recipe') {
+      // To get cached category recipe section nids.
+      $category_recipe_section_cache = cache_get("category_recipe_section_cache" . $node->nid, 'categorypg-cache');
+      if (!$category_recipe_section_cache || empty($category_recipe_section_cache->data)) {
+        // If no cache, getting data from below function.
+        $term_node_ids = ti_amg_fwrd_category_get_latest_nids_from_tid($tag_ids, $node_types, $pager, $range, $sec, $flat_tags, $node->nid);
+        // Setting the cache for 12 hours.
+        cache_set("category_recipe_section_cache" . $node->nid, $term_node_ids, 'categorypg-cache', time() + 3600 * TI_AMG_FWRD_CATEGORY_CACHE_EXPIRE_HOURS);
+      }
+      else {
+        // Fetching the cached category recipe section nids.
+        $term_node_ids = $category_recipe_section_cache->data;
+      }
+    }
+  }
+  if (!empty($term_node_ids)) {
+    $touts_count = count($term_node_ids);
+    if (!empty($section) && $section == 'recipe' && count($term_node_ids) >= 3) {
+      $output = ti_amg_fwrd_category_construct_touts($term_node_ids);
+    }
+    elseif (!empty($section) && $section == 'latest') {
+      $output = ti_amg_fwrd_category_construct_touts($term_node_ids);
+    }
+    else {
+      $output = '';
+    }
+  }
+  if (!empty($output) && count($output) > 0) {
+    if (!empty($section) && $section == 'latest') {
+      drupal_add_js(array('tout_row_count_latest' => count($output)), array('type' => 'setting'));
+    }
+    if (!empty($section) && $section == 'recipe') {
+      drupal_add_js(array('tout_row_count_recipe' => count($output)), array('type' => 'setting'));
+    }
+    $category_content_touts = theme('tag-tout-list', array(
+      'touts' => $output,
+      'title' => $section_title,
+      'type' => $section,
+      'touts_count' => $touts_count,
+      'nojs_seemore_link' => $term_path_alias,
+    ));
+  }
+  return $category_content_touts;
+}
+
+/**
+ * To construct taxonomy term page tout section.
+ */
+function ti_amg_fwrd_category_get_touts_by_term($tid) {
+  $category_content_touts = '';
+  $term_node_ids = array();
+  $node_types = array('blog', 'article', 'gallery', 'recipe', 'video');
+  $pager = TI_AMG_FWRD_CATEGORY_TERM_PAGE_TOUT_RANGE;
+  $range = '';
+  $sec = 'termpage';
+  $cnid = '';
+  $term_node_ids = ti_amg_fwrd_category_get_latest_nids_from_tid(array($tid), $node_types, $pager, $range, $sec, array(), $cnid);
+  $output = ti_amg_fwrd_category_construct_touts($term_node_ids);
+  if (!empty($output) && count($output) > 0) {
+    $category_content_touts = theme('tag-tout-list', array(
+      'touts' => $output,
+      'type' => 'page',
+    ));
+  }
+  else {
+    $category_content_touts = t('There is currently no content associated with this term.');
+  }
+  return $category_content_touts;
+}
+
+/**
+ * Constructing touts for the required $term_node_ids.
+ */
+function ti_amg_fwrd_category_construct_touts($term_node_ids = array()) {
+  $term_content_item = array();
+  $output = array();
+  $list_touts = '';
+  $story_card_content = '';
+  if (!empty($term_node_ids) && count($term_node_ids) > 0) {
+    $image_style = LATEST_STORIES_SMALL_TOUT_STYLE;
+    $count_row = 0;
+    foreach ($term_node_ids as $term_node_id) {
+      $term_content_item[] = _ti_amg_fwrd_landing_page_get_content($term_node_id, $image_style);
+    }
+    if (!empty($term_content_item) && count($term_node_ids) > 0) {
+      $latest_section_chunks = array_chunk($term_content_item, 3);
+      foreach ($latest_section_chunks as $row => $chunk) {
+        $count_row++;
+        $count_tout = 0;
+        $output[$row] = '';
+        foreach ($chunk as $item) {
+          $count_tout++;
+          $output[$row] .= theme('story-card', array(
+            'type' => 'feature',
+            'title' => $item['title'],
+            'url' => $item['url'],
+            'is_video' => $item['is_video'],
+            'image_url' => $item['image']['uri'],
+            'image_alt' => $item['title'],
+            'tags' => $item['tag'],
+            'classes_list' => 'grid-3-up__item',
+          ));
+          if ($count_tout == 3 && $count_row == 1) {
+            $output[$row] .= '<div id="phone-tablet-lazy-load-first-ad-holder" class="ad ad--300x600"></div>';
+          }
+          if ($count_tout == 3 && $count_row == 2) {
+            $output[$row] .= '<div id="phone-tablet-lazy-load-ad-holder" class="ad ad--300x600"></div>';
+          }
+        }
+      }  
+    }   
+  }
+  return $output;
+}
+
+/**
+ * To get Category page NIDs from the tagged category TIDs.
+ *
+ * @param array $tids
+ *   TIDs of category taxonomy.
+ *
+ * @return array
+ *   NIDs and respective term names tagged to those NIDs.
+ */
+function ti_amg_fwrd_category_get_nids_from_tids($tids = array()) {
+  $nids = array();
+  if (!empty($tids)) {
+    $query = db_select('node', 'node');
+    $query->fields('node', array('nid'));
+    $query->leftJoin('field_data_field_fw_category', 'fw_category', 'fw_category.entity_id = node.nid');
+    $query->leftjoin('taxonomy_term_data', 'td', 'td.tid = fw_category.field_fw_category_tid');
+    $query->leftJoin('publication_date', 'pd', 'pd.nid = node.nid');
+
+    $query->fields('td', array('tid', 'name'));
+    $query->condition('node.status', '1', '=');
+    $query->condition('fw_category.field_fw_category_tid', $tids, 'IN');
+    $query->condition('fw_category.bundle', 'category', '=');
+    $query->orderBy('pd.published_at', 'DESC');
+    // $query->condition('td.tid', $tid, '=');.
+    $result = $query->execute()->fetchAll();
+
+    if (!empty($result)) {
+      foreach ($result as $row_item) {
+        $nids[$row_item->tid]['nid'] = $row_item->nid;
+        $nids[$row_item->tid]['name'] = $row_item->name;
+      }
+    }
+  }
+
+  return $nids;
+}
+
+/**
+ * To get the details of selected hero node.
+ *
+ * @param object $hero_node
+ *   Node object.
+ *
+ * @return array
+ *   hero section details.
+ */
+function ti_amg_fwrd_category_get_hero_section_details($hero_node) {
+  global $heroSectionIsVideo;
+  $heroSectionIsVideo = FALSE;
+  $device = _ti_amg_fwrd_custom_getuseragent();
+  $hero_content = array();
+  if ($hero_node->type == 'video') {
+    $hero_content = _ti_amg_fwrd_homepage_getvideo_details($hero_node);
+    if (isset($hero_content['video_id'])) {
+      $heroSectionIsVideo = TRUE;
+      $hero_content['video'] = _ti_amg_fwrd_custom_get_html5_video($hero_content['video_id'], $device, 'category');
+      $hero_content['video_details'] = ti_amg_fwrd_custom_get_videoinfo_by_vid($hero_content['video_id']);
+      if (!empty($hero_content['video_details']['video_duration'])) {
+        $hero_content['video_details']['video_duration'] = ti_amg_fwrd_category_get_video_duration_format($hero_content['video_details']['video_duration']);
+      }
+    }
+  }
+  else {
+    $hero_content = ti_amg_fwrd_custom_get_content($hero_node, LARGE_VIDEO_TOUT_STYLE);
+  }
+  return $hero_content;
+}
+
+/**
+ * Callback function for hero section.
+ *
+ * @param object $node
+ *   Node Object.
+ *
+ * @return array
+ *   Rendered array of hero section.
+ */
+function ti_amg_fwrd_category_get_hero_section($node) {
+  $hero_content = ti_amg_fwrd_category_hero_section_manual($node);
+  if ($hero_content['overriden'] == FALSE && $hero_content['dynamic'] == TRUE) {
+    $hero_content = ti_amg_fwrd_category_hero_section_dynamic($node);
+  }
+  if (isset($hero_content) && !empty($hero_content)) {
+    if (isset($hero_content['video'])) {
+      return theme('hero-section-video', array('hero_content' => $hero_content));
+    }
+    else {
+      if (isset($hero_content['hero_image']['uri'])) {
+        $hero_content['image']['uri'] = $hero_content['hero_image']['uri'];
+      }
+      return theme('story-card', array(
+        'title' => $hero_content['title'],
+        'is_video' => isset($hero_content['is_video']) ? $hero_content['is_video'] : FALSE,
+        'text' => $hero_content['deck'],
+        'url' => $hero_content['url'],
+        'image_url' => isset($hero_content['overriden_image_path']) ? $hero_content['overriden_image_path'] : $hero_content['image']['uri'],
+        'image_alt' => $hero_content['title'],
+        'classes_list' => 'story-card-category',
+      ));
+    }
+  }
+  else {
+    return '';
+  }
+}
+
+/**
+ * To pull the Manual overriden values of hero section.
+ *
+ * @param object $node
+ *   Node object.
+ *
+ * @return array
+ *   hero section details.
+ */
+function ti_amg_fwrd_category_hero_section_manual($node) {
+  global $_ti_amg_fwrd_category_hero_section_nid, $_ti_amg_fwrd_category_nids_exempted;
+  $hero_content = array();
+  $hero_content['overriden'] = FALSE;
+  $hero_content['dynamic'] = TRUE;
+  // Taking if Manual overriden selected node.
+  if (isset($node->field_hero_section_content) &&
+      !empty($node->field_hero_section_content[LANGUAGE_NONE])) {
+    $manual_selected_entity = $node->field_hero_section_content[LANGUAGE_NONE][0]['entity'];
+    if (!empty($manual_selected_entity)) {
+      $_ti_amg_fwrd_category_hero_section_nid = $manual_selected_entity->nid;
+      $_ti_amg_fwrd_category_nids_exempted[] = $manual_selected_entity->nid;
+    }
+    $hero_content = ti_amg_fwrd_category_get_hero_section_details($manual_selected_entity);
+    $hero_content['overriden'] = TRUE;
+  }
+
+  // Taking hero section title.
+  if (isset($node->field_override_link_content) &&
+      !empty($node->field_override_link_content[LANGUAGE_NONE])) {
+    if ($node->field_override_link_content[LANGUAGE_NONE][0]['title'] !=
+        $node->field_override_link_content[LANGUAGE_NONE][0]['url']) {
+      $hero_content['title'] = $node->field_override_link_content[LANGUAGE_NONE][0]['title'];
+      $hero_content['overriden'] = TRUE;
+    }
+  }
+
+  // Taking hero section url.
+  if (isset($node->field_override_link_content) &&
+      !empty($node->field_override_link_content[LANGUAGE_NONE][0]['url'])) {
+    $hero_content['url'] = $node->field_override_link_content[LANGUAGE_NONE][0]['url'];
+    $hero_content['overriden'] = TRUE;
+  }
+
+  // Taking hero section deck.
+  if (isset($node->field_deck) &&
+      !empty($node->field_deck[LANGUAGE_NONE])) {
+    $hero_content['deck'] = ti_amg_fwrd_custom_get_field_value('node', $node, 'field_deck');
+    $hero_content['overriden'] = TRUE;
+  }
+
+  // Taking hero section image.
+  if (isset($node->field_hero_image) &&
+      !empty($node->field_hero_image[LANGUAGE_NONE])) {
+    $override_img_nid = $node->field_hero_image[LANGUAGE_NONE][0]['target_id'];
+    $override_img_content = _ti_amg_fwrd_feature_get_image($override_img_nid, LARGE_VIDEO_TOUT_STYLE);
+    $hero_content['overriden_image_path'] = $override_img_content['uri'];
+    $hero_content['overriden'] = TRUE;
+  }
+
+  return $hero_content;
+}
+
+/**
+ * To get latest gallery or video for current loaded node category.
+ *
+ * @param object $node
+ *   Current loaded node object.
+ *
+ * @return array
+ *   hero section details.
+ */
+function ti_amg_fwrd_category_hero_section_dynamic($node) {
+  global $_ti_amg_fwrd_category_hero_section_nid, $_ti_amg_fwrd_category_nids_exempted;
+  $hero_content = '';
+  $cat_children_tids = array();
+  $tid = ti_amg_fwrd_category_get_category_tid($node);
+  $content_types = array('gallery', 'video');
+  $range = 1;
+  $pager = '';
+  $sec = 'hero';
+  $vid = ti_amg_fwrd_category_get_term_vid($tid);
+  // Get tids from FW tags field.
+  $flat_tags = ti_amg_fwrd_category_get_fw_tags_tids($node, $sec);
+  $cat_children_tids = array_keys(ti_amg_fwrd_category_taxonomy_get_children_all($tid, $vid));
+  if (!empty($cat_children_tids)) {
+    $tag_ids = array_merge(array($tid), $cat_children_tids);
+  }
+  else {
+    $tag_ids = array($tid);
+  }
+  // To get cached category hero section nid.
+  $category_hero_section_cache = cache_get("category_hero_section_cache" . $node->nid, 'categorypg-cache');
+  if (!$category_hero_section_cache || empty($category_hero_section_cache->data)) {
+    // If no cache, getting data from below function.
+    $hero_nid = ti_amg_fwrd_category_get_latest_nids_from_tid($tag_ids, $content_types, $pager, $range, $sec, $flat_tags, $node->nid);
+    // Setting the cache for 12 hours.
+    cache_set("category_hero_section_cache" . $node->nid, $hero_nid, 'categorypg-cache', time() + 3600 * TI_AMG_FWRD_CATEGORY_CACHE_EXPIRE_HOURS);
+  }
+  else {
+    // Fetching the cached category hero section nid.
+    $hero_nid = $category_hero_section_cache->data;
+  }
+  if (!empty($hero_nid)) {
+    $_ti_amg_fwrd_category_hero_section_nid = $hero_nid;
+    $hero_node = node_load($hero_nid[0]);
+    $_ti_amg_fwrd_category_nids_exempted[] = $hero_nid[0];
+    $hero_content = ti_amg_fwrd_category_get_hero_section_details($hero_node);
+  }
+  else {
+    $content_types = array('blog', 'article');
+    // To get cached category hero section nid.
+    $category_hero_section_cache = cache_get("category_hero_section_cache" . $node->nid, 'categorypg-cache');
+    if (!$category_hero_section_cache || empty($category_hero_section_cache->data)) {
+      // If no cache, getting data from below function.
+      $hero_nid = ti_amg_fwrd_category_get_latest_nids_from_tid($tag_ids, $content_types, $pager, $range, $sec, $flat_tags, $node->nid);
+      // Setting the cache for 12 hours.
+      cache_set("category_hero_section_cache" . $node->nid, $hero_nid, 'categorypg-cache', time() + 3600 * TI_AMG_FWRD_CATEGORY_CACHE_EXPIRE_HOURS);
+    }
+    else {
+      // Fetching the cached category hero section nid.
+      $hero_nid = $category_hero_section_cache->data;
+    }
+    if (!empty($hero_nid)) {
+      $_ti_amg_fwrd_category_hero_section_nid = $hero_nid;
+      $hero_node = node_load($hero_nid[0]);
+      $_ti_amg_fwrd_category_nids_exempted[] = $hero_nid[0];
+      $hero_content = ti_amg_fwrd_category_get_hero_section_details($hero_node);
+    }
+  }
+
+  return $hero_content;
+}
+
+/**
+ * To get category TID of a node.
+ *
+ * @param object $node
+ *   Node object.
+ *
+ * @return string
+ *   Category TID of a node.
+ */
+function ti_amg_fwrd_category_get_category_tid($node) {
+  if (isset($node->field_fw_category[LANGUAGE_NONE])) {
+    $tid = $node->field_fw_category[LANGUAGE_NONE][0]['tid'];
+  }
+
+  return isset($tid) ? $tid : '';
+}
+
+/**
+ * To get category TID of a UT article node.
+ *
+ * @param object $node
+ *   Node object.
+ *
+ * @return string
+ *   Category TID of a node.
+ */
+function ti_amg_fwrd_category_get_category_article_tid($node) {
+  if (isset($node->field_category[LANGUAGE_NONE])) {
+    $tid = $node->field_category[LANGUAGE_NONE][0]['tid'];
+  }
+  return isset($tid) ? $tid : '';
+}
+
+/**
+ * To get taxonomy term name from TID.
+ *
+ * @param string $tid
+ *   Taxonomy term id.
+ *
+ * @return string
+ *   term name of tid.
+ */
+function ti_amg_fwrd_category_get_term_name($tid) {
+  if ($tid != '') {
+    $term = taxonomy_term_load($tid);
+    if (!empty($term)) {
+      $term_name = $term->name;
+    }
+  }
+  return isset($term_name) ? $term_name : '';
+}
+
+/**
+ * To get taxonomy term VID from TID.
+ *
+ * @param string $tid
+ *   Taxonomy term id.
+ *
+ * @return string
+ *   term vid.
+ */
+function ti_amg_fwrd_category_get_term_vid($tid) {
+  if ($tid != '') {
+    $term = taxonomy_term_load($tid);
+    if (!empty($term)) {
+      $term_vid = $term->vid;
+    }
+  }
+  return !empty($term_vid) ? $term_vid : '';
+}
+
+/**
+ * To get category TID of a node.
+ *
+ * @param object $node
+ *   Node object.
+ *
+ * @return array
+ *   FW Tags TIDs of a node.
+ */
+function ti_amg_fwrd_category_get_fw_tags_tids($node, $section) {
+  $fw_tags_ids = array();
+  if ($section == 'recipe') {
+    if (!empty($node->field_recipe_fw_tags[LANGUAGE_NONE]) && count($node->field_recipe_fw_tags[LANGUAGE_NONE]) > 0) {
+      foreach ($node->field_recipe_fw_tags[LANGUAGE_NONE] as $fwtags) {
+        if (!empty($fwtags['tid'])) {
+          $fw_tags_ids[] = $fwtags['tid'];
+        }
+      }
+    }
+  }
+  else {
+    if (!empty($node->field_fw_tags[LANGUAGE_NONE]) && count($node->field_fw_tags[LANGUAGE_NONE]) > 0) {
+      foreach ($node->field_fw_tags[LANGUAGE_NONE] as $fwtags) {
+        if (!empty($fwtags['tid'])) {
+          $fw_tags_ids[] = $fwtags['tid'];
+        }
+      }
+    }
+  }
+  return !empty($fw_tags_ids) ? $fw_tags_ids : array();
+}
+
+/**
+ * To get latest nodes which are mapped to particular TID.
+ *
+ * @param array $tid
+ *   Category TID value.
+ * @param array $node_types
+ *   What content types we require.
+ * @param string $pager
+ *   Pager value.
+ * @param string $range
+ *   The range of nodes list.
+ * @param string $sec
+ *   Section name.
+ *
+ * @return array
+ *   array of nids.
+ */
+function ti_amg_fwrd_category_get_latest_nids_from_tid($tid = array(), $node_types = array(), $pager = NULL, $range = NULL, $sec = NULL, $flat_tags = array(), $cnid = NULL) {
+  global $_ti_amg_fwrd_category_nids_exempted, $_ti_amg_fwrd_category_nids_exempted,$exclude_latest_term_ids;
+  $nids = array();
+  if (!empty($tid)) {
+    if (((!empty($sec)) && ($sec == 'latest' || $sec == 'recipe' || $sec == 'hero'))) {
+      $query = db_select('node', 'n');
+      $query->leftjoin('field_data_field_fw_category', 'fw_category', 'fw_category.entity_id = n.nid');
+      $query->leftjoin('field_data_field_fw_tags', 'fw_tags', 'fw_tags.entity_id = n.nid');
+      $or = db_or();
+      $or->condition('fw_category.field_fw_category_tid', $tid, 'IN');
+      $or->condition('fw_tags.field_fw_tags_tid', $tid, 'IN');
+      $query->condition($or);
+    }
+    else {
+      $query = db_select('node', 'n')->extend('PagerDefault');
+      $query->leftjoin('field_data_field_fw_category', 'fw_category', 'fw_category.entity_id = n.nid');
+      $or = db_or();
+      $or->condition('fw_category.field_fw_category_tid', $tid, 'IN');
+      $query->condition($or);
+    }
+    if (!empty($flat_tags)) {
+      $query->leftjoin('field_data_field_fw_tags', 'fw_tags', 'fw_tags.entity_id = n.nid');
+      $query->condition('fw_tags.field_fw_tags_tid', $flat_tags, 'IN');
+    }
+    $query->leftJoin('publication_date', 'pub_date', 'pub_date.nid = n.nid');
+    // Excluding hero tout content nid for the latest section.
+    if ((!empty($_ti_amg_fwrd_category_hero_section_nid)) && (!empty($sec) && $sec == 'latest')) {
+      $query->condition('n.nid', $_ti_amg_fwrd_category_hero_section_nid, '<>');
+    }
+    // Excluding the category page contents in the paginated pages.
+    if ((!empty($_ti_amg_fwrd_category_nids_exempted)) && $sec == 'termpage') {
+      $query->condition('n.nid', $_ti_amg_fwrd_category_nids_exempted, 'NOT IN');
+    }
+    // Excluding nodes which is already available in latest secetion.
+    if ((!empty($exclude_latest_term_ids)) && (!empty($sec) && $sec == 'recipe')) {
+      $query->condition('n.nid', $exclude_latest_term_ids, 'NOT IN');
+    }
+    $query->fields('n', array('nid'));
+    $query->condition('n.type', $node_types, 'IN');
+    $query->condition('n.status', '1', '=');
+    $query->groupBy('n.nid');
+    $query->orderBy('pub_date.published_at', 'DESC');
+    if (!empty($pager)) {
+      $query->limit($pager);
+    }
+    if (!empty($range)) {
+      $query->range(0, $range);
+    }
+    $results = $query->execute()->fetchAll();
+    if (!empty($results) && count($results) > 0) {
+      foreach ($results as $result) {
+        $nids[] = $result->nid;
+      }
+      if ($sec == 'latest' || $sec == 'recipe') {
+        $_ti_amg_fwrd_category_nids_exempted = array_merge($_ti_amg_fwrd_category_nids_exempted, $nids);
+        if ($sec == 'recipe' && !empty($_ti_amg_fwrd_category_nids_exempted) && !empty($cnid)) {
+          // Setting the cache for 12 hours.
+          cache_set("category_lpg_nids_cache" . $cnid, $_ti_amg_fwrd_category_nids_exempted, 'categorypg-cache', time() + 3600 * TI_AMG_FWRD_CATEGORY_CACHE_EXPIRE_HOURS);
+        }
+      }
+    }
+  }
+  return $nids;
+}
+
+/**
+ * Altering the entity query and adding fw_tags check.
+ */
+function ti_amg_fwrd_category_query_fwtags_alter(QueryAlterableInterface $query) {
+  $tids = $query->getMetaData('tids');
+  $query->leftjoin('field_data_field_fw_category', 'fw_category', 'fw_category.entity_id = node.nid');
+  $query->leftjoin('field_data_field_fw_tags', 'fw_tags', 'fw_tags.entity_id = node.nid');
+  $or = db_or();
+  $or->condition('fw_category.field_fw_category_tid', $tids, 'IN');
+  $or->condition('fw_tags.field_fw_tags_tid', $tids, 'IN');
+  $query->condition($or);
+}
+
+/**
+ * Callback function for Text Links Section.
+ *
+ * @param object $node
+ *   Current Loaded node object.
+ *
+ * @return array
+ *   Rendered array of text link section.
+ */
+function ti_amg_fwrd_category_get_text_link_section($node) {
+  $enable_section = FALSE;
+  // Checking the text link module section is enabled or not in the node object.
+  if (!empty($node->field_enable_section) &&
+      $node->field_enable_section[LANGUAGE_NONE][0]['value'] == 1) {
+    $enable_section = TRUE;
+  }
+  if ($enable_section) {
+    $text_links = array();
+    $tid = ti_amg_fwrd_category_get_category_tid($node);
+    $term_name = ti_amg_fwrd_category_get_term_name($tid);
+    if (!empty($node->field_related_content_title)) {
+      $title = $node->field_related_content_title[LANGUAGE_NONE][0]['value'];
+    }
+    else {
+      $title = 'More ' . $term_name;
+    }
+    $childrens = ti_amg_fwrd_category_taxonomy_get_children_all($tid);
+    // Giving siblings for grand children and great grand children.
+    // If those are not having sub childrens.
+    $parents = taxonomy_get_parents_all($tid);
+    if (count($parents) >= 3 && empty($childrens)) {
+      // It will satisfy only for grand children or great grand childrens.
+      $immediate_parent_tid = $parents[1]->tid;
+      $siblings = taxonomy_get_children($immediate_parent_tid);
+      if (count($siblings) > 1) {
+        // Means it has some sibligs to current tid.
+        // Removing the current item.
+        unset($siblings[$tid]);
+        $childrens = $childrens + $siblings;
+      }
+    }
+
+    if (!empty($childrens)) {
+      $taxnomy_tree_tids = array_keys($childrens);
+      $nids = ti_amg_fwrd_category_get_nids_from_tids($taxnomy_tree_tids);
+      $text_links = ti_amg_fwrd_category_get_category_page_paths($nids);
+    }
+    // If any child category pages available.
+    if (!empty($text_links)) {
+      $text_link_chunks = array_chunk($text_links, 3);
+      foreach ($text_link_chunks as $row => $chunk) {
+        $output[$row] = theme('text-link-row', array(
+          'tags' => $chunk,
+        ));
+      }
+      return theme('text-links', array(
+        'text_links' => $output,
+        'title' => $title,
+      ));
+    }
+    // If not child category pages available.
+    else {
+      return '';
+    }
+  }
+  else {
+    return '';
+  }
+}
+
+/**
+ * To get top level parent term id of a TID.
+ *
+ * @param string $tid
+ *   Taxnomy term id.
+ *
+ * @return string
+ *   Parent taxnomy term id.
+ */
+function ti_amg_fwrd_category_to_get_top_level_parent_tid($tid) {
+  $parents = taxonomy_get_parents_all($tid);
+  if (!empty($parents)) {
+    $terms_tree = array_reverse($parents);
+    $parent_tid = $terms_tree[0]->tid;
+  }
+  return isset($parent_tid) ? $parent_tid : '';
+}
+
+/**
+ * To get children TIDs of particular TID.
+ *
+ * @param string $tid
+ *   Taxonomy Term ID.
+ * @param string $vid
+ *   Vocabulary ID.
+ * @param string $key
+ *   Key value.
+ *
+ * @return array
+ *   array of TIDs.
+ */
+function ti_amg_fwrd_category_taxonomy_get_children_all($tid, $vid = 0, $key = 'tid') {
+  $c = taxonomy_get_children($tid, $vid, $key);
+  $result = array();
+  foreach ($c as $t => $d) {
+    $result[$t] = $d;
+    $below = ti_amg_fwrd_category_taxonomy_get_children_all($t, $vid, $key);
+    if (!empty($below)) {
+      foreach ($below as $nt => $nd) {
+        $result[$nt] = $nd;
+      }
+    }
+  }
+  return $result;
+}
+
+/**
+ * To get page title and deck.
+ *
+ * @param object $node
+ *   Node object.
+ *
+ * @return array
+ *   rendered array of header.
+ */
+function ti_amg_fwrd_category_get_header($node) {
+  $title = $node->title;
+  $deck = '';
+  $show_more = FALSE;
+  if (isset($node->body[LANGUAGE_NONE])) {
+    $deck = ti_amg_fwrd_custom_get_field_value('node', $node, 'body');
+    if (strlen($deck['#markup']) > 185) {
+      $show_more = TRUE;
+    }
+  }
+  return theme('category-header', array(
+    'title' => $title,
+    'deck' => $deck,
+    'show_more' => $show_more,
+  ));
+}
+
+/**
+ * To get video duration as per schema format.
+ *
+ * @param string $video_duration
+ *   Video duration.
+ *
+ * @return string
+ *   Formatted video duration.
+ */
+function ti_amg_fwrd_category_get_video_duration_format($video_duration = NULL) {
+  $output = '';
+  if (!empty($video_duration)) {
+    $vid_duration_seconds = floor($video_duration / 1000);
+    $video_duration_time = formatSeconds($vid_duration_seconds);
+    $video_time_arr = explode(':', $video_duration_time);
+    $hrs = ($video_time_arr[0] > 0) ? (int) $video_time_arr[0] . 'H' : '';
+    $mints = ($video_time_arr[1] > 0) ? (int) $video_time_arr[1] . 'M' : '';
+    $secs = ($video_time_arr[2] > 0) ? (int) $video_time_arr[2] . 'S' : '';
+    $output = 'T' . $hrs . $mints . $secs;
+  }
+  return $output;
+}
+
+/**
+ * To get term title and deck.
+ *
+ * @param object $term
+ *   TERM object.
+ *
+ * @return array
+ *   rendered array of header.
+ */
+function ti_amg_fwrd_category_get_term_header($term) {
+  if (!empty($term)) {
+    $title = $term->name;
+    $deck = '';
+    $show_more = FALSE;
+    if (!empty($term->description)) {
+      $deck = $term->description;
+      if (strlen($deck) > 185) {
+        $show_more = TRUE;
+      }
+    }
+    return theme('category-header', array(
+      'title' => $title,
+      'deck' => $deck,
+      'show_more' => $show_more,
+    ));
+  }
+  else {
+    return '';
+  }
+}
+
+/**
+ * Callback for sf_pager().
+ */
+function theme_sf_pager($variables) {
+  $tags = $variables['tags'];
+  $element = $variables['element'];
+  $parameters = $variables['parameters'];
+  $quantity = $variables['quantity'];
+  global $pager_page_array, $pager_total;
+  $tags = array("chicken");
+
+  // Calculate various markers within this pager piece:
+  // Middle is used to "center" pages around the current page.
+  $pager_middle = ceil($quantity / 2);
+  // Current is the page we are currently paged to.
+  $pager_current = $pager_page_array[$element] + 1;
+  // First is the first page listed by this pager piece (re quantity).
+  $pager_first = $pager_current - $pager_middle + 1;
+  // Last is the last page listed by this pager piece (re quantity).
+  $pager_last = $pager_current + $quantity - $pager_middle;
+  // Max is the maximum page number.
+  $pager_max = $pager_total[$element];
+  // End of marker calculations.
+  // Prepare for generation loop.
+  $i = $pager_first;
+  if ($pager_last > $pager_max) {
+    // Adjust "center" if at end of query.
+    $i = $i + ($pager_max - $pager_last);
+    $pager_last = $pager_max;
+  }
+  if ($i <= 0) {
+    // Adjust "center" if at start of query.
+    $pager_last = $pager_last + (1 - $i);
+    $i = 1;
+  }
+  // End of generation loop preparation.
+  $li_first = theme('pager_first',
+    array(
+      'text' => (isset($tags[0]) ? $tags[0] :
+    t('« first')),
+      'element' => $element,
+      'parameters' => $parameters,
+    ));
+  $li_previous = theme('pager_previous',
+   array(
+     'text' => (isset($tags[1]) ? $tags[1] :
+     t('‹ previous')),
+     'element' => $element,
+     'interval' => 1,
+     'parameters' => $parameters,
+   ));
+  $li_next = theme('pager_next',
+   array(
+     'text' => (isset($tags[3]) ? $tags[3] :
+   t('next ›')),
+     'element' => $element,
+     'interval' => 1,
+     'parameters' => $parameters,
+   ));
+  $li_last = theme('pager_last',
+   array(
+     'text' => (isset($tags[4]) ? $tags[4] :
+     t('last »')),
+     'element' => $element,
+     'parameters' => $parameters,
+   ));
+
+  if ($pager_total[$element] > 1) {
+    if ($li_previous) {
+      $items[] = array(
+        'class' => array('pager-previous'),
+        'data' => $li_previous,
+      );
+    }
+
+    // When there is more than one page, create the pager list.
+    if ($i != $pager_max) {
+      if ($i > 1) {
+        $items[] = array(
+          'class' => array('pager-ellipsis'),
+          'data' => '…',
+        );
+      }
+      // Now generate the actual pager piece.
+      for (; $i <= $pager_last && $i <= $pager_max; $i++) {
+        if ($i < $pager_current) {
+          $items[] = array(
+            'class' => array('pager-item'),
+            'data' => theme('pager_previous',
+             array(
+               'text' => $i,
+               'element' => $element,
+               'interval' => ($pager_current - $i),
+               'parameters' => $parameters,
+             )),
+          );
+        }
+        if ($i == $pager_current) {
+          $items[] = array(
+            'class' => array('pager-current'),
+            'data' => $i,
+          );
+        }
+        if ($i > $pager_current) {
+          $items[] = array(
+            'class' => array('pager-item'),
+            'data' => theme('pager_next',
+             array(
+               'text' => $i,
+               'element' => $element,
+               'interval' => ($i - $pager_current),
+               'parameters' => $parameters,
+             )),
+          );
+        }
+      }
+      if ($i < $pager_max) {
+        $items[] = array(
+          'class' => array('pager-ellipsis'),
+          'data' => '…',
+        );
+      }
+    }
+    // End generation.
+    if ($li_next) {
+      $items[] = array(
+        'class' => array('pager-next'),
+        'data' => $li_next,
+      );
+    }
+    return theme('item_list', array(
+      'items' => $items,
+      'attributes' => array('class' => array('pager')),
+    ));
+  }
+}
+
+/**
+ * Same as pager_default_initialize except $page is passed as a param.
+ */
+function _ti_amg_fwrd_category_pager_default_initialize($total, $limit, $element = 0, $page = 1) {
+  global $pager_page_array, $pager_total, $pager_total_items, $pager_limits;
+  $pager_total_items[$element] = $total;
+  $pager_total[$element] = ceil($pager_total_items[$element] / $limit);
+  $pager_page_array[$element] = max(0, min($page, ((int) $pager_total[$element]) - 1));
+  $pager_limits[$element] = $limit;
+
+  return $pager_page_array[$element];
+}
+
+/**
+ * Call back function for category pagination.
+ *
+ * @param array $tids
+ *   Terms IDs.
+ * @param array $node_types
+ *   Node types to display in the category pagination.
+ *
+ * @return array
+ *   Rendered array of paginated content.
+ */
+function ti_amg_fwrd_category_get_pagination_content($tids, $node_types) {
+  global $total_paginated_items;
+  $range = TI_AMG_FWRD_CATEGORY_TERM_PAGE_TOUT_RANGE;
+  $current_page = ti_amg_fwrd_category_get_page_number();
+  $term_node_ids = ti_amg_fwrd_category_paginated_items($tids, $node_types, $range, $current_page, FALSE);
+  $output = ti_amg_fwrd_category_construct_touts($term_node_ids);
+  if (!empty($output) && count($output) > 0) {
+    $category_content_touts = theme('tag-tout-list', array(
+      'touts' => $output,
+      'type' => 'page',
+    ));
+  }
+  else {
+    $category_content_touts = t('There is currently no content associated with this term.');
+  }
+  // Making the custom pager for category pages.
+  _ti_amg_fwrd_category_pager_default_initialize($total_paginated_items + $range, $range, 0, $current_page - 1);
+
+  return $category_content_touts;
+}
+
+/**
+ * Function to get category paginated items.
+ *
+ * @param array $tids
+ *   Array of taxonomy id's.
+ * @param array $types
+ *   Array of content types.
+ * @param string $range
+ *   How many number of items to fetch.
+ * @param string $current_page
+ *   To know on which page we are landing.
+ *
+ * @return mixed
+ *   when $range = 0, it will return the total number of item count.
+ *   when $range != 0, it will give the nids as per the range.
+ */
+function ti_amg_fwrd_category_paginated_items($tids, $types, $range, $current_page, $sitemap = FALSE) {
+  $cnid = arg(1);
+  // To get the category landing page nids to exempt.
+  $clpg_nids_cache = cache_get('category_lpg_nids_cache'.$cnid, 'categorypg-cache');
+  if ($clpg_nids_cache && !empty($clpg_nids_cache->data)) {
+    $category_nids_exempted = $clpg_nids_cache->data;
+  }
+  else {
+    $category_nids_exempted = array();
+  }
+  if (!empty($tids)) {
+    $tids_list = implode("-", $tids);
+    if ($range == 0) {
+      $cache = cache_get('cache-home-'.$cnid.'-'.$range.'-'.$current_page, 'cache-home');
+    }
+    else {
+      $curr_page = $current_page - 2;
+      $cache = cache_get('cache-home-'.$cnid.'-'.$range.'-'.$curr_page, 'cache-home');
+    }
+    if (!$cache || empty($cache->data)) {
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'node');
+      $query->entityCondition('bundle', $types);
+      $query->addTag('publication_date_desc');
+      $query->addTag('category');
+      $query->addMetaData('tids', $tids);
+      // Excluding the category page contents in the paginated pages.
+      if ((!empty($category_nids_exempted))) {
+        $query->propertyCondition('nid', $category_nids_exempted, 'NOT IN');
+      }
+      $query->propertyCondition('status', 1);
+
+      if ($range != 0) {
+        if ($sitemap == TRUE) {
+          $current_page = $current_page - 1;
+        }
+        else {
+          $current_page = $current_page - 2;
+        }
+        $query->range($current_page * $range, $range);
+      }
+      $result = $query->execute();
+      if (isset($result['node'])) {
+        $nids = array_keys($result['node']);
+        cache_set('cache-home-'.$cnid.'-'.$range.'-'.$current_page, $nids, 'cache-home', time() + 3600 * TI_AMG_FWRD_CATEGORY_CACHE_EXPIRE_HOURS);
+      }
+    }
+    else {
+      $nids = $cache->data;
+    }
+  }
+  if ($range == 0) {
+    return count($nids);
+  }
+  else {
+    return $nids;
+  }
+}
+
+/**
+ * Altering the query for category field.
+ */
+function ti_amg_fwrd_category_query_category_alter(QueryAlterableInterface $query) {
+  $tids = $query->getMetaData('tids');
+  $query->leftjoin('field_data_field_fw_category', 'fw_category', 'fw_category.entity_id = node.nid');
+  $or = db_or();
+  $or->condition('fw_category.field_fw_category_tid', $tids, 'IN');
+  $query->condition($or);
+}
+
+/**
+ * To get category pagination number.
+ *
+ * @return string
+ *   page number of cateogry pagination.
+ */
+function ti_amg_fwrd_category_get_page_number() {
+  $current_page = 1;
+  if (count(arg()) > 2) {
+    $current_page = str_replace('page', '', arg(2));
+    if (is_numeric($current_page)) {
+      return $current_page;
+    }
+  }
+  return $current_page;
+}
+
+/**
+ * To get category pagination number.
+ *
+ * @return string
+ *   page number of cateogry pagination.
+ */
+function ti_amg_fwrd_category_get_current_page_number() {
+  $current_page = 1;
+
+  if (arg(0) == 'sitemap') {
+    if (count(arg()) > 2 && strpos(arg(2), 'page') !== FALSE) {
+      $current_page = str_replace('page', '', arg(2));
+      if (is_numeric($current_page)) {
+        return $current_page;
+      }
+    }
+    if (count(arg()) > 3 && strpos(arg(3), 'page') !== FALSE) {
+      $current_page = str_replace('page', '', arg(3));
+      if (is_numeric($current_page)) {
+        return $current_page;
+      }
+    }
+    if (count(arg()) > 4 && strpos(arg(4), 'page') !== FALSE) {
+      $current_page = str_replace('page', '', arg(4));
+      if (is_numeric($current_page)) {
+        return $current_page;
+      }
+    }
+    if (count(arg()) > 5 && strpos(arg(5), 'page') !== FALSE) {
+      $current_page = str_replace('page', '', arg(5));
+      if (is_numeric($current_page)) {
+        return $current_page;
+      }
+    }
+  }
+  return $current_page;
+}
+
+/**
+ * Get Nodes by term id.
+ */
+function ti_amg_fwrd_category_get_nodes_by_term($tid) {
+  global $base_url;
+  $category_content = array();
+  $term_node_ids = array();
+  $node_types = array('blog', 'article', 'gallery', 'recipe', 'video');
+  $current_page = ti_amg_fwrd_category_get_current_page_number();
+  $range = 100;
+
+  $term_node_ids = ti_amg_fwrd_category_paginated_items(array($tid), $node_types, $range, $current_page, TRUE);
+  $total_paginated_items = ti_amg_fwrd_category_paginated_items(array($tid), $node_types, 0, $current_page, TRUE);
+  $total_pages = ($total_paginated_items / $range);
+
+  _ti_amg_fwrd_category_pager_default_initialize($total_paginated_items, $range, 0, $current_page - 1);
+
+  $next = 'page' . ($current_page + 1);
+  $prev = 'page' . ($current_page - 1);
+
+  $path = current_path();
+
+  $prev_path = str_replace('page' . $current_page, $prev, $path);
+  $next_path = str_replace('page' . $current_page, $next, $path);
+
+  if ($current_page == 1) {
+    $prev_path = '';
+    $next_path = $path . '/' . $next;
+  }
+  else {
+    $prev_path = $base_url . '/' . $prev_path;
+  }
+  $rel_prev = array(
+    '#tag' => 'link',
+    '#attributes' => array(
+      'rel' => 'prev',
+      'href' => $prev_path,
+    ),
+  );
+  drupal_add_html_head($rel_prev, 'prev');
+
+  if ($current_page < (int) $total_pages) {
+    $next_path = $base_url . '/' . $next_path;
+    $rel_next = array(
+      '#tag' => 'link',
+      '#attributes' => array(
+        'rel' => 'next',
+        'href' => $next_path,
+      ),
+    );
+    drupal_add_html_head($rel_next, 'next');
+  }
+
+  if ($term_node_ids) {
+    $term_nodes = node_load_multiple($term_node_ids);
+    foreach ($term_nodes as $term_node) {
+      $title = $term_node->title;
+      $path = drupal_get_path_alias('node/' . $term_node->nid);
+      $category_content[] = l($title, $path);
+    }
+  }
+  else {
+    $category_content[] = 'There is currently no content associated with this term.';
+  }
+  return $category_content;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ *
+ * Let the system know where all our own plugins are.
+ */
+function ti_amg_fwrd_category_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_tgx_config_zone_NODE_TYPE_alter().
+ */
+function ti_amg_fwrd_category_tgx_config_zone_category_alter(&$settings, $node) {
+  $path = request_path($_GET['q']);
+  $category_array = explode('/',$path);
+  $first_category = reset($category_array);
+  $zone = '';
+  if (count($category_array) > 1) {
+    $last_category = end($category_array);
+    $zone = $first_category .'/'. $last_category;
+  }
+  else {
+    $zone .=  $first_category.'/main';
+  }
+  $settings['zone_value'] = $zone;
+}
+
+/**
+ * Implements hook_tgx_config_zone_NODE_TYPE_alter().
+ */
+function ti_amg_fwrd_category_tgx_config_channel_category_alter(&$settings, $node) {
+  $channel = arg(0, request_path());
+  $settings['channel_value'] = $channel;
+}

@@ -1,0 +1,66 @@
+/*-----------------------------------------------------------------------------
+ *-----------------------------------------------------------------------------
+ *
+ * FONT FACE
+ * 
+ * Define any @font-face declarations below. 
+ *
+ *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------- */
+
+@mixin font-droid-sans {
+  font-family: 'Droid Sans', sans-serif;
+}
+
+@mixin font-droid-sans-bold {
+  @include font-droid-sans;
+  font-weight: 700;
+}
+
+@mixin font-droid-serif {
+  font-family: 'Droid Serif', serif;
+}
+
+@mixin font-droid-serif-bold {
+  @include font-droid-serif;
+  font-weight: 700;
+}
+
+@mixin font-droid-serif-italic {
+  @include font-droid-serif;
+  font-weight: 400i;
+}
+
+
+
+
+@mixin font-brandon {
+  font-family: "brandon-grotesque";
+}
+
+@mixin font-leitura-news {
+  font-family: "leitura-news";
+}
+
+@mixin font-jaf-bernino-sans {
+  font-family: jaf-bernino-sans, Helvetica, sans-serif;  
+}
+
+@mixin font-brandon-bold {
+  @include font-brandon;
+  font-weight: 700;
+}
+
+@mixin font-body {
+  @include font-jaf-bernino-sans;
+}
+
+@mixin font-heading-primary {
+  @include font-leitura-news;
+  font-weight: 700;
+}
+
+@mixin font-heading-secondary {
+  @include font-brandon;
+  font-weight: 400;
+}

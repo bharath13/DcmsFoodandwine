@@ -1,0 +1,92 @@
+<?php
+
+/**
+ * @file
+ * ti_amg_tl_mobile_blocks.module
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fw_mobile_blocks_block_info() {
+// Enable the info for the block
+
+  $blocks['back_to_top'] = array(
+    'info' => t('Mobile: Back to Top'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['logo'] = array(
+    'info' => t('Mobile: T+L Logo'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['search'] = array(
+    'info' => t('Mobile: Search'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  
+  $blocks['mobile_search_filters'] = array(
+    'info' => t('Mobile: Search Filters'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  return $blocks;
+
+}
+
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fw_mobile_blocks_block_view($delta = '') {
+// assign the theme and return it
+
+  switch ($delta) {
+
+    case 'back_to_top':
+    case 'logo':
+    case 'mobile_search_filters':
+
+      $block['content'] = array(
+        '#markup' => theme($delta),
+      );
+
+      break;
+
+    case 'search':
+
+      $block['content'] = drupal_get_form('search_block_form');
+      // To make search box as autocomplete for mobile.
+      // This is only for search box on page header.
+      $block['content']['search_block_form']['#autocomplete_path'] = 'search_auto_suggestions';
+      break;
+
+  }
+ 
+  return $block;
+
+}
+
+
+/**
+ * Implements hook_block_theme().
+ */
+function ti_amg_fw_mobile_blocks_theme() {
+
+  return array(
+
+    'back_to_top' => array(
+      'template' => 'back_to_top',
+    ),
+
+    'logo' => array(
+      'template' => 'logo',
+    ),
+    
+    'mobile_search_filters' => array(
+      'template' => 'mobile_search_filters',
+    ),
+
+  );
+
+}

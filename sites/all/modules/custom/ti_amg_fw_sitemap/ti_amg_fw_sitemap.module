@@ -1,0 +1,299 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Site Map feature.
+ */
+
+define('FW_BRIGHTCOVE_PLAYER_ID', 4724779710001);
+define('FW_BRIGHTCOVE_API_READ_KEY', 'G0WAHddcP6XZOG9rNsyKkIyiDCGh9C7gfIxjRADssc0.');
+define('BRIGHTCOVE_VIDEO_PLAYER_URL', 'http://link.brightcove.com/services/player/bcpid');
+define('BRIGHTCOVE_API_VIDEO_URL', 'http://api.brightcove.com/services/library');
+define('VIDEO_SITEMAP_PATH', 'video_xmlsitemap');
+include_once 'ti_amg_fw_sitemap.features.inc';
+
+/**
+ * Get wether this is the sitemap or a sub page of sitemap
+ *
+ * @return bool
+ *   If the literal search is in the first part of the url
+ */
+function ti_amg_fw_is_sitemap() {
+  if (arg(0) == 'sitemap') {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fw_sitemap_menu() {
+  $items['foodandwine_video_sitemap.xml'] = array(
+    'page callback' => 'video_xmlsitemap_output',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['foodandwine_video_test'] = array(
+    'page callback' => 'ti_amg_fw_sitemap_testing',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+  
+}
+/**
+ * Implements hook_cron().
+ */
+function ti_amg_fw_sitemap_cron() {
+  $main_xml_sitemap_last_generated_time = variable_get('xmlsitemap_generated_last', 0);
+  $video_xml_sitemap_last_generated_time = variable_get('xmlsitemap_generated_video_last', 0);
+  //If the sitemap module exists ,proceed
+  if (!(module_exists("xmlsitemap")) && !(module_exists("xmlsitemap_node"))) {
+    return;
+  }
+  //No update needed for the video sitemap xml file if the main xmlsitemap has generated before.
+  //Make sure that video xmlsite map is sync with main xml sitemap
+  if ($video_xml_sitemap_last_generated_time > $main_xml_sitemap_last_generated_time) {
+    return;
+  }
+  ti_amg_fw_sitemap_get_video_links();
+  watchdog('cron', 'XML Video Sitemap Cron executed');
+}
+
+/**
+ * Generate xml sitemap for video content type.
+ */
+function ti_amg_fw_sitemap_get_video_links() {
+  $limit = 20;
+  $chunk = 1;
+  $operations =  array();
+  $video_nids = _ti_amg_fw_sitemap_get_video_links($offset = 0);
+  while(count($video_nids)) {
+    if (count($video_nids) >= 1) {
+      $operations[] = array('ti_amg_fw_sitemap_list_video_nodes', array($video_nids));
+    }
+    $video_nids = _ti_amg_fw_sitemap_get_video_links($chunk * $limit);
+    $chunk++;
+ }
+
+  if (isset($operations) && count($operations) >= 1) {
+    _ti_amg_fw_sitemap_video_batchit($operations);
+  }
+}
+
+/**
+ * Function fetches the links for the mobile sitemap.
+ */
+function _ti_amg_fw_sitemap_get_video_links($offset = 0) {
+  $limit = 20;
+  $query = db_select('xmlsitemap', 'x');
+  $query->fields('x', array('id'));
+  $query->condition('x.type', 'node');
+  $query->condition('x.subtype', 'video');
+  $query->condition('x.access', 1);
+  $query->condition('x.status', NODE_PUBLISHED);
+  $query->range($offset, $limit);
+  $query->orderBy('x.lastmod', 'DESC');
+  $query->orderBy('x.id', 'DESC');
+  $nids = $query->execute()->fetchCol();
+  return $nids;
+}
+
+/**
+ * Batch the operations.
+ * @param array $operations
+ *   Operations array.
+ */
+function _ti_amg_fw_sitemap_video_batchit($operations) {
+  // Put all that information into our batch array.
+  $batch = array(
+    'operations' => $operations,
+    'title' => t('Update Video Sitemap'),
+    'init_message' => t('Initializing Video Sitemap'),
+    'error_message' => t('An error occurred while Initializing Video Sitemap'),
+    'finished' => '_ti_amg_fw_sitemap_video_batch_finished',
+  );
+
+  // Get the batch process all ready.
+  batch_set($batch);
+  $batch =& batch_get();
+
+  // Because we are doing this on the back-end, we set progressive to false.
+  $batch['progressive'] = FALSE;
+
+  // Run the batch process.
+  batch_process();
+}
+/**
+ * Function to query video type record from sitemap table.
+ */
+function ti_amg_fw_sitemap_list_video_nodes($nids, &$context) {
+  global $base_url;
+  $env_path = variable_get('xmlsitemap_base_url', $base_url);
+  $results = $video_ids = $videos = array();
+  $result_nodes = node_load_multiple($nids);
+  $lastmod_format = variable_get('xmlsitemap_lastmod_format', DATE_W3C);
+  foreach ($result_nodes as $id => $node) {
+    $result = array();
+    $result['nid'] = $node->nid;
+    $result['loc'] = $env_path . '/' . drupal_get_path_alias('node/' . $node->nid);
+    $result['title'] = (!empty($node->title)) ? $node->title : $node->field_headline[LANGUAGE_NONE][0]['value'];
+    $result['desc'] = (!empty($node->field_deck)) ? $node->field_deck[LANGUAGE_NONE][0]['value'] : '';
+    $result['video_uploadDate'] = (!empty($node-> created)) ? gmdate($lastmod_format, $node->created) : '';
+    $result['content_loc'] =  (!empty($node->field_video_id)) ? BRIGHTCOVE_VIDEO_PLAYER_URL . FW_BRIGHTCOVE_PLAYER_ID . '?bctid=' . $node->field_video_id[LANGUAGE_NONE][0]['value'] : '';
+    $result['video_id'] =  (!empty($node->field_video_id)) ? $node->field_video_id[LANGUAGE_NONE][0]['value'] : NULL;
+    $video_ids[] = $result['video_id'];
+    $results[]= $result;
+  }
+
+  $video_data = ti_amg_fw_sitemap_get_video_info_by_id(implode(',', $video_ids));
+  foreach ($results as $key => $result) {
+    $results[$key]['video_duration'] = $video_data[$key]['video_duration'];
+    $results[$key]['video_thumbnail_url'] = $video_data[$key]['video_thumbnail_url'];
+    $results[$key]['video_contentUrl'] = $video_data[$key]['video_contentUrl'];
+  }
+  $context['results'] = is_array($context['results']) ? $context['results'] : array();
+  $context['results'] = array_merge($context['results'],$results);
+}
+
+// To Get Brightcove mp4 video URL.
+function ti_amg_fw_sitemap_get_video_info_by_id($video_ids) {
+  $video = $videos = array();
+  $url = BRIGHTCOVE_API_VIDEO_URL . '?command=find_videos_by_ids&video_ids=' .$video_ids. '&video_fields=id,name,length,thumbnailURL,FLVURL&media_delivery=http&token=' . FW_BRIGHTCOVE_API_READ_KEY;
+  $output = drupal_http_request(url($url));
+  if ($output->code == 200) {
+    $brighcove_response =  json_decode($output->data);
+    foreach ($brighcove_response->items as $key => $video_data) {
+      $video['video_id'] = !empty($video_data->id) ? $video_data->id : '';
+      $duration = !empty($video_data->length) ? $video_data->length : '';
+      $video_duration = ti_amg_fwrd_category_get_video_duration_format($duration);
+      $video['video_duration'] = 'P'.$video_duration;
+      $video['video_title'] = !empty($video_data->name) ? $video_data->name : '';
+      $video['video_thumbnail_url'] = !empty($video_data->thumbnailURL) ? $video_data->thumbnailURL : '';
+      $video['video_contentUrl'] = !empty($video_data->FLVURL) ? $video_data->FLVURL : '';
+
+      $videos[] = $video;
+    }
+  }
+  return $videos;
+}
+
+/**
+ * Batch callback when finished.
+ *
+ * @param bool $success
+ *   Success indicator.
+ * @param array $results
+ *   Result array.
+ * @param array $operations
+ *   Operations array.
+ */
+function _ti_amg_fw_sitemap_video_batch_finished($success, $results, $operations) {
+  if ($success) {
+    $video_sitemap_path = VIDEO_SITEMAP_PATH;
+    $old_directory = variable_get('old_directory_video', NULL);
+    if (isset($video_sitemap_path)) {
+      $path = file_build_uri($video_sitemap_path);
+    }
+    if (isset($old_directory)) {
+      $old_path = file_build_uri($old_directory);
+    }
+    if (isset($old_path) && ($old_path != $path)) {
+      file_unmanaged_delete_recursive(file_build_uri($old_directory));
+    }
+    variable_set('old_directory_video', $video_sitemap_path);
+    if (isset($path) && !file_prepare_directory($path)) {
+      drupal_mkdir($path);
+    }
+    $destination_uri = $path . '/sitemap_video.xml'; 
+    $drupal_sitemap_data = _ti_amg_fw_sitemap_print_links(FALSE, $results);
+    
+    // create file for sub sequent file
+    $rs = file_unmanaged_save_data($drupal_sitemap_data, $destination_uri, FILE_EXISTS_REPLACE);
+    // update last generate time
+    variable_set('xmlsitemap_generated_video_last', REQUEST_TIME);
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    drush_print(
+      t('An error occurred while processing @operation with arguments : @args',
+        array(
+          '@operation' => $error_operation[0],
+          '@args' => print_r($error_operation[0], TRUE),
+        )
+      )
+    );
+  }
+}
+
+/**
+ * Function to generate sitemap based on the results.
+ */
+function _ti_amg_fw_sitemap_print_links($flag = FALSE, $result = array()) {
+  // XML header .
+  $content = '<?xml version="1.0" encoding="UTF-8"?>';
+  $content .= '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>';
+  $content .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemapvideo/1.1">';
+  if (!empty($result)) {
+    foreach ($result as $rec) {
+
+      $content .= '<url><loc><![CDATA[' . $rec['loc'] . ']]></loc>';
+      $content .= '<video:video><video:title><![CDATA[' . $rec['title'] . ']]></video:title>';
+      $content .= '<video:description><![CDATA[' . $rec['desc'] . ']]></video:description>';
+      $content .= '<video:content_loc><![CDATA[' . $rec['content_loc'] . ']]></video:content_loc>';
+      $content .= '<video:restriction relationship="allow">allow</video:restriction>';
+      $content .= '<video:requires_subscription>no</video:requires_subscription>';
+      $content .= '<video:live>no</video:live>';
+      $content .= '<video:duration>' . $rec['video_duration'] . '</video:duration>';
+      $content .= '<video:content_url><![CDATA[' . $rec['video_contentUrl'] . ']]></video:content_url>';
+      $content .= '<video:embed_url><![CDATA[' . $rec['video_embedUrl'] . ']]></video:embed_url>';
+      $content .= '<video:thumbnail_url><![CDATA[' . $rec['video_thumbnail_url'] . ']]></video:thumbnail_url>';
+      $content .= '<video:interaction_count></video:interaction_count>';
+      $content .= '<video:aggregate_rating></video:aggregate_rating>';
+      $content .= '<video:comment></video:comment>';
+      $content .= '<video:comment_count></video:comment_count>';
+      $content .= '<video:upload_date>' . $rec['video_uploadDate'] . '</video:upload_date>';
+      $content .= '<video:uploader>' . $rec['uploader'] . '</video:uploader></video:video>';
+      $content .= '<lastmod>' . $rec['video_uploadDate'] . '</lastmod>';
+      $content .= '<changefreq>daily</changefreq></url>';
+      $content .= "\n";
+    } // foreach node
+  } //result array should not be empty
+  $content .= '</urlset>';
+  drupal_add_http_header('Content-Type', 'text/xml; charset=utf-8');
+  return $content;
+}
+
+/**
+ * Output a video sitemap page.
+ *
+ */
+function video_xmlsitemap_output() {
+  $file = file_build_uri(VIDEO_SITEMAP_PATH . '/sitemap_video.xml');
+  // use xmlsitemap.pages to render file
+  module_load_include('inc', 'xmlsitemap', 'xmlsitemap.pages');
+  return xmlsitemap_output_file($file);
+}
+
+/**
+ * Get everything after /sitemap(.*).
+ *
+ * @return string
+ *   The terms searched for after /search/site/ part
+ */
+function ti_amg_fw_sitemap_get_sitemap_path_from_url() {
+  $return_array = array();
+  if (arg(0) == 'sitemap' ) {
+    if (!is_null(arg(1))) {
+      array_push($return_array, check_plain(arg(1)));
+      if (!is_null(arg(2))) {
+        array_push($return_array, check_plain(arg(2)));
+      }
+    }
+  }
+
+  return $return_array;
+}
+

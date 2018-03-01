@@ -1,0 +1,491 @@
+<?php
+
+/**
+ * @file
+ * To create custom functionalities to responsive FW site.
+ */
+
+define('MAX_VIDEO_SLIDES_COUNT', 8);
+define('BRIGHTCOVE_API_URL', 'http://api.brightcove.com/services/library');
+define('BRIGHTCOVE_API_TOKEN', 'tYP0_tVIlr1G80ZRAzs_f5w4DkFMwtnV7A27LOTRUl0.');
+
+/** 
+ * Add variables on the page level
+ */
+function ti_amg_fwrd_video_landing_preprocess_page(&$vars) {
+  if (isset($vars['node']->type)) {    
+    if ($vars['node']->type == 'video_landing_page') {      
+      $vars['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+      if (isset($vars['detect_device'])) {
+        $vars['device_leaderboard_ad'] = _ti_amg_fwrd_custom_device_leaderboard_ad($vars['detect_device']);
+        if ($vars['detect_device'] == "desktop") {
+          drupal_add_css(
+            drupal_get_path('module', 'ti_amg_fwrd_custom')
+            . '/css/newsletters-signup.css'); 
+          drupal_add_js(
+            drupal_get_path('module', 'ti_amg_fwrd_custom')
+            . '/js/newsletters-signup.js'); 
+         }   
+          drupal_add_css(
+        drupal_get_path('module', 'ti_amg_fwrd_custom')
+        . '/css/hero-carousel-video-tout.css'); 
+      }
+ $ads_manager = <<<EOD
+       <script type="text/javascript">
+            var detect_device = 'desktop';
+            isPhone = navigator.userAgent.match(/(up.browser|up.link|mmp|symbian|smartphone|midp|wap|iPhone|android|iemobile|mobile)/i) != null;
+            isTablet = navigator.userAgent.match(/(tablet|ipad|playbook)|(android(?!.*(mobi|opera mini)))/i) != null;
+            if (isTablet) isPhone = false;
+            if (isPhone) detect_device = 'phone';
+            if (isTablet) detect_device = 'tablet';
+           (function($) {
+          $(document).ready(function() {
+            if (detect_device != 'desktop') {
+              var marketplace_el = document.getElementById("marketplace-ad-wrapper");
+              marketplace_el.style.display = 'none';
+              var newsletters_el = document.getElementById("newsletters-section");
+              if (typeof(newsletters_el) != 'undefined' && newsletters_el != null) {
+                newsletters_el.style.display = 'none';
+              } 
+              var outbrain_el = document.getElementById("outbrain-wrapper");
+              if (typeof(outbrain_el) != 'undefined' && outbrain_el != null) {
+                outbrain_el.style.display = 'none';
+              }  
+            }
+          });
+        }(jQuery));
+       </script> 
+EOD;
+    $vars['ads_manager'] = $ads_manager;
+    }
+  }   
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fwrd_video_landing_theme($existing, $type, $theme, $path) {
+  return array(
+    'video-hero-carousel' => array(
+      'template' => 'video-hero-carousel',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'recipe_carousel' => array(),
+        'slides' => array(),
+      )
+    ),
+    'video-series' => array(
+      'template' => 'video-series',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes_list' => array(),
+        'output' => array(),
+        'content' => array(),
+      )
+    ),
+  );
+}
+    
+function ti_amg_fwrd_video_landing_node_view($node, $view_mode, $langcode) {
+  global $base_url, $conf, $og_img_path, $page_title, $slideshow_flag;
+  if (isset($node)) {
+    if ($node->type == 'video_landing_page') {
+      $video_content = array();
+      $video_landing_content['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+      $video_landing_content['title'] = $node->title;
+      $page_title = $video_landing_content['title'];
+      $video_landing_content['deck'] = ti_amg_fwrd_custom_get_field_value('node', $node, 'field_deck');
+      $video_landing_content['see_more'] = (strlen($video_landing_content['deck']['#markup']) > 185) ? TRUE  : FALSE;
+      $video_landing_content['path'] = $base_url . '/' .
+       drupal_get_path_alias('node/' . $node->nid);      
+      $social_share_img_path = url($conf['social_share_default_img'], array('absolute' => TRUE));
+      $og_img_path = $social_share_img_path;
+      $video_landing_content['breadcrumbs'] = _ti_amg_fwrd_feature_preprocess_breadcrumb_content($node);
+      $video_landing_content['hero-carousel'] = _ti_amg_fwrd_video_landing_hero_carousel($node, $video_landing_content['detect_device']);
+      $video_landing_content['series-section'] = _ti_amg_fwrd_video_landing_get_fw_series($node);
+      $video_landing_content['most-watched'] = _ti_amg_fwrd_video_landing_most_watched($node);
+
+      //Showing Classic Aspen Menu if enabled.
+      if (!empty($node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value']) &&
+      $node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value'] == 1) {
+        $video_landing_content['sub_header'] = module_invoke('ti_amg_fwrd_generic_page', 'block_view', 'classic_aspen_header');
+      }    
+      
+      $node->content['video_landing_content'] = $video_landing_content;
+   
+    }   
+  } 
+}
+
+function _ti_amg_fwrd_video_landing_hero_carousel($node, $device) {
+  global $base_url;
+  $hero_carousel = array();
+  $carousel_nids = array();
+  if (isset($node->field_featured_video[LANGUAGE_NONE])) {
+    foreach ($node->field_featured_video[LANGUAGE_NONE] as $slide) {
+      $carousel_nids[] = $slide['value'];
+    }
+    $hero_carousel =  _ti_amg_fwrd_video_landing_get_carousel_content($carousel_nids, $device);
+  }
+  return $hero_carousel;
+}
+
+/**
+ * Get content for carousel: collection of video contents
+ */
+function _ti_amg_fwrd_video_landing_get_carousel_content($node_ids, $device) {
+  global $base_url;
+  $slides = array();
+  $slides_list = entity_load('field_collection_item', $node_ids);
+  $image_style = 'rd_home_hero_slide';
+  foreach ($slides_list as $item) {
+    $content_item = array();
+    // Updating Hero Carousel Title and URL.
+    if (isset($item->field_headline_title[LANGUAGE_NONE])) {
+      $content_item['title'] = isset($item->field_headline_title[LANGUAGE_NONE][0]['value']) ?
+          $item->field_headline_title[LANGUAGE_NONE][0]['value'] : '';
+    }
+    if (isset($item->field_headline_deck[LANGUAGE_NONE])) {       
+      $content_item['deck'] = isset($item->field_headline_deck[LANGUAGE_NONE][0]['value']) ?
+          $item->field_headline_deck[LANGUAGE_NONE][0]['value'] : '';
+    }  
+    // Item content
+    if (isset($item->field_related_videos[LANGUAGE_NONE][0]['target_id'])) {
+      $slide_content_nid = $item->field_related_videos[LANGUAGE_NONE][0]['target_id'];
+      $content_item['video_content_id'] = $slide_content_nid;   
+      $slide_node = node_load($slide_content_nid);
+
+      if (isset($slide_node->field_video_id[LANGUAGE_NONE][0])) {
+         $content_item['video_id'] = $slide_node->field_video_id[LANGUAGE_NONE][0]['value']; 
+      }
+      if (isset($slide_node->field_video_still[LANGUAGE_NONE][0])) {
+        $video_thumbnail_uri = (isset($slide_node->field_video_still[LANGUAGE_NONE][0]['uri'])) ? 
+        $slide_node->field_video_still[LANGUAGE_NONE][0]['uri'] : DEFAULT_IMAGE_URI;
+        $content_item['image']['uri'] = image_style_url($image_style, $video_thumbnail_uri);
+        $content_item['image']['alt'] = '';
+      }
+    }
+     // Item image
+    if (isset($item->field_featured_video_image[LANGUAGE_NONE][0]['target_id'])) {
+      $slide_image_nid = $item->field_featured_video_image[LANGUAGE_NONE][0]['target_id'];
+      $content_item['image'] = _ti_amg_fwrd_landing_page_get_image($slide_image_nid, $image_style);
+    }
+    if (isset($content_item['video_id'])) {
+      $content_item['embed_video'] = _ti_amg_fwrd_custom_get_html5_video($content_item['video_id'], $device, 'video_landing_page');
+    }
+    $content_item['device'] = $device;
+    $slides[] = $content_item;
+  }
+
+  return theme('video-hero-carousel', array(
+      'slides' => $slides,
+    ));
+
+}
+
+/**
+ * Get content for carousel: collection of video contents
+ */
+function _ti_amg_fwrd_video_landing_get_fw_series($node) {
+  global $base_url;
+  $video_series = array();
+  $series_nids = array();
+  $output = array();
+  $video_series['section_title'] = (isset($node->field_video_category_title[LANGUAGE_NONE][0]['value'])) ? $node->field_video_category_title[LANGUAGE_NONE][0]['value'] : 'F&amp;W Video Series';
+  if (isset($node->field_vlp_category[LANGUAGE_NONE])) {
+    foreach ($node->field_vlp_category[LANGUAGE_NONE] as $series) {
+      $series_nids[] = $series['value'];
+    }
+    $video_series['series'] =  _ti_amg_fwrd_video_landing_get_series_content($series_nids);
+  }
+  return $video_series;
+}
+
+/**
+ * Get content for carousel: collection of video contents
+ */
+function _ti_amg_fwrd_video_landing_get_series_content($node_ids) {
+  global $base_url;
+  $slides = array();
+  $slides_list = entity_load('field_collection_item', $node_ids);
+  $image_style = 'rd_home_hero_slide';
+  $output = array();
+  $default_image_url = image_style_url(SMALL_VIDEO_TOUT_STYLE, DEFAULT_LOGO_IMAGE_URI);
+  $content = array();
+  $content['video_series_row'] = '';
+  foreach ($slides_list as $item) {
+    $tids_to_check = array();
+    $content_item = array();
+    
+    if (isset($item->field_video_series_content[LANGUAGE_NONE])) {
+      $output['small_video_touts'] = '';
+      foreach ($item->field_video_series_content[LANGUAGE_NONE] as $entity_id) {
+        $content_id = $entity_id['target_id'];
+        $content_series = _ti_amg_fwrd_homepage_get_content($content_id, SMALL_VIDEO_TOUT_STYLE);
+        if ($content_series['image']['type'] == 'image') {
+          $content_series['image']['uri'] = (!empty($content_series['image']['uri'])) ?
+            $content_series['image']['uri'] : $default_image_url;         }
+        else {
+          $content_series['image']['uri'] = $default_image_url;
+        }
+        $is_video = ($content_series['type'] == 'video') ? TRUE : FALSE;
+        $output['small_video_touts'] .= theme('story-card', array(
+          'type' => 'feature',
+          'title' => $content_series['title'],
+          'url' => $content_series['url'],
+          'image_url' => $content_series['image']['uri'],
+          'image_alt' => $content_series['title'],
+          'is_video' => $is_video,
+          'classes_list' => 'grid-3-up__item',
+          'placeholder_url' => '',
+        ));
+      }
+    }
+    else if (isset($item->field_vlp_category_tags[LANGUAGE_NONE][0]['tid'])) {
+      foreach($item->field_vlp_category_tags[LANGUAGE_NONE] as $all_tags) {
+    	  array_push($tids_to_check, $all_tags['tid']);
+    	}
+      $tid_to_check = $item->field_vlp_category_tags[LANGUAGE_NONE][0]['tid'];
+      $field_to_check = 'field_video_tags';
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'node')
+          ->entityCondition('bundle', array('video'))
+          ->propertyCondition('status', 1)
+          ->fieldCondition($field_to_check, 'tid', $tids_to_check, 'IN')
+          ->propertyOrderBy('changed', 'DESC')
+          ->range(0, 3);
+
+      $result = $query->execute();
+      if (isset($result['node'])) {
+        $video_nids = array_keys($result['node']);
+        $videos_array = array_values(entity_load('node', $video_nids));
+        $output['small_video_touts'] = '';
+        foreach ($videos_array as $key => $video) {
+          $video_info = _ti_amg_fwrd_homepage_getvideo_details($video);
+          if (!empty($video_info)) {
+            if ($video_info['image_type'] == 'image') {
+              $video_info['image']['uri'] = (!empty($video_info['thumbnail_uri'])) ?
+                image_style_url(SMALL_VIDEO_TOUT_STYLE, $video_info['thumbnail_uri']) : $default_image_url;              
+            }
+            else {
+              $video_info['image']['uri'] = $default_image_url;
+            }           
+            $output['small_video_touts'] .= theme('story-card', array(
+             'type' => 'feature',
+             'title' => $video_info['title'],
+             'url' => $video_info['url'],
+             'image_url' => $video_info['image']['uri'],
+             'image_alt' => $video_info['title'],
+             'is_video' => TRUE,
+             'classes_list' => 'grid-3-up__item',
+             'placeholder_url' => '',
+           ));
+          }
+        } // for loop
+      } // query result
+    }   
+    if (isset($item->field_video_series_title[LANGUAGE_NONE])) {
+      $content_item['topic'] = (isset($item->field_video_series_title[LANGUAGE_NONE][0]['value'])) ? 
+        $item->field_video_series_title[LANGUAGE_NONE][0]['value'] : '';
+    } 
+    else if (isset($item->field_vlp_category_tags[LANGUAGE_NONE][0]['tid'])) {
+    	$tid_to_check = $item->field_vlp_category_tags[LANGUAGE_NONE][0]['tid'];
+      $topic = taxonomy_term_load($tid_to_check);
+      $content_item['topic'] = $topic->name;
+    }
+     $content_item['series_headline'] = "";
+    if (isset($item->field_vlp_category_headline[LANGUAGE_NONE])) {
+      $content_item['series_headline'] = (isset($item->field_vlp_category_headline[LANGUAGE_NONE][0]['value'])) ? 
+        $item->field_vlp_category_headline[LANGUAGE_NONE][0]['value'] : '';
+    } 
+    if (isset($item->field_video_cat_see_more_link[LANGUAGE_NONE])) {
+      $content_item['see_more_link'] = (isset($item->field_video_cat_see_more_link[LANGUAGE_NONE][0]['url'])) ? 
+        $item->field_video_cat_see_more_link[LANGUAGE_NONE][0]['url'] : '';  
+    }
+    if (isset($item->field_video_cat_more_link_title[LANGUAGE_NONE])) {
+      $content_item['see_more_link_title'] = (isset($item->field_video_cat_more_link_title[LANGUAGE_NONE][0]['value'])) ? 
+        $item->field_video_cat_more_link_title[LANGUAGE_NONE][0]['value'] : '';  
+      $content_item['see_link'] = l($content_item['see_more_link_title'],
+        $content_item['see_more_link'], array(
+          'html' => TRUE,
+          'attributes' => array(
+             'class' => 'btn btn--arrow'
+           )
+         )
+       );
+    }
+    $content['video_series_row'] .= theme('video-series', array(
+      'classes_list' => '',
+      'output' => $output,
+      'content' => $content_item,
+    ));
+  } // for loop for series list
+  return $content['video_series_row'];
+}  
+
+/**
+ * Get most watched content
+ */
+function _ti_amg_fwrd_video_landing_most_watched($node) {
+  $most_watched = array(); 
+  $most_watched['title'] = isset($node->field_video_section_pop_title[LANGUAGE_NONE]) ? 
+    ($node->field_video_section_pop_title[LANGUAGE_NONE][0]['value']) : 'Most Watched';
+  if (!empty($node->field_video_section_pop_item[LANGUAGE_NONE])) {  
+    foreach ($node->field_video_section_pop_item[LANGUAGE_NONE] as $entity_id) {
+      $entity_ids[] = $entity_id['target_id'];
+    }
+    $content_nodes = array_values(entity_load('node', $entity_ids));
+    foreach ($content_nodes as $node) {
+      $most_watched['content'][] = _ti_amg_fwrd_video_landing_get_most_watched_content($node);
+    }
+    return theme('highlight-list', array(
+      'most_popular' => $most_watched,
+      'is_video' => TRUE,
+    )); 
+  } 
+}
+
+function _ti_amg_fwrd_video_landing_get_most_watched_content($node) {
+  global $base_url;
+  $content = array();
+  $content['title'] = $node->title;
+  $content['url'] = $base_url . '/' .
+    drupal_get_path_alias('node/' . $node->nid);
+  $content['link'] = l($content['title'],
+    $content['url'], array(
+      'html' => TRUE,
+      'attributes' => array(
+         'class' => 'highlight-list__item__link'
+       )
+     )
+   );
+  if (isset($node->field_video_still[LANGUAGE_NONE][0])) {
+    $video_thumbnail_uri = (isset($node->field_video_still[LANGUAGE_NONE][0]['uri'])) ? 
+    $node->field_video_still[LANGUAGE_NONE][0]['uri'] : DEFAULT_IMAGE_URI;
+    $content['image']['uri'] = image_style_url(SMALL_VIDEO_TOUT_STYLE, $video_thumbnail_uri);
+    $content['image']['alt'] = '';
+  }
+  else {
+    $content['image']['uri'] = url(DEFAULT_VIDEO_IMAGE_URI, array('absolute' => TRUE));
+    $content['image']['alt'] = '';
+  }
+  $content['image_link'] = l('<img src="'. $content['image']['uri'] . '"/>',
+    $content['url'], array(
+      'html' => TRUE,
+     )
+   );
+  return $content;  
+}
+
+
+
+
+function _ti_amg_fwrd_video_landing_social_share_section($node_title = '', $social_share_img_path = '', $page_alias = '') {
+  global $base_url;
+  $current_url = $page_alias;
+  $img_path = url(drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/spritemap.svg', array('absolute' => TRUE));
+  $social_share_content['title'] = urlencode($node_title);
+  $social_share_content['pinit_title'] = urlencode($node_title . ' | ' . $site_name);
+  $social_share_content['social_share_img_path'] = $social_share_img_path;
+  $social_share_content['mail_subject'] = urlencode($node_title . ' on ' . $site_name);
+  $social_share_content['mail_body'] = urlencode($node_title) . '%0A' . urlencode($current_url);
+  $social_share_content['twitter_text'] = 'original_referer=' . urlencode($current_url) . '&amp;text=' . rawurlencode($node_title) . ' on' . rawurlencode($site_name) . '&amp;url=' . urlencode($current_url) . '%3Fxid%3Dtwsharebar&amp;via=foodandwine';
+  $social_share_content['fb_data'] = '';
+  if ($_COOKIE['TI_PREFS'] == 'phone') {
+    $fb_params =array('u' => $current_url, 'images' => array($social_content['social_share_img_path']),
+      't' => $social_content['title']);
+    $social_share_content['fb_data'] = 'http://m.facebook.com/sharer.php?' .
+      http_build_query($fb_params);
+  }else{
+    //desktop
+    $fb_params = array('s' => 100, 'p' => array('url' => $current_url,
+      'images' => array($social_share_img_path), 'title' => $social_share_content['title']));
+    $social_share_content['fb_data'] = 'http://www.facebook.com/sharer/sharer.php?'.
+      http_build_query($fb_params);
+  } 
+  $social_share_content['twitter_data'] = '';
+  $twitter_params = array('url' => $current_url, 'text' => $social_content['title'],
+    'via' => 'foodandwine', 'related' => 'foodandwine');
+  $social_share_content['twitter_data'] = 'https://twitter.com/intent/tweet?' .
+    http_build_query($twitter_params);
+   $pinterest_params = array('description' => $social_content['title'], 'url' => $current_url,
+    media => $social_share_img_path);
+  $social_share_content['pinterest_data'] = 'http://pinterest.com/pin/create/linkshare/?'.
+    http_build_query($pinterest_params);   
+  return theme('social-share-gallery-mobile', array(
+    'url' => $current_url,
+    'img_path' => $img_path,
+    'social_content' => $social_share_content,
+  ));
+}
+
+function _ti_amg_fwrd_video_landing_most_watched_fallback() {
+$videos = '';
+
+ $options = array(
+    'method' => 'GET',
+    'data' => '',
+    'timeout' => 15,
+    'headers' => array(
+      'Content-Type' => 'application/json',
+    ),
+  );
+  $video_api_query = BRIGHTCOVE_API_URL
+        . "?command=find_all_videos&&video_fields=id,name," . 
+        "shortDescription,longDescription,publishedDate,linkURL," . 
+        "linkText,thumbnailURL,thumbnail,playsTotal," . 
+        "&media_delivery=default" . 
+        "&callback=BCL.onSearchResponse&".
+        "sort_by=PLAYS_TRAILING_WEEK&" . 
+        "sort_order=DESC&" . 
+        "page_number=0&" .
+        "page_size=20&" .
+        "get_item_count=true&" .
+        "token=" . BRIGHTCOVE_API_TOKEN;
+  $video_list = _ti_amg_fwrd_video_landing_brightcove_api($video_api_query, $options);    
+  return $video_list;
+}
+
+function _ti_amg_fwrd_video_landing_brightcove_api($query, $options) {
+  $request = '';
+  $most_watched = array();
+  $most_watched_sorted = array();
+  $request = drupal_http_request($query, $options);
+  if($request->code == 200 && (!empty($request->data))) {
+    $response_json_data = $request->data;
+    $response_json_data = (string) $response_json_data;
+    $response_json_data = 
+        str_replace('BCL.onSearchResponse(', '', $response_json_data);
+    $response_json_data = str_replace(');', '', $response_json_data);
+    $response_json_data = drupal_json_decode($response_json_data);
+
+    foreach($response_json_data['items'] as $video_item) {
+      $content = array();
+      $image_tag = theme('html_tag', array(
+        'element' => array(
+          '#tag' => 'img', 
+          '#attributes' => array(
+            'src' => $video_item['thumbnailURL'],
+          ),
+        ),
+      ));
+      $content['image_link'] = l($image_tag, $video_item['linkURL'], array('html' => TRUE));
+      $content['link'] = l($video_item['name'],
+        $video_item['linkURL'], array(
+          'html' => TRUE,
+          'attributes' => array(
+             'class' => 'highlight-list__item__link'
+          )
+        )
+      );
+      $content['total_shares'] = $video_item['playsTotal'];
+      $most_watched[] = $content;
+    }
+    
+    usort($most_watched, '_ti_amg_fwrd_custom_sort_cmp');
+    $most_watched_sorted = array_slice($most_watched, 0, 5);
+    
+    return $most_watched_sorted;
+   }
+ }  

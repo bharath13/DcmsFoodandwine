@@ -1,0 +1,4 @@
+name = Comscore Analytics
+description = Module used for enabling comscore analytics script
+core = 7.x
+package = ti_amg_fw_comscore

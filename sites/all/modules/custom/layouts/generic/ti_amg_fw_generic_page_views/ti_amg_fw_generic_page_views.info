@@ -1,0 +1,12 @@
+name = TI AMG FW GENERIC PAGE VIEWS
+description = TI AMG FW GENERIC PAGE VIEWS
+core = 7.x
+package = FoodandWine DCMS
+version = 7.x-1.2
+project = ti_amg_fw_generic_page_views
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = ti_amg_fw_generic_page
+features_exclude[dependencies][ctools] = ctools
+mtime = 1427409980

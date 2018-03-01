@@ -1,0 +1,1199 @@
+<?php
+
+/**
+ * @file
+ * To create custom functionalities to responsive FW site.
+ */
+
+  define('NAVIGATION_LINKS_TOTAL', 10);
+  define('FEATURE_IMAGE_STYLE', 'rd_feature_image');
+  define('FEATURE_MAIN_IMAGE_STYLE', 'rd_feature_main_image');
+  define('FEATURE_PAGINATION_IMAGE', '75x75');
+  define('FEATURE_MIN_CHARS_BEFORE_AD', 200);
+  define('FEATURE_UNIVERSAL_AD_WORDS_COUNT', 130);
+  define('FEATURE_UNIVERSAL_AD_LAST_WORDS_COUNT', 50);
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fwrd_feature_block_info() {
+  $block['special_event_section'] = array(
+    'info' => t('Responsive Special Event Module'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  return $block;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fwrd_feature_block_view($block_key = '') {
+  $block = array();
+
+  switch ($block_key) {
+    case 'special_event_section':
+
+      break;
+    default:
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Add variables on the page level
+ */
+function ti_amg_fwrd_feature_preprocess_page(&$vars) {
+  if (isset($vars['node']->type)) {
+    if ($vars['node']->type == 'blog') {
+      $vars['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+      if (isset($vars['detect_device'])) {
+        $vars['device_leaderboard_ad'] = _ti_amg_fwrd_custom_device_leaderboard_ad($vars['detect_device']);
+        if ($vars['detect_device'] == "desktop") {
+          drupal_add_css(
+            drupal_get_path('module', 'ti_amg_fwrd_custom')
+            . '/css/newsletters-signup.css');
+          drupal_add_js(
+            drupal_get_path('module', 'ti_amg_fwrd_custom')
+            . '/js/newsletters-signup.js');
+        }
+      }
+
+ $ads_manager = <<<EOD
+       <script type="text/javascript">
+          (function($) {
+          $(document).ready(function() {
+            if (detect_device != 'desktop') {
+              var newsletters_el = document.getElementById("newsletters-section");
+              if (typeof(newsletters_el) != 'undefined' && newsletters_el != null) {
+                newsletters_el.style.display = 'none';
+              }
+              var outbrain_el = document.getElementById("outbrain-wrapper");
+              if (typeof(outbrain_el) != 'undefined' && outbrain_el != null) {
+                outbrain_el.style.display = 'none';
+              }
+            }
+          });
+        }(jQuery));
+       </script>
+EOD;
+    $vars['ads_manager'] = $ads_manager;
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fwrd_feature_theme($existing, $type, $theme, $path) {
+  return array(
+    'bottom-video-section' => array(
+      'template' => 'bottom-video-section',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'videos' => array(),
+        'title' => array(),
+      ),
+    ),
+    'bottom-related-stories' => array(
+      'template' => 'bottom-related-stories',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'related_stories' => array(),
+        'title' => array(),
+      ),
+    ),
+    'content-list' => array(
+      'template' => 'content-list',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'list_title' => array(),
+        'is_numbered' => array(),
+        'dropdown' => array(),
+        'current_number' => array(),
+        'list_content' => array(),
+        'img_path' =>  array(),
+      ),
+    ),
+    'feature-pagination' => array(
+      'template' => 'content-pager',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes_list' => array(),
+        'next' => array(),
+        'previous' => array(),
+        'show_image' => array(),
+      ),
+    ),
+    'related-section' => array(
+      'template' => 'related-content',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes_list' => array(),
+        'related_contents' => array(),
+      ),
+    ),
+    'pull-quotes' => array(
+      'template' => 'pull-quotes',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'pull_quote' => array(),
+      ),
+    ),
+    'hero-image' => array(
+      'template' => 'feature-image',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes_list' => array(),
+        'image' => array(),
+        'is_video' => array(),
+        'is_hero' => array(),
+         'social_share' => array(),
+      ),
+    ),
+    'image-insert' => array(
+      'template' => 'image-insert',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes_list' => array(),
+        'image' => array(),
+        'is_video' => array(),
+        'social_share' => array(),
+      ),
+    ),
+    'byline_section' => array(
+      'template' => 'author',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'byline' => array(),
+      ),
+    ),
+    'bottom-module-zergnet' => array(
+      'template' => 'bottom-module-zergnet',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+      ),
+    ),
+  );
+}
+
+function ti_amg_fwrd_feature_node_view($node, $view_mode, $langcode) {
+  global $base_url, $conf, $og_img_path;
+  if (isset($node)) {
+    if ($node->type == 'blog') {
+      $feature_content = array();
+      $feature_content['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+      $feature_content['img_path'] = url(drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/spritemap.svg', array('absolute' => TRUE));
+      $feature_content['title'] = $node->title;
+      $feature_content['related_links'] = '';
+      $istoken = ti_amg_fwrd_feature_check_related_token($node);
+      if (!$istoken) {
+        $feature_content['related_links'] = _ti_amg_fwrd_feature_preprocess_related_links($node, $istoken);
+      }
+      else {
+        $feature_content['related_links'] = '';
+      }
+      $body = _ti_amg_fwrd_feature_body($node, $istoken, $feature_content['detect_device']);
+      if (!empty($body)) {
+        $feature_content['body'] = $body['#markup'];
+      }
+      $feature_content['path'] = $base_url . '/' .
+        drupal_get_path_alias('node/' . $node->nid);
+      $feature_content['deck'] = ti_amg_fwrd_custom_get_field_value('node', $node, 'field_deck');
+      // hide deck if the content was created before the cut date
+      $cut_date = mktime(0,0,0,10,12,2015);
+      $content_published_date = $node->changed;
+      if ($content_published_date < $cut_date) {
+        $feature_content['deck'] = '';
+      }
+      //Checking the subqueue id for particular blog.
+      $squid = _ti_amg_fwrd_feature_get_squid($node->nid);
+      if ($squid != '') {
+        $feature_content['left_section_list'] = _ti_amg_fwrd_feature_get_nodequeue_data($squid, $node->nid);
+        $feature_content['pagination'] = _ti_amg_fwrd_feature_pagination($feature_content['left_section_list']);
+      }
+      else {
+        $feature_content['left_section_list'] = _ti_amg_fwrd_feature_preprocess_left_section_list_content($node);
+        $feature_content['pagination'] = _ti_amg_fwrd_feature_prev_next_node($node);
+      }
+      $feature_content['hero_image'] = '';
+      $feature_content['insert_image'] = '';
+      $social_share_img_path = url($conf['social_share_default_img'], array('absolute' => TRUE));
+      if ((isset($node->field_enable_hero[LANGUAGE_NONE])) &&
+          ($node->field_enable_hero[LANGUAGE_NONE][0]['value']) &&
+          (!empty($node->field_blog_hero_image[LANGUAGE_NONE][0]['target_id']))) {
+        $feature_content['hero_image'] = _ti_amg_fwrd_feature_preprocess_hero_image_content($node);
+        if (!empty($feature_content['hero_image']['image']['uri']))
+          $social_share_img_path = $feature_content['hero_image']['image']['uri'];
+      }
+      elseif (!empty($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $feature_content['insert_image'] = _ti_amg_fwrd_feature_preprocess_image_content($node);
+        if (!empty($feature_content['insert_image']['main_image']['uri']))
+          $social_share_img_path = $feature_content['insert_image']['main_image']['uri'];
+      }
+      $og_img_path = $social_share_img_path;
+      $feature_content['breadcrumbs'] = _ti_amg_fwrd_feature_preprocess_breadcrumb_content($node);
+      $feature_content['social_share_section'] =
+          _ti_amg_fwrd_feature_social_share_section($node->title, $social_share_img_path,
+              $feature_content['path'], $node);
+      $feature_content['byline'] = _ti_amg_fwrd_feature_preprocess_byline_content($node);
+
+      $feature_content['right_rail_block2'] = '';
+      $feature_content['newsletters'] = '';
+
+      if ($feature_content['detect_device'] != 'mobile') {
+        if ($feature_content['detect_device'] == 'desktop') {
+          $feature_content['right_rail_block2'] =
+            theme('ti_amg_fw_outbrain_redesign',
+              array(
+              'widget_id' => 'SB_4',
+              'title' => '',
+              )
+            );
+        }
+      }
+      if ($feature_content['detect_device'] == 'desktop') {
+        $feature_content['newsletters'] = theme('ti_amg_fw_custom_newsletter');
+      }
+      // To get the video object of particular node.
+      $feature_content['feature_video'] = _ti_amg_fwrd_feature_get_video($node, $feature_content['detect_device']);
+
+      //Showing Classic Aspen Menu if enabled.
+      if (!empty($node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value']) &&
+      $node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value'] == 1) {
+        $feature_content['sub_header'] = module_invoke('ti_amg_fwrd_generic_page', 'block_view', 'classic_aspen_header');
+      }
+
+      if (module_exists('editorial_ecommerce_workflow')) {
+        if (!empty($feature_content['deck']['#markup'])) {
+          $feature_content['deck']['#markup'] = _ecommerce_product_afl_replacer($feature_content['deck']['#markup'], $node);
+        }
+        if (!empty($feature_content['body'])) {
+          $feature_content['body'] = _ecommerce_product_afl_replacer($feature_content['body'], $node);
+        }
+      }
+
+      $node->content['feature_content'] = $feature_content;
+
+    }
+
+  }
+}
+
+/**
+  * Body: construct with multiple mbedded images and singular pull quote
+  *
+  */
+function _ti_amg_fwrd_feature_body($node, $istoken = '', $device = '') {
+  $body = ti_amg_fwrd_custom_get_field_value('node', $node, 'body');
+  if (!empty($body)) {
+    //Tagging multiple images to the blog body's token
+    if (isset($node->field_multiple_images[LANGUAGE_NONE])) {
+      $mltpl_images = $node->field_multiple_images[LANGUAGE_NONE];
+      if (count($mltpl_images) > 0) {
+        // Define Multiple Images Array
+        $multi_imgs = array();
+        $img_style = FEATURE_IMAGE_STYLE;
+        foreach ($mltpl_images as $key => $imgres) {
+          if ($imgres['target_id'] != '') {
+            // Get the corresponding image style with attributes.
+            // load it to multi_imgs array.
+            $multi_imgs[] = _ti_amg_fwrd_feature_get_image(
+                $imgres['target_id'], $img_style);
+          }
+        }
+        // Assigning tagged body content to views result body field.
+        $body['#markup'] = ti_amg_fwrd_feature_replace_multi_img_tokens($multi_imgs, $body['#markup']);
+      }
+    }
+    if (isset($node->field_blog_pull_quote_headline[LANGUAGE_NONE])) {
+      $pull_quote_content = (isset($node->field_blog_pull_quote_headline[LANGUAGE_NONE][0]['safe_value'])) ?
+          $node->field_blog_pull_quote_headline[LANGUAGE_NONE][0]['safe_value'] : '';
+      $body['#markup'] = ti_amg_fwrd_feature_replace_single_quote_token($pull_quote_content, $body['#markup']);
+    }
+    if (isset($node->field_embedded_video[LANGUAGE_NONE])) {
+      $video_ids = array();
+      $video_ids_list = $node->field_embedded_video[LANGUAGE_NONE];
+      foreach ($video_ids_list as $video_nid) {
+        if (isset($video_nid['target_id'])) {
+          $video_id = $video_nid['target_id'];
+          $video_ids[] = $video_id;
+        }
+      }
+      $body['#markup'] = ti_amg_fwrd_feature_replace_embedded_video_tokens($video_ids, $body['#markup'], $device);
+    }
+    if (isset($node->field_related_cnt_links[LANGUAGE_NONE])) {
+      $related_content = _ti_amg_fwrd_feature_preprocess_related_links($node, $istoken);
+      if ($istoken) {
+        $body['#markup'] = _ti_amg_fwrd_feature_replace_single_related_links_token($related_content, $body['#markup']);
+      }
+    }
+  }
+
+  return $body;
+}
+
+/**
+ * Replacing Multiple Image tokens with correspoinding images
+ */
+function ti_amg_fwrd_feature_replace_multi_img_tokens($multi_imgs = array(), $body_cnt = '') {
+  foreach ($multi_imgs as $kkey => $multi_img) {
+    $constructed_img = theme('image-insert', array(
+      'image' => $multi_img,
+      'is_video' => FALSE,
+    ));
+    $search = '<p>[%image' . ($kkey + 1) . ']</p>';
+    $body_cnt = str_replace($search, $constructed_img, $body_cnt);
+  }
+  return $body_cnt;
+}
+
+/**
+ * Replacing Single Pull Quote token with the correspoding pull quote
+ */
+function ti_amg_fwrd_feature_replace_single_quote_token($pull_quote_content = '', $body_cnt = '') {
+  $constructed_pull_quote = theme('pull-quotes', array(
+    'pull_quote' => $pull_quote_content,
+  ));
+  $search = '<p>[%quote1]</p>';
+  $body_cnt = str_replace($search, $constructed_pull_quote, $body_cnt);
+  return $body_cnt;
+}
+
+/**
+ * Replacing Embedded Video token with the correspoding video player
+ */
+function ti_amg_fwrd_feature_replace_embedded_video_tokens($video_content_ids = array(), $body_cnt = '', $device) {
+  foreach ($video_content_ids as $kkey => $video_content_id) {
+    $video_object = node_load($video_content_id);
+    if (!empty($video_object->field_video_id)) {
+      $video_id = $video_object->field_video_id[LANGUAGE_NONE][0]['value'];
+
+      $player_data = array(
+        'data-viewplay="true"',
+      );
+      $constructed_video = _ti_amg_fwrd_custom_get_html5_video($video_id, $device, 'article', $player_data);
+      $card = '<div class="embedded_video_player story-card  story-card--is-video ' . $device .'">' . $constructed_video . '</div>';
+      $search = '<p>[%video' . ($kkey + 1) . ']</p>';
+      $body_cnt = str_replace($search, $card, $body_cnt);
+    }
+  }
+  return $body_cnt;
+}
+
+/**
+ * Replacing Single Related Links token with the correspoding related links
+ */
+function _ti_amg_fwrd_feature_replace_single_related_links_token($related_links_content = '', $body_cnt = '') {
+  $search = '<p>[%related]</p>';
+  if (strpos($body_cnt, $search) != FALSE) {
+    $body_cnt = str_replace($search, $related_links_content, $body_cnt);
+  }
+  return $body_cnt;
+}
+
+/*
+ * Social Sharing Block for Feature pages.
+ *
+ * @param1 $node_title
+ *    Title of particular page.
+ * @param2 $social_share_img_path
+ *    Image path for social share icons.
+ * @param3 $page_alias
+ *    Alias of current page
+ *
+ * @return A rederable array of social share icons for feature page.
+ */
+
+function _ti_amg_fwrd_feature_social_share_section($node_title = '', $social_share_img_path = '', $page_alias = '', $node) {
+   global $base_url;
+  $current_url = $page_alias;
+  $img_path = url(drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/spritemap.svg', array('absolute' => TRUE));
+  $social_share_content['title'] = urlencode($node_title);
+  $site_name = variable_get('site_name');
+  $social_share_content['pinit_title'] = $node_title . ' | ' . $site_name;
+  $social_share_content['social_share_img_path'] = $social_share_img_path;
+  $social_share_content['mail_subject'] = urlencode($node_title . ' on ' . $site_name);
+  $social_share_content['mail_body'] = urlencode($node_title) . '%0A' . urlencode($current_url);
+  $social_share_content['twitter_text'] = 'original_referer=' . urlencode($current_url) . '&amp;text=' . rawurlencode($node_title) . ' on' . rawurlencode($site_name) . '&amp;url=' . urlencode($current_url) . '%3Fxid%3Dtwsharebar&amp;via=foodandwine';
+  $social_share_content['fb_data'] = '';
+  if (isset($_COOKIE['TI_PREFS']) && $_COOKIE['TI_PREFS'] == 'phone') {
+    $fb_params =array('u' => $current_url, 'images' => array($social_share_content['social_share_img_path']),
+      't' => $social_share_content['title']);
+    $social_share_content['fb_data'] = 'http://m.facebook.com/sharer.php?' .
+      http_build_query($fb_params);
+  }else{
+    //desktop
+    $fb_params = array('s' => 100, 'p' => array('url' => $current_url,
+      'images' => array($social_share_img_path), 'title' => $social_share_content['title']));
+    $social_share_content['fb_data'] = 'http://www.facebook.com/sharer/sharer.php?'.
+      http_build_query($fb_params);
+  }
+  $social_share_content['twitter_data'] = '';
+  $twitter_params = array('url' => $current_url, 'text' => html_entity_decode($node_title),
+    'via' => 'foodandwine', 'related' => 'foodandwine');
+  $social_share_content['twitter_data'] = 'https://twitter.com/intent/tweet?' .
+    http_build_query($twitter_params);
+   $pinterest_params = array('description' => $social_share_content['pinit_title'], 'url' => $current_url,
+   'media' => $social_share_img_path);
+  $social_share_content['pinterest_data'] = 'http://pinterest.com/pin/create/linkshare/?'.
+    http_build_query($pinterest_params);
+  $social_share_content['spotit-comments'] = $node->nid;
+  return theme('social-share-gallery-mobile', array(
+    'url' => $current_url,
+    'img_path' => $img_path,
+    'social_content' => $social_share_content,
+  ));
+}
+
+/**
+ * Byline Section: author image, name, social, published date
+ **/
+function _ti_amg_fwrd_feature_preprocess_byline_content($node) {
+  global $base_url;
+  $byline = array();
+  $contrib_authors = '';
+  $authors_list = array();
+  $turn_off_publish_date = ((isset($node->field_blog_turn_off_publish_date[LANGUAGE_NONE])
+	&& $node->field_blog_turn_off_publish_date[LANGUAGE_NONE][0]['value'] == 1)) ? TRUE : FALSE;
+  if (!empty($node->published_at) && $turn_off_publish_date == FALSE) {
+    $date = $node->published_at;
+    $byline['published_date'] = date("F d, Y", $date);
+  }
+  if (isset($node->field_author[LANGUAGE_NONE])) {
+    if (count($node->field_author[LANGUAGE_NONE]) > 1) {
+      $source_authors = $node->field_author[LANGUAGE_NONE];
+      foreach ($source_authors as $source_nid => $source_author) {
+        $author_tid = $source_author['target_id'];
+        $author_url = $base_url . '/' .
+          drupal_get_path_alias('node/' . $author_tid);
+        $author = node_load($author_tid);
+        $author_last_name = $author->field_last_name[LANGUAGE_NONE][0]['safe_value'];
+        $author_first_name = $author->field_given_name[LANGUAGE_NONE][0]['safe_value'];
+        $author_link = l(t($author_first_name . ' ' . $author_last_name),
+          $author_url, array(
+            'html' => TRUE,
+            'attributes' => array(
+              'target' => '_blank',
+              'class' => 'author__info-link',
+            )
+          )
+        );
+        $authors_list[] = $author_link;
+      }
+      $total_authors = count($authors_list);
+      foreach ($authors_list as $key => $author) {
+        $separator = ($key == ($total_authors - 1)) ? '' : ', ';
+        $contrib_authors .= trim($author) . $separator;
+      }
+      $byline['links'] = $contrib_authors;
+    } // multiple authors
+    else {
+      $author_tid = $node->field_author[LANGUAGE_NONE][0]['target_id'];
+      $author_url = $base_url . '/' .
+        drupal_get_path_alias('node/' . $author_tid);
+      $author = node_load($author_tid);
+      $author_last_name = $author->field_last_name[LANGUAGE_NONE][0]['safe_value'];
+      $author_first_name = $author->field_given_name[LANGUAGE_NONE][0]['safe_value'];
+      $author_link = l(t($author_first_name . ' ' . $author_last_name),
+        $author_url, array(
+          'html' => TRUE,
+          'attributes' => array(
+            'target' => '_blank',
+            'class' => 'author__info-link',
+          )
+        )
+      );
+      $byline['links'] = $author_link;
+      if (isset($author->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $author_image_tid = $author->field_images[LANGUAGE_NONE][0]['target_id'];
+        $byline['image'] = _ti_amg_fwrd_feature_get_image($author_image_tid, $image_style);
+      }
+    } // the only one author
+  }
+  return theme('byline_section', array(
+     'byline' => $byline,
+   ));
+}
+/**
+ * Breadcrumbs
+ */
+function _ti_amg_fwrd_feature_preprocess_breadcrumb_content($node) {
+global $base_url;
+$breadcrumbs_set_ids = array();
+$breadcrumbs = array();
+
+  if (isset($node->field_blog_breadcrumb_link[LANGUAGE_NONE])) {
+    foreach ($node->field_blog_breadcrumb_link[LANGUAGE_NONE] as $breadcrumb_id) {
+      $breadcrumbs_set_ids[] = $breadcrumb_id['value'];
+    }
+    $breadcrumb_entity = entity_load('field_collection_item', $breadcrumbs_set_ids);
+    $breadcrumbs[0]['label'] = 'Home';
+    $breadcrumbs[0]['url'] = $base_url;
+    foreach ($breadcrumb_entity as $breadcrumb) {
+      $breadcrumb_unit = array();
+      if (!empty($breadcrumb->field_breadcrumb_title[LANGUAGE_NONE][0]['value'])) {
+        $breadcrumb_unit['label'] = $breadcrumb->field_breadcrumb_title[LANGUAGE_NONE][0]['value'];
+      }
+      if (!empty($breadcrumb->field_section_url[LANGUAGE_NONE][0]['value'])) {
+        $breadcrumb_unit['url'] = $breadcrumb->field_section_url[LANGUAGE_NONE][0]['value'];
+      }
+      if (!empty($breadcrumb->field_breadcrumb_content[LANGUAGE_NONE][0]['target_id'])) {
+        $breadcrumb_content_nid = $breadcrumb->field_breadcrumb_content[LANGUAGE_NONE][0]['target_id'];
+        if (empty($breadcrumb_unit['label'])) {
+          $breadcrumb_node = node_load($breadcrumb_content_nid);
+          $breadcrumb_unit['label'] = $breadcrumb_node->title;
+        }
+        if (empty($breadcrumb_unit['url'])) {
+          $breadcrumb_unit['url'] = $base_url . '/' .
+          drupal_get_path_alias('node/' . $breadcrumb_content_nid);
+        }
+      }
+      $breadcrumbs[] = $breadcrumb_unit;
+    }
+  }
+  else {
+    $breadcrumbs = ti_amg_fwrd_custom_get_page_breadcrumbs($node);
+  }
+  return theme('breadcrumbs-section', array(
+      'links' => $breadcrumbs,
+    ));
+}
+
+/**
+ * Hero Image
+ */
+function _ti_amg_fwrd_feature_preprocess_hero_image_content($node, $content_url) {
+  $hero_image = array();
+  if (!empty($node->field_blog_hero_image[LANGUAGE_NONE][0]['target_id'])) {
+    $hero_image_tid = $node->field_blog_hero_image[LANGUAGE_NONE][0]['target_id'];
+    $hero_image = _ti_amg_fwrd_feature_get_image($hero_image_tid, LARGE_VIDEO_TOUT_STYLE);
+    if ($content_url) {
+      $hero_image['content_url'] = $content_url;
+      if (empty($hero_image['alt'])) {
+        $hero_image['alt'] = $node->title;
+      }
+      $hero_image['link'] = l('<div class="image-insert__wrap"><img src="' . $hero_image['uri'] . '" alt="Food &amp; Wine: ' . $hero_image['alt'] . '"></div>', $content_url, array(
+        'html' => TRUE,
+        'attributes' => array(
+          'target' => '_blank'
+        )
+          )
+      );
+    }
+  }
+  if (empty($hero_image['alt'])) {
+    $hero_image['alt'] = $node->title;
+  }
+  return array('image' => $hero_image, 'hero_img_content' => theme('hero-image', array(
+      'image' => $hero_image,
+      'classes_list' => 'feature__image',
+      'is_hero' => TRUE,
+  )));
+}
+
+/**
+ * Content Image
+ */
+function _ti_amg_fwrd_feature_preprocess_image_content($node) {
+  global $base_url;
+  $lead_image = array();
+  $image_style = 'rd_fwrd_blog_main_image';
+  if (!empty($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+    $image_tid = $node->field_images[LANGUAGE_NONE][0]['target_id'];
+    $lead_image = _ti_amg_fwrd_feature_get_image($image_tid, $image_style);
+    if (!empty($node->field_overwrite_image_credit)) {
+      $lead_image['credit'] = strip_tags($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['value']);
+    }
+    if (!empty($node->field_overwrite_image_caption)) {
+      $lead_image['caption'] = strip_tags($node->field_overwrite_image_caption[LANGUAGE_NONE][0]['value']);
+    }
+    if (!empty($node->field_overwrite_image_alt_text)) {
+      $lead_image['alt'] = strip_tags($node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value']);
+    }
+    $content_url = $base_url . '/' . drupal_get_path_alias('node/' . $node->nid);
+    $social_share['fb_share'] = _ti_amg_fwrd_custom_social_share_widget($node->title, $lead_image['uri'], $content_url, 'fb');
+    $social_share['pinit_share'] = _ti_amg_fwrd_custom_social_share_widget($node->title, $lead_image['uri'], $content_url, 'pinit');
+  }
+  if(empty($lead_image['alt'])){
+    $lead_image['alt'] = $node->title;
+  }
+  return array('main_image' => $lead_image, 'main_img_content' => theme('image-insert', array(
+      'image' => $lead_image,
+      'classes_list' => 'feature__image',
+      'social_share' => $social_share,
+      'is_video' => FALSE,
+  )));
+}
+
+function _ti_amg_fwrd_feature_prev_next_node($node) {
+  $pagination = array();
+  $prev_next =  _ti_amg_fwrd_custom_prev_next_node($node->nid);
+  $pagination['prev'] = $prev_next[0];
+  $pagination['next'] = $prev_next[1];
+  return $pagination;
+ }
+/**
+  * Left Section List: manual content and section title
+  */
+function _ti_amg_fwrd_feature_preprocess_left_section_list_content($node) {
+  global $base_url;
+  $feature = array();
+  $entity_ids = array();
+
+  $feature['title'] =
+    (isset($node->field_list_left_section_title[LANGUAGE_NONE][0]['safe_value'])) ?
+     $node->field_list_left_section_title[LANGUAGE_NONE][0]['safe_value'] : 'Latest';
+  if (isset($node->field_blog_left_section_content[LANGUAGE_NONE])) {
+    foreach ($node->field_blog_left_section_content[LANGUAGE_NONE] as $entity_id) {
+      $entity_ids[] = $entity_id['target_id'];
+    }
+    $content_nodes = array_values(entity_load('node', $entity_ids));
+    foreach ($content_nodes as $current_node) {
+      $feature['content'][] = _ti_amg_fwrd_feature_get_left_section_list_content($current_node);
+    }
+  }
+  else {
+    // Fallback: latest blogs based on the first topic, the current content is targeted to.
+    if (isset($node->field_topic[LANGUAGE_NONE][0]['tid'])) {
+      $topic_tid = $node->field_topic[LANGUAGE_NONE][0]['tid'];
+      $tids_to_check = $topic_tid;
+      $topic_obj = taxonomy_term_load($topic_tid);
+      $nids_to_exclude[] = $node->nid;
+      $field_to_check = 'field_topic';
+      $total_links_max = NAVIGATION_LINKS_TOTAL;
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', array('blog', 'article'))
+      ->propertyCondition('status', 1)
+      ->fieldCondition($field_to_check, 'tid', $tids_to_check)
+      ->entityCondition('entity_id', $nids_to_exclude, 'NOT IN')
+      ->propertyOrderBy('changed', 'DESC')
+      ->range(0, $total_links_max);
+       $result = $query->execute();
+      if (isset($result['node'])) {
+        $blog_nids = array_keys($result['node']);
+      }
+      $feature['content'] = _ti_amg_fwrd_feature_get_related_contents($blog_nids);
+    }
+  }
+  return $feature;
+}
+
+function _ti_amg_fwrd_feature_get_related_contents($node_ids) {
+  global $base_url;
+  $related_content = array();
+  $contents_array = array_values(entity_load('node', $node_ids));
+  foreach ($contents_array as $content) {
+    $content_item = array();
+    $content_item['title'] = $content->title;
+    $content_item['url'] = $base_url . '/' .
+      drupal_get_path_alias('node/' . $content->nid);
+    $content_item['link'] = l($content_item['title'],
+    $content_item['url'], array(
+      'html' => TRUE,
+      'attributes' => array(
+         'class' => 'content-list__list-link'
+       )
+     )
+    );
+    $related_content[] = $content_item;
+  }
+  return $related_content;
+}
+function _ti_amg_fwrd_feature_get_left_section_list_content($node) {
+  global $base_url;
+  $content = array();
+  $content['title'] = $node->title;
+  $content['url'] = $base_url . '/' .
+    drupal_get_path_alias('node/' . $node->nid);
+  $content['link'] = l($content['title'],
+    $content['url'], array(
+      'html' => TRUE,
+      'attributes' => array(
+         'class' => 'content-list__list-link'
+       )
+     )
+   );
+  return $content;
+}
+
+/**
+  * Related Links: manual contents
+  */
+function _ti_amg_fwrd_feature_preprocess_related_links($node, $istoken = '') {
+  $related_links = array();
+  if (isset($node->field_related_content[LANGUAGE_NONE])) {
+    foreach ($node->field_related_content[LANGUAGE_NONE] as $entity_id) {
+      $entity_ids[] = $entity_id['target_id'];
+    }
+    $content_nodes = array_values(entity_load('node', $entity_ids));
+    foreach ($content_nodes as $related_node) {
+      $related_links[] = _ti_amg_fwrd_feature_get_related_links_content($related_node);
+    }
+    $class_list = 'feature__related related-content';
+
+    if (isset($istoken) && ($istoken)) { $class_list = 'feature__related related-content divider'; }
+
+    return theme('related-section', array(
+      'related_contents' => $related_links,
+      'classes_list' => $class_list,
+    ));
+  }
+}
+
+function _ti_amg_fwrd_feature_get_related_links_content($node) {
+  global $base_url;
+  $content = array();
+  $content['title'] = $node->title;
+  $content['url'] = $base_url . '/' .
+    drupal_get_path_alias('node/' . $node->nid);
+  $content['link'] = l($content['title'],
+    $content['url'], array(
+      'html' => TRUE,
+     )
+   );
+  return $content;
+}
+
+function _ti_amg_fwrd_feature_get_content($node_id, $image_style) {
+  global $base_url;
+  $content = array();
+  $node = node_load($node_id);
+  $content['title'] = $node->title;
+  $content['url'] = $base_url . '/' .
+    drupal_get_path_alias('node/' . $node->nid);
+  $image_style = (isset($image_style)) ? $image_style : LANDING_TOUT_IMAGE_STYLE;
+  if (($node->type == 'article') || ($node->type == 'blog')) {
+    if (isset($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+      $image_tid = $node->field_images[LANGUAGE_NONE][0]['target_id'];
+      $lead_image = _ti_amg_fwrd_feature_get_image($image_tid, $image_style);
+      $lead_image_credit = '';
+      $lead_image_alt = '';
+      if (isset($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['safe_value'])) {
+          $lead_image_credit =
+            strip_tags($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['safe_value']);
+      }
+      if (isset($node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['safe_value'])) {
+          $lead_image_alt =
+            strip_tags($node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['safe_value']);
+      }
+      $content['image'] = $lead_image;
+      $content['image']['credit'] = (isset($lead_image_credit)) ?
+        $lead_image_credit : $lead_image['credit'];
+      $content['image']['alt'] = (isset($lead_image_alt)) ?
+        $lead_image_alt : $lead_image['alt'];
+      $content['image']['alt'] = (isset($content['image']['alt'])) ?
+        $content['image']['alt'] : '';
+    }
+  }
+  elseif ($node->type == 'gallery') {
+    if (isset($node->field_slide_info[LANGUAGE_NONE][0])) {
+      $first_slide_nid = $node->field_slide_info[LANGUAGE_NONE][0]['value'];
+      $slide_entity = entity_load('field_collection_item',
+              array($first_slide_nid));
+      if (isset($slide_entity[$first_slide_nid]->field_slide_image[LANGUAGE_NONE][0]['target_id'])) {
+         $lead_image_nid = $slide_entity[$first_slide_nid]->field_slide_image[LANGUAGE_NONE][0]['target_id'];
+         $lead_image = _ti_amg_fwrd_feature_get_image($lead_image_nid, $image_style);
+         $content['image'] = $lead_image;
+         $content['image']['alt'] = (isset($lead_image['alt'])) ?
+           $lead_image['alt'] : '';
+      }
+    }
+  }
+  elseif ($node->type == 'video') {
+    if (isset($node->field_video_still[LANGUAGE_NONE][0])) {
+      $video_thumbnail_uri = (isset($node->field_video_still[LANGUAGE_NONE][0]['uri'])) ?
+      $node->field_video_still[LANGUAGE_NONE][0]['uri'] : DEFAULT_IMAGE_URI;
+      $content['image']['uri'] = image_style_url($image_style, $video_thumbnail_uri);
+      $content['image']['alt'] = '';
+    }
+  }
+  elseif ($node->type == 'recipe') {
+    if (!empty($node->field_images)) {
+      if (isset($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $recipe_nid = $node->field_images[LANGUAGE_NONE][0]['target_id'];
+        // Load the image node by using given recipe nid
+        $image_node = node_load($recipe_nid);
+        // Load the image_uri from large image field
+        if (!empty($image_node->field_large_image)) {
+          $image_file = $image_node->field_large_image[LANGUAGE_NONE][0];
+          $content['image']['uri'] = image_style_url($image_style, $image_file['uri']);
+        }
+        // Load the image_uri from image field
+        elseif (!empty($image_node->field_image)) {
+          $image_file = $image_node->field_image[LANGUAGE_NONE][0];
+          $content['image']['uri'] = image_style_url($image_style, $image_file['uri']);
+        }
+        // Load the default recipe image
+        else {
+          $content['image']['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+        }
+        // Load the image_credit
+        if (!empty($image_node->field_credit)) {
+          $content['image']['credit'] = $image_node->field_credit[LANGUAGE_NONE][0]['value'];
+        }
+        else {
+          $content['image']['credit'] = '';
+        }
+        if (!empty($image_node->field_alt_text)) {
+          $content['image']['alt'] = $image_node->field_alt_text[LANGUAGE_NONE][0]['value'];
+        }
+        else {
+          $content['image']['alt'] = '';
+        }
+      }
+    }
+    else {
+      // Load the default recipe image
+      $content['image']['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+      $content['image']['credit'] = '';
+      $content['image']['alt'] = '';
+    }
+
+  }
+
+  return $content;
+}
+
+/**
+  * Preprocessing image, required param: image node id
+  */
+function _ti_amg_fwrd_feature_get_image($node_id, $image_style) {
+  $image = array();
+  $image_node = node_load($node_id);
+  $image_style = (isset($image_style)) ? $image_style : LANDING_TOUT_IMAGE_STYLE;
+  if ($image_node->type == 'image') {
+    //Load the image_uri from large image field
+    if (!empty($image_node->field_large_image)) {
+      $image_file = $image_node->field_large_image[LANGUAGE_NONE][0];
+      $image['uri'] = image_style_url($image_style, $image_file['uri']);
+    }
+    //Load the image_uri from image field
+    elseif (!empty($image_node->field_image)) {
+      $image_file = $image_node->field_image[LANGUAGE_NONE][0];
+      $image['uri'] = image_style_url($image_style, $image_file['uri']);
+    }
+    //Load the default recipe image
+    else {
+      $image['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+    }
+    //Load the image_credit
+    if (!empty($image_node->field_credit)) {
+      $image['credit'] = $image_node->field_credit[LANGUAGE_NONE][0]['value'];
+    }
+    else {
+      $image['credit'] = '';
+    }
+    //Load the image_caption
+    if (!empty($image_node->field_caption)) {
+      $image['caption'] = $image_node->field_caption[LANGUAGE_NONE][0]['value'];
+    }
+    else {
+      $image['caption'] = '';
+    }
+    //Load the image_alt
+    if (!empty($image_node->field_alt_text)) {
+      $image['alt'] = $image_node->field_alt_text[LANGUAGE_NONE][0]['value'];
+    }
+    else {
+      $image['alt'] = '';
+    }
+  }
+  elseif($image_node->type == 'video') {
+    $image = ti_amg_fwrd_custom_get_video_still_image_info($image_node, $image_style);
+  }
+
+
+  return $image;
+}
+
+/*
+ * To get subqueue id of particular node id.
+ *
+ * @param $nid
+ *    NID of partuclar node.
+ *
+ * @return $subqueue_id
+ *    Subqueue id of partuclar node belongs to.
+ */
+
+function _ti_amg_fwrd_feature_get_squid($nid) {
+  $subqueue_id = db_query("SELECT sqid from {nodequeue_nodes} where nid=:nid", array(':nid' => $nid))->fetchField();
+  return $subqueue_id;
+}
+
+/*
+ * To get all content of nodes selected under a subqueue.
+ *
+ * @param $subqueue_id
+ *    Subqueue id of particular node belongs to.
+ *
+ * @param $subqueue_id
+ *    NID of partuclar node.
+ *
+ * @return $result
+ *    Content of all nodes under the subqueue
+ *    title of subqueue
+ *    next & prev item positions for the current node id.
+ */
+
+function _ti_amg_fwrd_feature_get_nodequeue_data($subqueue_id, $current_nid) {
+  $result = array();
+  $subqueue_info = nodequeue_load_subqueue($subqueue_id);
+  $result['title'] = $subqueue_info->title;
+  $subqueue_size = $subqueue_info->count;
+  $result['current_item_number'] = 0;
+  $subqueue_data = nodequeue_load_nodes($subqueue_id, $backward = FALSE, $from = 0, $count = $subqueue_size, $published_only = TRUE);
+  foreach ($subqueue_data as $key => $item) {
+    if ($item->nid == $current_nid) {
+      $result['current_pos'] = $key;
+      $result['current_item_number'] = $key + 1;
+    }
+    $result['content'][$key]['title'] = $item->title;
+    $result['content'][$key]['nid'] = $item->nid;
+    $content_node = node_load($item->nid);
+    if (isset($content_node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $image_tid = $content_node->field_images[LANGUAGE_NONE][0]['target_id'];
+        $image = _ti_amg_fwrd_feature_get_image($image_tid, FEATURE_PAGINATION_IMAGE);
+        $result['content'][$key]['image'] = $image;
+    }
+    else if (isset($content_node->field_multiple_images[LANGUAGE_NONE])) {
+       $image_tid = $content_node->field_multiple_images[LANGUAGE_NONE][0]['target_id'];
+       $image = _ti_amg_fwrd_feature_get_image($image_tid, FEATURE_PAGINATION_IMAGE);
+        $result['content'][$key]['image'] = $image;
+    }
+    else if ((!empty($content_node->field_related_videos)) || (!empty($content_node->field_blog_video))){
+       $image = _ti_amg_fwrd_feature_get_video_image($content_node);
+       $result['content'][$key]['image'] = $image;
+    }
+
+    $result['content'][$key]['url'] = $base_url . '/' . drupal_get_path_alias('node/' . $item->nid);
+    $result['content'][$key]['link'] = l($result['content'][$key]['title'], $result['content'][$key]['url'], array('html' => TRUE,
+      'attributes' => array(
+        'class' => 'content-list__list-link'
+    )));
+  }
+  $size = count($result['content']);
+  $result['next_pos'] = (($result['current_pos'] + 1) >= $size) ? 0 : $result['current_pos'] + 1;
+  $result['prev_pos'] = (($result['current_pos'] - 1) < 0) ? $size - 1 : $result['current_pos'] - 1;
+  return $result;
+}
+
+/*
+ * To get the rendered pagination links info.
+ *
+ * @param $left_section_data
+ *    Array of subqueue items for current node id.
+ *
+ * @return rendered array of pagination links.
+ */
+
+function _ti_amg_fwrd_feature_pagination($left_section_data = array()) {
+  $result = array();
+  if (!empty($left_section_data)) {
+    $next_pos = $left_section_data['next_pos'];
+    $prev_pos = $left_section_data['prev_pos'];
+
+    $result['next'] = array(
+      'url' => $left_section_data['content'][$next_pos]['url'],
+      'title' => $left_section_data['content'][$next_pos]['title'],
+      'image' => $left_section_data['content'][$next_pos]['image'],
+    );
+    $result['prev'] = array(
+      'url' => $left_section_data['content'][$prev_pos]['url'],
+      'title' => $left_section_data['content'][$prev_pos]['title'],
+      'image' => $left_section_data['content'][$prev_pos]['image'],
+    );
+  }
+  return $result;
+}
+
+/*
+ * Returning the video object of particular blog.
+ *
+ * @param1 $node
+ *    Node object.
+ * @param2 $device
+ *    The current loaded device.
+ *
+ * @return $video
+ *    Video object of particular node.
+ */
+
+function _ti_amg_fwrd_feature_get_video($node, $device) {
+  global $heroSectionIsVideo;
+  $heroSectionIsVideo = FALSE;
+  $video = '';
+  
+  if (!empty($node->field_related_videos) &&
+      isset($node->field_related_videos[LANGUAGE_NONE][0]['target_id'])) {
+    $video_object = $node->field_related_videos[LANGUAGE_NONE][0]['entity'];
+
+    if (!empty($video_object->field_video_id)) {
+      $video_id = $video_object->field_video_id[LANGUAGE_NONE][0]['value'];
+      $player_data = array(
+        'data-viewplay="true"',
+        'data-stickyplay="true"',
+      );
+      $video = _ti_amg_fwrd_custom_get_html5_video($video_id, $device, "article", $player_data);
+      $heroSectionIsVideo = TRUE;    
+    }
+  }
+  else if (!empty($node->field_blog_video[LANGUAGE_NONE])) {
+    $embed_video = ti_amg_fwrd_custom_get_field_value('node', $node, 'field_blog_video');
+    if (!empty($embed_video)) {
+      $video = render($embed_video);
+      $heroSectionIsVideo = TRUE;
+    }
+  }
+  return $video;
+}
+
+function _ti_amg_fwrd_feature_get_video_image($node) {
+  $video_image_uri = '';
+  $image = array();
+  if (!empty($node->field_related_videos) &&
+      isset($node->field_related_videos[LANGUAGE_NONE][0]['target_id'])) {
+      $video = node_load($node->field_related_videos[LANGUAGE_NONE][0]['target_id']);
+
+    if (isset($video->field_video_still[LANGUAGE_NONE][0])) {
+      $video_image_uri = (isset($video->field_video_still[LANGUAGE_NONE][0]['uri'])) ?
+      $video->field_video_still[LANGUAGE_NONE][0]['uri'] : DEFAULT_IMAGE_URI;
+      $image['uri'] = image_style_url(FEATURE_PAGINATION_IMAGE, $video_image_uri);
+      $image['alt'] = '';
+    }
+  }
+  return  $image;
+}
+
+/*
+ * Implements hook_node_insert().
+ */
+function ti_amg_fwrd_feature_node_insert($node) {
+  if ($node->is_new && $node->type == 'recipe') {
+    $type = 'recipes';
+    // Skipping this logic if it is syndicated content.
+    if (isset($node->path) && empty($node->syndicated_from[LANGUAGE_NONE])) {
+      if (empty($node->path['alias'])) {
+        $node_title = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents($node->title));
+        $node_title = pathauto_cleanstring(utf8_decode($node_title));
+        $node->path['alias'] = trim($type . "/" . $node_title);
+      }
+      else {
+        $node_title = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents($node->path['alias']));
+        $node_title = pathauto_cleanstring(utf8_decode($node_title));
+        $node->path['alias'] = trim($node_title);
+      }
+      if (empty($node->path['source'])) {
+        $node->path['source'] = "node" . "/" . $node->nid;
+      }
+      path_save($node->path);
+    }
+  }
+}
+
+// To convert the specal characters in the url alias.
+function ti_amg_fwrd_feature_convert_url_special_char($alias = NULL) {
+  $exploded_array = explode('/', $alias);
+  $new_path = '';
+  foreach ($exploded_array as $item) {
+    $updated_content = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents($item));
+    $updated_content = pathauto_cleanstring(utf8_decode($updated_content));
+    if ($new_path == '') {
+      $new_path = $updated_content;
+    }
+    else {
+      $new_path .= '/' . $updated_content;
+    }
+  }
+  return $new_path;
+}
+
+/**
+ * Inserting the Universal ad 300x250 in the mobile blog body for every 130 words.
+ * 130 Words mean it will come around 600px height.
+ */
+function ti_amg_fwrd_feature_universal_ad($body_cnt = '') {
+  $contents = array_filter(explode('</p>', $body_cnt));
+  $word_count = 0;
+  $floor_word_count = 0;
+  $diff_total_word_count = 0;
+  $diff_last_word_count = 0;
+  $last_word_count = 0;
+  $total_word_count = str_word_count(strip_tags($body_cnt));
+  // In 50 pixel height, around 11 words will fit in the mobile page.
+  $figure_height = 80; // figure height is 370 = 80 words.
+  if (preg_match_all('/(<figure)/', $body_cnt, $matches)) {
+    if (!empty($matches[0])) {
+      // If inner images in the page, calculating image height interms of words.
+      $total_word_count += count($matches[0]) * $figure_height;
+    }
+  }
+  $ad_pos = 0;
+  $new_content = '';
+  foreach ($contents as $item) {
+    $word_count += str_word_count(strip_tags($item));
+    if (preg_match('/(<figure)/', $item, $matches)) {
+      $word_count += $figure_height;
+    }
+    $floor_word_count = floor($word_count / FEATURE_UNIVERSAL_AD_WORDS_COUNT);
+    $diff_total_word_count = $total_word_count - $word_count;
+    $diff_last_word_count = $word_count - $last_word_count;
+    if ($total_word_count > $word_count &&
+        $floor_word_count > 0 &&
+        $diff_last_word_count >= FEATURE_UNIVERSAL_AD_WORDS_COUNT &&
+        $diff_total_word_count > FEATURE_UNIVERSAL_AD_WORDS_COUNT) {
+      $ad_pos++;
+      $insert_str = theme('html_tag', array(
+        'element' => array(
+          '#tag' => 'div',
+          '#attributes' => array(
+            'id' => 'universal-ad_' . $ad_pos, // for first universal ad id = universal-ad_1
+            'class' => 'universal-mobile-ads not-fired',
+            // For first universal ad, ad position will be 2
+            // Because already 300x250 ad is serving under deck.
+            'ad_postion' => $ad_pos + 1,
+          ),
+          '#value' => '',
+        )
+      ));
+      $new_content .= $item . '</p>' . $insert_str;
+      $last_word_count = $word_count;
+    }
+    else {
+      $new_content .= $item . '</p>';
+    }
+  }
+  return $new_content;
+}
+
+/**
+ * To check related link token availble in the body field.
+ *
+ * @param object $node
+ *   Node Object.
+ * @return boolean
+ *   If token available, return TRUE
+ */
+function ti_amg_fwrd_feature_check_related_token($node) {
+  $related_token = FALSE;
+  if (isset($node->field_related_cnt_links[LANGUAGE_NONE])) {
+    $search = '<p>[%related]</p>';
+    if (isset($node->body[LANGUAGE_NONE][0]['value'])) {
+      $body = $node->body[LANGUAGE_NONE][0]['value'];
+      if (strpos($body, $search) != FALSE) {
+        $related_token = TRUE;
+      }
+    }
+  }
+  return $related_token;
+}

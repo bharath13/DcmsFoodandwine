@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Recipe Ads feature.
+ */
+
+include_once 'ti_amg_fw_recipe_ads.features.inc';

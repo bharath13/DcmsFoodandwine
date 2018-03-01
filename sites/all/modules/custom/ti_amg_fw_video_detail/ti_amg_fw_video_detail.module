@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * @file
+ * Module used for FoodAndWine Slideshow.
+ */
+
+/**
+ * Implements hook_node_view().
+ * Add scripts & style sheets for slideshow details page
+ */
+//function ti_amg_fw_video_detail_node_view($node, $view_mode, $langcode) {
+//  $language = $node->language;
+//}
+
+/**
+ * Implements hook_preprocess_node();
+ * Makes custom variables available in gallery node theme.
+ * Pass slideshow data to Javascript.
+ */
+function ti_amg_fw_video_detail_preprocess_node(&$variables, $hook) {
+
+  //  echo '<pre>';
+  //  print_r($node);
+  //  exit;
+  global $base_url;
+  $node = $variables['node'];
+
+  if ($node->type == 'video') {
+    $nid = $node->nid;
+    $variables['title'] = $node->title;
+    $variables['video_slug'] = (isset($node->field_video_slug[LANGUAGE_NONE][0]['value'])) ? $node->field_video_slug[LANGUAGE_NONE][0]['value'] : "";
+
+
+    $variables['deck'] = (isset($node->field_deck[LANGUAGE_NONE][0]['value'])) ? $node->field_deck[LANGUAGE_NONE][0]['value'] : "";
+
+    $variables['video_id'] = (isset($node->field_video_id[LANGUAGE_NONE][0]['value'])) ? $node->field_video_id[LANGUAGE_NONE][0]['value'] : "";
+    $variables['player_id'] = (isset($node->field_player_id[LANGUAGE_NONE][0]['value'])) ? $node->field_player_id[LANGUAGE_NONE][0]['value'] : "";
+    if($variables['video_id'] != ''){
+      //Setting video_asset_id to Tealium UDO
+      ti_udo_set("video_asset_id", $variables['video_id']);
+    }
+  }
+}
+

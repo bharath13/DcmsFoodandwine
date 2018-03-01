@@ -1,0 +1,6 @@
+name = FW custom module for responsive design
+description = Create custom functionalities for responsive design template.
+package = Foodandwine
+core = 7.x
+
+

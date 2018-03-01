@@ -1,0 +1,66 @@
+<?php
+
+/**
+ * Implements hook_context_plugins().
+ */
+function ti_amg_fw_mobile_context_context_plugins() {
+
+  $plugins = array(
+
+    'ti_amg_fw_mobile_context_condition_is_mobile' => array(
+      'handler' => array(
+
+        'path' => drupal_get_path('module', 'ti_amg_fw_mobile_context')
+        . '/plugins/context',
+        'file' => 'ti_amg_fw_mobile_context_condition_is_mobile.inc',
+        'class' => 'ti_amg_fw_mobile_context_condition_is_mobile',
+        'parent' => 'context_condition',
+
+      ),
+    ),
+
+  );
+
+  return $plugins;
+
+}
+
+
+/**
+ * Implements hook_context_registry().
+ */
+function ti_amg_fw_mobile_context_context_registry() {
+
+  $registry = array(
+
+    'conditions' => array(
+      'ti_amg_fw_mobile_context_condition_is_mobile' => array(
+
+        'title' => t('Is Mobile'),
+        'description' =>
+          t('Set this context based on whether the user is on a mobile device or not'),
+        'plugin' => 'ti_amg_fw_mobile_context_condition_is_mobile',
+
+      ),
+    ),
+
+  );
+
+  return $registry;
+
+}
+
+
+/**
+ * Implements hook_context_page_reaction().
+ */
+function ti_amg_fw_mobile_context_context_page_reaction() {
+
+  $plugin = context_get_plugin('condition',
+    'ti_amg_fw_mobile_context_condition_is_mobile');
+
+  if ($plugin) {
+    $plugin->execute();
+  }
+
+}

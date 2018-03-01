@@ -1,0 +1,78 @@
+/**
+ * Block: social-share
+ * Element: social-share__element
+ * Modifier: social-share--modifier
+ */
+
+$block: social-share;
+.social-share {
+  @include clearfix;
+  display: inline-block;
+  vertical-align: middle;
+
+  &__item {
+    position: relative;
+    float: left;
+    width: 48px;
+    height: 45px;
+    text-align: center;
+    
+    &__icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      @include size(30px);
+      display: inline-block;
+      vertical-align: middle;
+      @include transform( translateX(-50%) translateY(-50%) );
+      
+      &--pt {
+        color: $brand-primary;
+        padding-top: 10px;
+      }
+
+      &--tw {
+        color: $color-twitter;
+        padding-top: 10px;
+      }
+
+      &--fb {
+        color: #5372cc;
+        padding-top: 10px;
+      }
+
+      &--email,
+      &--print {
+        color: $color-dark-grey;
+      }
+    }
+    
+    &--has-count &__icon{
+      top: -2px;
+      @include transform( translateX(-50%) translateY(0) );
+    }
+
+    &__count {
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      color: lighten($color-dark-grey, 20%);
+      font-size: rem(14);
+      line-height: 1;
+    }
+    
+    &:after {
+      content: '';
+      display: block;
+      width: 1px;
+      height: 100%;
+      background-color: $color-mid-grey;
+      float: right;
+    }
+
+    &:last-child:after {
+      display: none;
+    }
+  }
+}

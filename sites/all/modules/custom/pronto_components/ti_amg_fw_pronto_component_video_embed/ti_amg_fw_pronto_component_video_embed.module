@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * @file
+  * Implement pronto title with subheader component.
+   *
+    * Author Sathishkumar Selvakumar
+     * <sathishkumar.selvakumar@mindtree.com>.
+      */
+
+/**
+ * Implements hook_field_extra_fields().
+  */
+function ti_amg_fw_pronto_component_video_embed_field_extra_fields() {
+  $extra = array();
+  $entity_info = entity_get_info('node');
+  $bundles = array_keys($entity_info['bundles']);
+  foreach ($bundles as $bundle) {
+    $extra['node'][$bundle] = array(
+      'display' => array(
+        'pronto_component_video_embed' => array(
+          'label' => t('Pronto Component: Video Embed v1.0'),
+          'weight' => 0,
+          'visible' => FALSE,
+        ),
+      ),
+    );
+  }
+
+  return $extra;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function ti_amg_fw_pronto_component_video_embed_node_view($node, $view_mode, $langcode) {
+  if ($view_mode !== TI_PRONTO_FIELD_FORMATTERS_VIEW_MODE_MACHINE_NAME) {
+    return FALSE;
+  }
+
+  $extra_fields = field_info_extra_fields('node', $node->type, 'display');
+  $field = $extra_fields['pronto_component_video_embed']['display'][$view_mode];
+
+  if ($field['visible']) {
+    $weight = $field['weight'];
+  }
+  else {
+    // return if not visibile
+    return;
+  }
+
+  if ($node->type == 'blog') {
+    $embed_iframe_video = field_get_items('node', $node, 'field_blog_video');
+    if (!empty($embed_iframe_video)) {
+      $embed_item = reset($embed_iframe_video);
+      $item = trim($embed_item['value']);
+      if (!empty($item) && strpos($item, 'iframe') > 0 && (strpos($item, 'youtube') > 0 || strpos($item, 'youtu.be')) > 0) {
+        // Checking that if any iframe tag embedded in the field.
+        preg_match('/src="([^"]+)"/', $item, $iframe_src);
+        if (!empty($iframe_src[1])) {
+          preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $iframe_src[1], $match);
+          $youtube_id = $match[1];
+          if (!empty($youtube_id)) {
+            $pronto_embed_component = array(
+              'type' => "components/article/video-youtube",
+              'version' => 1,
+              'weight' => $weight + 1,
+              'data' => array(
+                'id' => $youtube_id,
+              ),
+            );
+            $node->json_elements[] = $pronto_embed_component;
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,161 @@
+/**
+ * Block: content-carousel
+ * Element: content-carousel__element
+ * Modifier: content-carousel--modifier
+ */
+
+$block: content-carousel;
+$max-width: 1760px;
+
+.#{$block} {
+  height: 100%;
+  @include respond-to('small and up') {
+    position: relative;
+    top: 0;
+    left: 50%;
+    width: 980px;
+    margin: 0 auto;
+    @include transform( translateX(-50%) );
+  }
+
+  @include respond-to('medium and up') {
+    width: $max-width;
+  }
+
+  &--contained {
+    width: 100%;
+
+    @include respond-to('medium and up') {
+      width: 100%;
+    }
+  }
+
+  // add faded overly to non-active slide
+  &--focus-center {
+
+    .#{$block}__slide {
+      .hero-feature__link:after {
+        content: '';
+        display: block;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 99;
+        background-color: rgba(#ffffff, .75);
+        opacity: 1;
+        transition: opacity .25s ease-out,
+        background-color .1s ease-out;
+      }
+    }
+    .#{$block}__slide:after {
+      content: '';
+      display: block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: $z-3;
+      background-color: rgba(#ffffff, .75);
+      opacity: 1;
+      transition: opacity .25s ease-out,
+      background-color .1s ease-out;
+    }
+    .slick-active:after {
+      opacity: 0;
+      z-index: $z-3;
+    }
+    .slick-active .hero-feature__link:after {
+      opacity: 0;
+      z-index: $z-3;
+    }
+  }
+
+  &--tight {
+
+    .#{$block}__slide {
+      margin-right: 6px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  &--wide-slides {
+
+    .#{$block}__slide {
+      margin: 0 2px;
+    }
+  }
+}
+
+.content-carousel-container {
+  position: relative;
+  overflow: hidden;
+  max-width: $max-width;
+  margin: 0 auto;
+  margin-bottom: 20px;
+
+  .pagination-btn {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    margin-top: -29px;
+
+    &--next {
+      left: auto;
+      right: 20px;
+    }
+  }
+
+  .video-js {
+    .vjs-tech,
+    .vjs-poster,
+    .vjs-text-track-display,
+    .vjs-loading-spinner,
+    .vjs-big-play-button,
+    .vjs-control-bar,
+    .vjs-error-display,
+    .vjs-caption-settings,
+    .vjs-dock-text,
+    .vjs-player-info-modal,
+    .vjs-social-overlay,
+    .vjs-control-bar {
+      z-index: 1;
+    }
+  }
+  .vjs-ad-playing {
+    .vjs-ima3-ad-container {
+      z-index: 1;
+    }
+  }
+}
+.section-container {
+    #travel_guide_section {
+        .subhead {
+            .subheading {
+                font-size: 1.4444rem;
+                @include font-droid-sans;
+                color: #333;
+                line-height: 1.4;
+                margin: 0 0 10px 0;
+                text-transform: uppercase;
+            }
+            .deck {
+                p{
+                    margin: 0 0 10px 0;
+                    color: #666;
+                    font-size: 1.2222rem;
+                }
+            }
+            h3 {
+                margin:0px;
+            }
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+    }
+}

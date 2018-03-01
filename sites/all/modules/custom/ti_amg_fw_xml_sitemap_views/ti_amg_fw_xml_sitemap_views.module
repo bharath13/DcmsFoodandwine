@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW XML Sitemap Views feature.
+ */
+
+include_once 'ti_amg_fw_xml_sitemap_views.features.inc';

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Person Ads feature.
+ */
+
+include_once 'ti_amg_fw_person_ads.features.inc';

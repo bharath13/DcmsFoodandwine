@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<cross-domain-policy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="http://www.adobe.com/xml/schemas/PolicyFile.xsd">
+  <allow-access-from domain="*.foodandwine.com"/>
+  <allow-access-from domain="*.timeinc.net"/>
+  <allow-access-from domain="*.brightcove.com"/>
+  <allow-access-from domain="*.g.doubleclick.net"/>
+  <allow-access-from domain="*.googlesyndication.com" />
+</cross-domain-policy>

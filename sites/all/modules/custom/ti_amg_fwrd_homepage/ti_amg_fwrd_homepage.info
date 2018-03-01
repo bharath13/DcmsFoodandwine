@@ -1,0 +1,5 @@
+name = FW Homepage module for responsive design
+description = Create Homepage functionalities for responsive design template.
+package = Foodandwine
+core = 7.x
+dependencies[] = ti_amg_ads

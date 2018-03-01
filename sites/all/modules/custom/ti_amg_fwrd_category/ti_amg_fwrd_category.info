@@ -1,0 +1,6 @@
+name = FW category module for responsive design
+description = Create Taxonomy Category Page functionalities for responsive design template.
+package = Foodandwine
+core = 7.x
+
+

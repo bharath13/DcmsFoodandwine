@@ -1,0 +1,133 @@
+<?php
+
+/**
+ * @file
+ * Custom Module for Nativo Pages.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function ti_amg_fw_nativo_init() {
+  // Add nativo JS to each page.
+  $path = 'http://a.postrelease.com/serve/load.js?async=true';
+  if (!path_is_admin(current_path()) && (arg(0) == 'partner')) {
+    drupal_add_js($path, array('type' => 'external', 'defer' => FALSE));
+  }
+  // Longer TTL -- TLLE-1206.
+  if ((arg(0) == 'partner') || (arg(0) == 'partner_blog')) {
+    drupal_add_http_header('Cache-Control', 'max-age=86400, public=true');
+    drupal_add_http_header('X-Frame-Options', 'ALLOW-FROM http://www.stumbleupon.com');
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fw_nativo_menu() {
+
+  $items = array();
+
+  $items['ussweeps'] = array(
+    'title' => 'US Sweeps',
+    'page callback' => 'ti_amg_fw_nativo_ussweeps',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+  );
+
+  return $items;
+
+}
+
+/**
+ * Implements hook_html_head_alter().
+ */
+function ti_amg_fw_nativo_html_head_alter(&$head_elements) {
+
+  // Alter a few pieces of the HEAD for the nativo landing page.
+  if ((arg(0) == 'partner')) {
+    // Better IE10 support.
+    $head_elements['meta_ie_render_engine'] = array(
+      '#type' => 'html_tag',
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'content' => 'IE=10,chrome=1',
+        'http-equiv' => 'X-UA-Compatible',
+      ),
+    );
+  }
+}
+
+/**
+ * Implements page call back function for partner page.
+ */
+function ti_amg_fw_nativo_partner() {
+  // Getting the Ads for partner page and
+  // passing TRUE to enable newsletter for the partner page.
+  $page_info = ti_amg_fwrd_custom_get_ads(TRUE);
+
+  // If Navito page added to sponsor logo campaign.
+  if (ti_amg_fw_sponsor_logo_campaign_is_nativo()) {
+    $page_info['is_nativo_campaign'] = TRUE;
+  }
+  else {
+    $page_info['is_nativo_campaign'] = FALSE;
+  }
+
+  return theme('partner', array('page_info' => $page_info));
+}
+
+/**
+ * Implements page call back function for ussweeps page.
+ */
+function ti_amg_fw_nativo_ussweeps() {
+  return theme('ussweeps');
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fw_nativo_theme($existing, $type, $theme, $path) {
+  return array(
+    'partner' => array(
+      'template' => 'partner',
+      'path' => drupal_get_path('module', 'ti_amg_fw_nativo'),
+      'page_info' => array(),
+    ),
+    'ussweeps' => array(
+      'template' => 'ussweeps',
+      'path' => drupal_get_path('module', 'ti_amg_fw_nativo'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function ti_amg_fw_nativo_preprocess_page(&$vars) {
+  if (current_path() == 'partner') {
+    $vars['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+    if (isset($vars['detect_device'])) {
+      $vars['device_leaderboard_ad'] = _ti_amg_fwrd_custom_device_leaderboard_ad($vars['detect_device']);
+      if ($vars['detect_device'] == "desktop") {
+        drupal_add_css(
+            drupal_get_path('module', 'ti_amg_fwrd_custom')
+            . '/css/newsletters-signup.css');
+        drupal_add_js(
+            drupal_get_path('module', 'ti_amg_fwrd_custom')
+            . '/js/newsletters-signup.js');
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ *
+ * Let the system know where all our own plugins are.
+ */
+function ti_amg_fw_nativo_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools') {
+    return 'plugins/' . $plugin_type;
+  }
+}

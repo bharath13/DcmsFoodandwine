@@ -1,0 +1,13 @@
+name = Foodandwine Responsive theme setting
+description = Foodandwine responsive theme settings
+core = 7.x
+package = FoodandWine Layouts
+version = 7.x-1.0
+project = ti_amg_fw_theme_settings
+dependencies[] = ctools
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[variable][] = theme_default
+features[variable][] = theme_foodandwine_settings
+mtime = 1418081228

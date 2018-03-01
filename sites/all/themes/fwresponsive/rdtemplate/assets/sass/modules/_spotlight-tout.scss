@@ -1,0 +1,144 @@
+/**
+ * Block: spotlight-tout
+ * Element: spotlight-tout__element
+ * Modifier: spotlight-tout--modifier
+ */
+
+$block: spotlight-tout;
+
+.#{$block} {
+  @include clearfix;
+  @include layout((columns: 3, gutters: 40/280));
+  position: relative;
+  text-align: center;
+  
+  &__content {
+    position: relative;
+    padding-top: 25px;
+
+     &:before {
+      @extend %large-quote;
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -28px;
+      z-index: $z-1;
+      @include transform( scale(.7, .7));
+    }
+  }
+
+  &__title {
+    @include font-droid-sans-bold;
+    display: block;
+    font-size: rem(26);
+    line-height: 1.125;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+  }
+  
+  &__img {
+
+    img {
+      margin: 0 auto;
+      display: block;
+      border-radius: 50%
+    }
+  }
+
+  &__quote {
+    position: relative;
+    z-index: $z-2;
+  }
+
+  &__text {
+    margin-bottom: 4px;
+    font-size: rem(14);
+  }
+
+  &__link {
+    &, &:hover { color: $color-black };
+    font-size: rem(16);
+    @include font-droid-sans-bold;
+    text-transform: uppercase;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:after {
+      @extend %button-arrow;
+      content: '';
+      display: inline-block;
+      margin-left: 2px;
+      @include transform( scale(.8, .8) );
+    }
+  }
+
+&__clink {
+  &, &:hover { color: $color-black };
+}
+
+  &--alt {
+
+    .#{$block}__content {
+      padding-top: 15px;
+
+        &:before {
+          content: '';
+          display: none;
+      }
+    }
+  }
+  
+  &--show-quote {
+
+    .#{$block}__content {
+        &:before {
+          content: ' ';
+          display: block;
+      }
+    }
+  }
+
+  @include respond-to('small and up') {
+    text-align: left;
+  
+    &--alt {
+      @include layout((columns: 5, gutters: 10/230));
+
+      .#{$block}__img {
+        @include span(1 of 5);
+        position: absolute;
+        top: 50%;
+        @include transform(translateY(-50%));
+
+      }
+
+      .#{$block}__content {
+        @include span(3.8 of 5 last);
+      }
+    }
+
+    &__img {
+      @include span(1 of 3);
+    }
+
+    &__content {
+      @include span(2 of 3 last);
+      padding-top: 45px;
+
+      &:before {
+        left: -25px;
+        @include transform( none );
+      }
+    }
+
+    &__quote {
+      margin-bottom: 15px;
+      
+      blockquote {
+        margin: 0;
+      }
+    }
+  }
+}

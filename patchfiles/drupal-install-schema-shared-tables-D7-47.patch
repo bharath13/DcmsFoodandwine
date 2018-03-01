@@ -1,0 +1,15 @@
+diff --git a/includes/database/schema.inc b/includes/database/schema.inc
+index 1fc9295..ef95d31 100644
+--- a/includes/database/schema.inc
++++ b/includes/database/schema.inc
+@@ -654,7 +654,9 @@ abstract class DatabaseSchema implements QueryPlaceholderInterface {
+    */
+   public function createTable($name, $table) {
+     if ($this->tableExists($name)) {
+-      throw new DatabaseSchemaObjectExistsException(t('Table @name already exists.', array('@name' => $name)));
++      //throw new DatabaseSchemaObjectExistsException(t('Table @name already exists.', array('@name' => $name)));
++      drupal_set_message(t('Table %name already exists in the Database.', array('%name' => $name))); 
++	    return;
+     }
+     $statements = $this->createTableSql($name, $table);
+     foreach ($statements as $statement) {

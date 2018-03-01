@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file
+ * Create springboard author.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function ti_amg_fw_springboard_article_install() {
+  // Check if springboard author already exist.
+  // If not create new springboard author.
+  $user = user_load_by_name('springboard');
+  if (!is_object($user)) {
+    $editor = user_role_load_by_name('Editor');
+    if (is_object($editor)) {
+      $editor_rid = $editor->rid;
+      // Check if springboard user already present.
+      $userObj = array(
+        'name' => 'springboard',
+        'pass' => 'springboard',
+        'status' => 1,
+        'roles' => array(
+          DRUPAL_AUTHENTICATED_RID => 'authenticated user',
+          $editor_rid => 'Editor',
+        ),
+      );
+      // The first parameter is left NULL so a new user is created.
+      user_save(NULL, $userObj);
+    }
+  }
+}

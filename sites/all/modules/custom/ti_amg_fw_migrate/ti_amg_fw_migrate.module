@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * @file
+ * THIS SPACE INTENTIONALLY LEFT BLANK.
+ *
+ * Yes, there is no code in the .module file. Migrate operates almost entirely
+ * through classes, and by adding any files containing class definitions to the
+ * .info file, those files are automatically included only when the classes they
+ * contain are referenced. The one non-class piece you need to implement is
+ * hook_migrate_api(), but because .migrate.inc is registered using
+ * hook_hook_info by defining your implementation
+ * of that hook in mymodule.migrate.inc, it is
+ * automatically invoked only when needed.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fw_migrate_menu() {
+  $items = array();
+  $items['admin/config/generate-image-style'] = array(
+    'title' => 'Generate Image Style',
+    'description' => 'Generate Image Style.',
+    'access arguments' => array('access administration pages'),
+    'page callback' => '_ti_amg_fw_migrate_generate_image_style',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Flush image styles after migration.
+ */
+function _ti_amg_fw_migrate_generate_image_style() {
+  $force = arg(3);
+  if (variable_get('ti_amg_fw_image_flush', 0) == 1) {
+    foreach (image_styles() as $style) {
+      image_style_flush($style);
+    }
+    variable_set('ti_amg_fw_image_flush', 0);
+  }
+  elseif (isset($force) && $force == "force") {
+    foreach (image_styles() as $style) {
+      image_style_flush($style);
+    }
+  }
+
+  return t("Image styles flushed");
+}
+

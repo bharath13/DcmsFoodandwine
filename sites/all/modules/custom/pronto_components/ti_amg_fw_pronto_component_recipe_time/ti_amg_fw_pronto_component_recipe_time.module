@@ -1,0 +1,120 @@
+<?php
+
+/**
+ * @file
+ * Implement pronto recipe - time duration component.
+ *
+ * Author Sathishkumar Selvakumar
+ * <sathishkumar.selvakumar@mindtree.com>.
+ */
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function ti_amg_fw_pronto_component_recipe_time_field_extra_fields() {
+  $extra = array();
+  $entity_info = entity_get_info('node');
+  $bundles = array_keys($entity_info['bundles']);
+  foreach ($bundles as $bundle) {
+    $extra['node'][$bundle] = array(
+      'display' => array(
+        'pronto_component_recipe_active_time' => array(
+          'label' => t('Pronto Component: Recipe Active Time v1.0'),
+          'description' => t('To display the recipe active time.'),
+          'weight' => 99,
+          'visible' => FALSE,
+        ),
+        'pronto_component_recipe_total_time' => array(
+          'label' => t('Pronto Component: Recipe Total Time v1.0'),
+          'description' => t('To display the recipe total time.'),
+          'weight' => 98,
+          'visible' => FALSE,
+        ),
+      ),
+    );
+  }
+
+  return $extra;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function ti_amg_fw_pronto_component_recipe_time_node_view($node, $view_mode, $langcode) {
+  if ($view_mode !== TI_PRONTO_FIELD_FORMATTERS_VIEW_MODE_MACHINE_NAME) {
+    return FALSE;
+  }
+  switch ($node->type) {
+    case 'recipe':
+      // Checking whether the string 'components/recipe/information'
+      // already exist or not.
+      $key_exist = array_search('components/recipe/information', array_column($node->json_elements, 'type'));
+      if (empty($key_exist)) {
+        $pronto_component = array(
+          'type' => "components/recipe/information",
+          'version' => 1,
+          'data' => array(),
+        );
+      }
+      $flag = FALSE;
+      $extra_fields = field_info_extra_fields('node', $node->type, 'display');
+      foreach ($extra_fields as $key => $extra_field) {
+        $field = $extra_field['display'][$view_mode];
+        if ($key == 'pronto_component_recipe_active_time' && $field['visible']) {
+          $other_time = _ti_amg_fwrd_custom_preprocessing_other_time($node);
+          // Don't show recipe other time component if empty.
+          if (!empty($other_time)) {
+            $data = array(
+              'displayText' => t('Other Time'),
+              'string' => $other_time,
+            );
+            if (empty($key_exist)) {
+              $pronto_component['data']['times'][] = $data;
+            }
+            else {
+              $node->json_elements[$key_exist]['data']['times'][] = $data;
+            }
+            $flag = TRUE;
+          }
+          $duration = _ti_amg_fwrd_custom_preprocessing_active_time($node);
+          !empty($duration) ? $duration_time = $duration['rich_snippet_active_time'] : "";
+          // Don't show recipe active time component if empty.
+          if (!empty($duration_time) && ($duration_time != 'PT')) {
+            $data = array(
+              'type' => t('cook'),
+              'duration' => $duration_time,
+            );
+            if (empty($key_exist)) {
+              $pronto_component['data']['times'][] = $data;
+            }
+            else {
+              $node->json_elements[$key_exist]['data']['times'][] = $data;
+            }
+            $flag = TRUE;
+          }
+        }
+        if ($key == 'pronto_component_recipe_total_time' && $field['visible']) {
+          $duration = _ti_amg_fwrd_custom_preprocessing_time($node);
+          !empty($duration) ? $duration_time = $duration['rich_snippet_total_time'] : "";
+          // Don't show recipe total time component if empty.
+          if (!empty($duration_time) && ($duration_time != 'PT')) {
+            $data = array(
+              'type' => t('total'),
+              'duration' => $duration_time,
+            );
+            if (empty($key_exist)) {
+              $pronto_component['data']['times'][] = $data;
+            }
+            else {
+              $node->json_elements[$key_exist]['data']['times'][] = $data;
+            }
+            $flag = TRUE;
+          }
+        }
+      }
+      if (!empty($pronto_component) && $flag) {
+        $node->json_elements[] = $pronto_component;
+      }
+      break;
+  }
+}

@@ -1,0 +1,11 @@
+#stuff
+*sass-cache*
+tags
+*.sw*
+/vendor
+/bin
+*.phar
+.DS_Store
+.sass-cache
+tests/behat/features/*.feature
+*DS_Store

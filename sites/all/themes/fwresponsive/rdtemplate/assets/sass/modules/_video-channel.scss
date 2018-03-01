@@ -1,0 +1,38 @@
+$block: video-channels;
+$storyCard: story-card;
+
+.#{$block} {
+
+  .section-heading--center {
+    margin-top: 0;
+  }
+
+
+  &__row {
+
+    &:not(:last-child) {
+      margin-bottom: 40px;
+    }
+  }
+
+  @include respond-to('up to small') { 
+
+    .section-heading-desc {
+      font-size: rem(16);
+    }
+
+    .#{$storyCard} {
+
+      &__img-wrap {
+        clear: both;
+        float: none;
+        width: 100%;
+        margin-right: 0;
+      }
+
+      &__content {
+        width: 100%;
+      }
+    }
+  }
+}

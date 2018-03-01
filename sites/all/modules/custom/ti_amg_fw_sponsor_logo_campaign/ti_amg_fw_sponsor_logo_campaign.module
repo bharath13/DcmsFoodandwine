@@ -1,0 +1,289 @@
+<?php
+
+/**
+ * @file
+ * Campaign the Sponsor Logo's to F&W Site.
+ */
+define('CAMPAIGN_DESKTOP_STYLE', 'campaign_desktop_970x127');
+define('CAMPAIGN_TABLET_STYLE', 'campaign_tablet_728x124');
+define('CAMPAIGN_MOBILE_STYLE', 'campaign_mobile_320x124');
+
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fw_sponsor_logo_campaign_menu() {
+  $items = array();
+
+  $items['campaign_autocomplete'] = array(
+    'page callback' => 'ti_amg_fw_sponsor_logo_campaign_autocomplete',
+    'access callback' => 'user_access',
+    'access arguments' => array('access content'),
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/config/fw_settings'] = array(
+    'title' => 'F&W Configurations',
+    'description' => 'Settings related to F&W',
+    'position' => 'right',
+    'weight' => 10,
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+  );
+
+  $items['admin/config/fw_settings/sponsor_logo_campaign'] = array(
+    'title' => 'Sponsor Logo Campaign',
+    'description' => 'Implementing Spronsor Logo Campaign',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ti_amg_fw_sponsor_logo_campaign_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+    'file' => 'includes/ti_amg_fw_sponsor_logo_campaign.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/fw_settings/sponsor_logo_campaign/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Implementing Spronsor Logo Campaign',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -12,
+  );
+
+  $items['admin/config/fw_settings/sponsor_logo_campaign/add_content'] = array(
+    'title' => 'Campaign Content',
+    'description' => 'Implementing Spronsor Logo Campaign',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ti_amg_fw_sponsor_logo_campaign_content_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+    'file' => 'includes/ti_amg_fw_sponsor_logo_campaign.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items['admin/config/fw_settings/sponsor_logo_campaign/mp_config'] = array(
+    'title' => 'Marketplace Settings',
+    'description' => 'Configure Marketplace Display',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ti_amg_fw_sponsor_logo_campaign_marketplace_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+    'file' => 'includes/ti_amg_fw_sponsor_logo_campaign.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+  
+  return $items;
+}
+
+/**
+ * Callback function to fetch node titles for autocomplete.
+ */
+function ti_amg_fw_sponsor_logo_campaign_autocomplete($string) {
+  $matches = ti_amg_fw_sponsor_logo_campaign_autocomplete_query($string);
+  print drupal_json_encode($matches);
+  exit();
+}
+
+/**
+ * To get the list of nodes selected for sponsor logo campaign.
+ *
+ * @return array.
+ *   List of nodes.
+ */
+function ti_amg_fw_sponsor_logo_campaign_get_content($option = NULL) {
+  if ($option == 'marketplace') {
+    $content = variable_get('ti_lsg_fw_sponsor_logo_campaign_marketplace', array());
+    $campaign_items = array();
+    if (!empty($content)) {
+      foreach ($content as $row) {
+        $row_content = explode('|', $row);
+        $node_id = trim($row_content[0]);
+        if (is_numeric($node_id)) {
+          array_push($campaign_items, $node_id);
+        }
+      }
+    }
+  } 
+  else {
+    $content = variable_get('ti_lsg_fw_sponsor_logo_campaign_content', array());
+    $campaign_items = array();
+    if (!empty($content)) {
+      foreach ($content as $row) {
+        $row_content = explode('|', $row);
+        $node_id = trim($row_content[0]);
+        if (is_numeric($node_id)) {
+          array_push($campaign_items, $node_id);
+        }
+      }
+    }
+  }
+
+  return $campaign_items;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function ti_amg_fw_sponsor_logo_campaign_node_view($node, $view_mode, $langcode) {
+  if (isset($node)) {
+    $node->content['in_campaign'] = FALSE;
+    $node->content['hide_marketplace'] = FALSE;
+    // Checking the current node type is enabled under campaign settings.
+    $campaign_content_types = ti_amg_fw_sponsor_logo_campaign_get_content_types();
+    if (in_array($node->type, $campaign_content_types)) {
+      $campaign_list = ti_amg_fw_sponsor_logo_campaign_get_content();
+      // Checking the current node id is added under campaign list.
+      if (in_array($node->nid, $campaign_list)) {
+        $node->content['in_campaign'] = TRUE;
+      }
+
+      $marketplace_list = ti_amg_fw_sponsor_logo_campaign_get_content('marketplace');
+      // Hide market place Ads for the secleted pages.
+      if (in_array($node->nid, $marketplace_list)) {
+        $node->content['hide_marketplace'] = TRUE;
+      }
+    }
+
+    if($node->type != 'recipe') {
+
+      drupal_add_js(array('sponsor_campaign' => array('in_campaign' => $node->content['in_campaign'])), array('type' => 'setting'));
+
+      // Checking if campaign image uploaded to the node or not.
+      $campaign_img = array();
+      $campaign_url = '#';
+      if (!empty($node->field_campaign_logo)) {
+        $campaign_logo_item = $node->field_campaign_logo[LANGUAGE_NONE][0]['entity'];
+        if (!empty($campaign_logo_item->field_image)) {
+          $campaign_img['desktop'] = image_style_url(CAMPAIGN_DESKTOP_STYLE, $campaign_logo_item->field_image[LANGUAGE_NONE][0]['uri']);
+          $campaign_img['tablet'] = image_style_url(CAMPAIGN_TABLET_STYLE, $campaign_logo_item->field_image[LANGUAGE_NONE][0]['uri']);
+          $campaign_img['phone'] = image_style_url(CAMPAIGN_MOBILE_STYLE, $campaign_logo_item->field_image[LANGUAGE_NONE][0]['uri']);
+        }
+      }
+      // Checking if campaign url updated to the node or not.
+      if (!empty($node->field_campaign_url)) {
+        $campaign_url = $node->field_campaign_url[LANGUAGE_NONE][0]['value'];
+      }
+      drupal_add_js(array('sponsor_campaign' => array('campaign_img' => $campaign_img, 'campaign_url' => $campaign_url)), array('type' => 'setting'));
+    }
+  }
+}
+
+/**
+ * Implements hook_init().
+ */
+function ti_amg_fw_sponsor_logo_campaign_init() {
+  if (!path_is_admin(current_path())) {
+    drupal_add_js(drupal_get_path('module', 'ti_amg_fw_sponsor_logo_campaign') . '/js/' . 'campaign.js', array(
+      'type' => 'file',
+      'scope' => 'footer',
+      'weight' => -135,
+      'group' => JS_THEME,
+    ));
+    drupal_add_css(
+        drupal_get_path('module', 'ti_amg_fw_sponsor_logo_campaign')
+        . '/css/campaign.css');
+  }
+}
+
+/**
+ * To get the list of content types selected for sponsor logo campaign.
+ *
+ * @return array.
+ *   List of content types.
+ */
+function ti_amg_fw_sponsor_logo_campaign_get_content_types() {
+  $campaign_content_types = variable_get('sponsor_content_types', array());
+  $content_types = array();
+  foreach ($campaign_content_types as $content_type) {
+    if ($content_type != '0') {
+      array_push($content_types, $content_type);
+    }
+  }
+  return $content_types;
+}
+
+/**
+ * To verify the node is listed in the sponsor logo campaign.
+ *
+ * @param1 string $nid
+ *   NID of a node.
+ *
+ * @param2 string $type
+ *   Content Type of a node.
+ *
+ * @return bool
+ *   It return TRUE if the node added under campaign list.
+ */
+function ti_amg_fw_sponsor_logo_campaign_check($nid = '', $type = '') {
+  $in_campaign = FALSE;
+  if (!empty($nid) && !empty($type)) {
+    $campaign_content_types = ti_amg_fw_sponsor_logo_campaign_get_content_types();
+    if (in_array($type, $campaign_content_types)) {
+      $campaign_list = ti_amg_fw_sponsor_logo_campaign_get_content();
+      if (in_array($nid, $campaign_list)) {
+        $in_campaign = TRUE;
+      }
+    }
+  }
+  return $in_campaign;
+}
+
+/**
+ * To get the node titles for autocomplete.
+ *
+ * @param1 string $string
+ *   typed text for identify the node.
+ *
+ * @return array
+ *    array of node titles for the typed string.
+ */
+function ti_amg_fw_sponsor_logo_campaign_autocomplete_query($string = '') {
+  $matches = array();
+  $nids = array();
+  $content_types = ti_amg_fw_sponsor_logo_campaign_get_content_types();
+  $content_range = variable_get('sponsor_content_range', 10);
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', $content_types)
+      ->propertyCondition('status', 1)
+      ->propertyCondition('title', '%' . $string . '%', 'like')
+      ->addTag('publication_date_desc')
+      ->range(0, $content_range);
+
+  $result = $query->execute();
+  if (isset($result['node'])) {
+    $nids = array_map(function ($entry) {
+      return $entry->nid;
+    }, $result['node']);
+  }
+  $nodes = node_load_multiple($nids);
+  foreach ($nodes as $node) {
+    $title = check_plain($node->title);
+    $matches[$node->nid . ' | ' . $title] = $title;
+  }
+  return $matches;
+}
+
+/**
+ * Checking the Navito page added to sponsor logo campaign or not.
+ */
+function ti_amg_fw_sponsor_logo_campaign_is_nativo() {
+  $nativo_campaign = variable_get('nativo_campaign', '');
+  if (!empty($nativo_campaign) && ($nativo_campaign)) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function ti_amg_fw_sponsor_logo_campaign_preprocess_node(&$variables) {
+  if (isset($variables['content']['in_campaign']) && ($variables['content']['in_campaign'])) {
+    $variables['classes_array'][] = 'node-campaign';
+  }
+}

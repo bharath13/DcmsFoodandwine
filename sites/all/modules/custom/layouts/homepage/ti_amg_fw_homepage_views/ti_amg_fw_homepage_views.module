@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Homepage Views feature.
+ */
+
+include_once 'ti_amg_fw_homepage_views.features.inc';

@@ -1,0 +1,33 @@
+/**
+ * Block: tag-list
+ * Element: tag-list__element
+ * Modifier: tag-list--modifier
+ */
+
+ $block: tag-list;
+
+ .#{$block} {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  text-align: center;
+
+  &__tag {
+    @include font-droid-sans;
+    font-size: rem(21);
+    line-height: 1.125;
+    margin-bottom: 20px;
+
+    a {
+      color: #222;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+    
+    @include respond-to('small and up') {
+      text-align: left;
+    }
+  }
+ }

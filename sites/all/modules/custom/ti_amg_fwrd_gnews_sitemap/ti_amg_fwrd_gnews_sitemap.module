@@ -1,0 +1,87 @@
+<?php
+
+/**
+ * @file
+ * Module used for creating content type specific site maps.
+ *
+ */
+
+/**
+ * @Implements hook_menu().
+ */
+function ti_amg_fwrd_gnews_sitemap_menu() {
+  // Google news sitemap
+  $items['news-sitemap.xml'] = array(
+    'page callback' => 'ti_amg_fwrd_gnews_sitemap_main_links',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'ti_amg_fwrd_gnews_sitemap.inc',
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  return $items;
+}
+
+/**
+ * Function to fetch article and video_article nodes
+ * Pub'd within the last 48 hours, not in "How-To" channel
+ * not designted as syndicated content.
+ * @return type
+ */
+function _ti_amg_fwrd_gnews_sitemap_news_links($is_find_total = TRUE) {
+  $results = array();
+  // Per google requirements, no more than 1,000 items.
+  $xml_gnews_sitemap_max_rec = variable_get('xml_gnews_sitemap_max_rec', 1000);
+
+  $query = new EntityFieldQuery;
+  $how_to_tid = $query->entityCondition('entity_type', 'taxonomy_term')
+    ->propertyCondition('name', array('News'), 'IN')
+    ->execute();
+  
+  $how_to_tid = array_keys($how_to_tid['taxonomy_term']);
+  $how_to_tid = $how_to_tid[0];
+  // DB currently has 3 News tags, only the last one is populated on autocomplete
+  // will hard code tid until it will be fixed
+  $how_to_tid = '52453';
+  $field_to_check = "field_topic";
+ 
+  $query = db_select('node', 'n');
+  $query->fields('n', array('nid'));
+  $query->addMetaData('base_table', 'node');
+  $query->addTag('node_access');
+  $query->condition('n.type', array('blog'), 'IN');
+  $query->leftJoin('publication_date', 'pub_date', 'pub_date.nid = n.nid');
+  $query->leftJoin('field_data_field_topic', 'field_topic', 'field_topic.entity_id = n.nid');
+  $query->leftJoin('field_data_body', 'field_data_body', 'field_data_body.entity_id = n.nid');
+  $query->condition('n.status', NODE_PUBLISHED);
+  $query->condition('field_topic.field_topic_tid', $how_to_tid, '=');
+  $query->condition('pub_date.published_at',strtotime('-48 hours'), '>');
+  $query->orderBy('n.changed', 'DESC');
+  $query->range(0, $xml_gnews_sitemap_max_rec);
+
+  $result = $query->execute()->fetchCol();
+
+  $results = array();
+  $node_ids = array_values($result);
+  if (empty($node_ids)) {
+    return $results;
+  }
+  $node_dump = node_load_multiple($node_ids);
+  if (empty($node_dump)) {
+    return $results;
+  }
+  $image_url = '';
+  foreach ($node_dump as $blog_content) {
+     if (!empty($blog_content->field_images[LANGUAGE_NONE][0]['target_id'])) {
+         $img = ti_amg_fw_custom_get_image_style($blog_content->field_images[LANGUAGE_NONE][0]['target_id'], VIDEO_SLIDER_TOUT_STYLE);
+         $image_url = $img['image_uri'];
+        } 
+   $results[$blog_content->nid] = array(
+      'title' => $blog_content->title,
+      'keywords' => (!empty($tags)) ? implode(', ', array_filter($tags)) : '',
+      'img_url' => $image_url,
+      'pub_date' => $blog_content->created
+    );
+  }
+  return $results;
+
+}

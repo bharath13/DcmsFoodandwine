@@ -1,0 +1,159 @@
+<?php
+
+/*
+ * @file
+ * Component to alter pronto body field.
+ */
+
+/**
+ * Implements hook_pronto_component_body_post_alter
+ * To adjust the body value.
+ *
+ * @param array $pronto_component
+ *   To hold pronto component information.
+ * @param object $entity
+ *   Node object.
+ */
+function ti_amg_fw_pronto_component_body_pronto_component_body_post_alter(&$component, $entity) {
+  if ($entity->type == 'article' || $entity->type == 'blog') {
+    $body_content = '';
+    $langcode = 'und';
+    $body_filter_name = 'pronto_block_html';
+    $pronto_component = array();
+    $rendered_items = array();
+    if (isset($entity->body[LANGUAGE_NONE][0]['value'])) {
+      $body_content = array($entity->body[LANGUAGE_NONE][0]['value']);
+
+      $related_token_flag = 0;
+      $weight = $component['weight'];
+      // Taking if any images inserted inside the body.
+      if (!empty($entity->field_multiple_images[LANGUAGE_NONE])) {
+        $multiple_images = $entity->field_multiple_images[LANGUAGE_NONE];
+      }
+      foreach ($body_content as $key => &$item) {
+        $replacement_token = 0;
+        $item = trim($item);
+        if (!empty($item)) {
+          // Checking if any related link token(<p>[%related]</p>) available.
+          if (preg_match('/(\[%related\]<\/p>)/', $item, $matches)) {
+            $related_token_flag = 1;
+            $weight++;
+            $pronto_component[$weight] = ti_amg_fw_pronto_component_body_get_related_link_component($entity, $weight);
+            $item = trim(preg_replace('/(\[%related\]<\/p>)/', '', $item));
+            $replacement_token = 1;
+          }
+          else if (preg_match('/(\[%quote1\]<\/p>)/', $item, $matches)) {
+            // Replacing the pull quote token in the body.
+            if (!empty($entity->field_blog_pull_quote_headline[LANGUAGE_NONE])) {
+              $pull_quote_text = $entity->field_blog_pull_quote_headline[LANGUAGE_NONE][0]['value'];
+              $item = trim(preg_replace('/(\[%quote1\])/', $pull_quote_text, $item));
+            }
+          }
+          else if (preg_match('/(\[%image[0-9]*\]<\/p>)/', $item, $matches)) {
+            // Checking if any image token(ex: <p>[%image3]</p>) available.
+            $weight++;
+            if (preg_match('/\d+/', $item, $img_matches)) {
+              if (!empty($img_matches[0])) {
+                $img_num = $img_matches[0];
+              }
+            }
+
+            $image_node_id = $img_num && isset($multiple_images[$img_num - 1]['target_id']) ? $multiple_images[$img_num - 1]['target_id'] : '';
+
+            if (!empty($image_node_id)) {
+              $image_entity =  entity_load('node', array($image_node_id));
+              $image_view = entity_view('node', $image_entity, 'pronto_json_inline_embed');
+              $settings['merge_elements'] = 1;
+              $image_node = $image_view['node'][$image_node_id]['#node'];
+              if (isset($image_node->json_elements)) {
+                _pronto_component_entity_reference_merge_elements($image_node->json_elements, $settings, 0, $display, $rendered_items);
+                $pronto_component[$weight] = reset($rendered_items);
+              }
+            }
+
+            $item = trim(preg_replace('/(\[%image[0-9]*\]<\/p>)/', '', $item));
+
+            $replacement_token = 1;
+          }
+          else if (strpos($item, 'iframe') > 0 &&
+              (strpos($item, 'youtube') > 0 || strpos($item, 'youtu.be')) > 0) {
+            // Checking if any iframe tags embedded inside the body.
+            $weight++;
+            preg_match('/src="([^"]+)"/', $item, $iframe_src);
+            $pronto_component[$weight] = array(
+              'type' => "components/article/embed-iframe",
+              'version' => 1,
+              'weight' => $weight,
+              'data' => array(
+                'src' => $iframe_src[1],
+              ),
+            );
+            $item = trim(preg_replace('/(<iframe\s.*<\/iframe><\/p>)/', '', $item));
+            $replacement_token = 1;
+          }
+          else if (preg_match('/(\[%video\]<\/p>)/', $item, $matches)) {
+            // Checking if any brightcove video embedded inside the body content.
+            if (!empty($entity->field_embedded_video)) {
+              $video_nid = $entity->field_embedded_video[LANGUAGE_NONE][0]['target_id'];
+              $video_node = node_load($video_nid);
+              $video_bc_id = (!empty($video_node->field_video_id[LANGUAGE_NONE])) ? $video_node->field_video_id[LANGUAGE_NONE][0]['value'] : '';
+              if (!empty($video_bc_id)) {
+                $weight++;
+                $pronto_component[$weight] = array(
+                  'type' => "components/article/video-brightcove",
+                  'version' => 1,
+                  'weight' => $weight,
+                  'data' => array(
+                    'id' => $video_bc_id,
+                  ),
+                );
+                $item = trim(preg_replace('/(\[%video\]<\/p>)/', '', $item));
+                $replacement_token = 1;
+              }
+            }
+          }
+        }
+      }
+    }
+    if (!empty($pronto_component)) {
+
+      $component = '';
+      foreach ($pronto_component as $comp) {
+        $entity->json_elements[] = $comp;
+      }
+    }
+  }
+}
+
+/**
+ * To get related link pronto component.
+ *
+ * @param object $entity
+ *   Node object.
+ * @param string $component_weight
+ *   Weight of the component.
+ *
+ * @return array
+ *   Related link Pronto Component.
+ */
+function ti_amg_fw_pronto_component_body_get_related_link_component($entity, $component_weight) {
+  $related_component = array();
+  $related_content = $entity->field_related_content[LANGUAGE_NONE];
+  $related_items = array();
+  if (!empty($related_content)) {
+    foreach ($related_content as $related_item) {
+      array_push($related_items, array('id' => $related_item['target_id']));
+    }
+    $related_component = array(
+      'type' => "components/article/related",
+      'version' => 1,
+      'weight' => $component_weight,
+      'data' => array(
+        'related' => $related_items,
+      ),
+    );
+    $item = preg_replace('/(\[%related\]<\/p>)/', '', $item);
+  }
+
+  return $related_component;
+}

@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * This is a @file
+ */
+function ti_amg_fw_comscore_init() {
+  global $is_https;
+  $items_url = drupal_get_path('module', 'ti_amg_fw_comscore') . '/js/' . 'Brightcove-adPolicy-override.js';
+  $footer_url = drupal_get_path('module', 'ti_amg_fw_comscore') . '/js/' . 'Brightcove-adPolicy-override_footer.js';
+
+  drupal_add_js($items_url, array('scope' => 'header'));
+
+  drupal_add_js($footer_url, array('scope' => 'footer'));
+}
+

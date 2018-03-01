@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Brightcove Settings feature.
+ */
+
+include_once 'ti_amg_fw_brightcove_settings.features.inc';

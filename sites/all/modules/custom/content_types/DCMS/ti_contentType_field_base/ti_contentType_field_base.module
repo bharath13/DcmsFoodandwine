@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the FoodandWine DCMS ContentType Field Base feature.
+ */
+
+include_once 'ti_contentType_field_base.features.inc';

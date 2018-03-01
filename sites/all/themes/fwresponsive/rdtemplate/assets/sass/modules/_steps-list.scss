@@ -1,0 +1,47 @@
+/**
+ * Block: steps-list
+ * Element: steps-list__element
+ * Modifier: steps-list--modifier
+ */
+
+$block: steps-list;
+.steps-list {
+  @include ui-list;
+  counter-reset: steps;
+
+  &__item {
+    $step-num-width: 26px;
+    @include clearfix;
+
+    margin-bottom: 20px;
+    counter-increment: steps;
+
+    &:before {
+      content: counter(steps);
+      float: left;
+      display: block;
+      min-width: $step-num-width;
+      font-size: rem(30);
+      @include font-droid-serif-bold;
+      line-height: .9;
+      text-align: right;
+      vertical-align: top;
+    }
+
+    &__text {
+      display: block;
+      float: left;
+      @include calc('width', '100% - #{$step-num-width}');
+      padding-left: 35px;
+      vertical-align: top;
+      box-sizing: border-box;
+
+      & .step-title {
+          text-transform: uppercase;
+      }
+      p {
+        margin-top:0;
+      }
+    }
+  }
+}

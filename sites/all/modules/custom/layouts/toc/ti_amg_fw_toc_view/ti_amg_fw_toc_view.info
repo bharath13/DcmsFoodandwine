@@ -1,0 +1,13 @@
+name = TI AMG FW TOC VIEWS
+description = TOC Page Views
+core = 7.x
+package = FoodandWine DCMS
+version = 7.x-1.8
+project = ti_amg_fw_toc_view
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = ti_amg_fw_toc
+features[views_view][] = ti_amg_fw_toc_columns_block
+features[views_view][] = ti_amg_fw_toc_recipes_block
+features_exclude[dependencies][ctools] = ctools

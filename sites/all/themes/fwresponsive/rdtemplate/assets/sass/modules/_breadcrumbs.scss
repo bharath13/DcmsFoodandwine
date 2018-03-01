@@ -1,0 +1,95 @@
+/**
+ * Block: breadcrumbs
+ * Element: breadcrumbs__element
+ * Modifier: breadcrumbs--modifier
+ */
+
+$block: breadcrumbs;
+
+.breadcrumbs {
+  @include ui-list;
+  @include clearfix;
+  display: inline-block;
+
+  &__crumb {
+    float: left;
+    font-size: rem(14);
+    color: $color-dark-grey;
+
+    &:last-child {
+
+      &:after {
+        display: none;
+      }
+    }
+
+    &:after {
+      content: ' ';
+      display: block;
+      float: left;
+      width: 1px;
+      height: 1.1em;
+      margin-top: 0.2em;
+      margin-right: 0.5em;
+      margin-left: 0.5em;
+      background-color: $color-mid-grey;
+      vertical-align: middle;
+    }
+
+    &__link {
+      display: block;
+      float: left;
+      text-transform: uppercase;
+      color: $color-dark-grey;
+
+      .#{$block}__crumb:hover & {
+        color: lighten($color-dark-grey, 10%);
+      }
+
+      .#{$block}__crumb:last-child & {
+        color: $color-red;
+
+        &:hover {
+          color: $color-red; 
+        }
+      }
+    }
+  }
+
+  &--dark {
+
+    .#{$block}__crumb {
+      @include font-droid-sans;
+      font-size: rem(13);
+
+      &__link {
+        color: $color-dark-grey;
+        font-weight: 700;
+
+        &--alt {
+          font-weight: 100;
+        }
+      }
+
+      &:last-child {
+        .#{$block}__crumb__link {
+          color: $color-dark-grey;
+
+          &:hover {
+            color: $color-dark-grey; 
+          }
+        }
+      }
+
+      @include respond-to('small and up') {
+        font-size: rem(14);
+      }
+    }
+  }
+
+  &--left {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+}

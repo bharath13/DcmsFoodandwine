@@ -1,0 +1,15 @@
+$susy: (
+  gutters: 20px/300px
+);
+.guide-cards {
+  @include clearfix;
+
+  .guide-card {
+    @include span(1 of 4);
+
+    &:nth-child(4n) {
+      @include last;
+    }
+    margin-bottom: gutter(4);
+  }
+}

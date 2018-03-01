@@ -1,0 +1,13 @@
+name = FoodandWine DCMS Person Taxonomy
+core = 7.x
+package = FoodandWine DCMS
+version = 7.x-1.0
+dependencies[] = features
+dependencies[] = strongarm
+dependencies[] = taxonomy
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[taxonomy][] = gender
+features[taxonomy][] = honorific_prefix
+features[taxonomy][] = honorific_suffix
+features[taxonomy][] = person_id_type

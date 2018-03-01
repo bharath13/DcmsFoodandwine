@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Sub Menu Settings Content Type feature.
+ */
+
+include_once 'ti_amg_fw_sub_menu_settings_content_type.features.inc';

@@ -1,0 +1,748 @@
+<?php
+
+/**
+ * @file
+ * Module used for FoodAndWine Site Search.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function ti_amg_fw_search_init() {
+  if (arg(0) == 'search' || arg(0) == 'recipe-finder') {
+    drupal_add_js(drupal_get_path('module', 'ti_amg_fw_search') . '/js/search.js');
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Unset default submit function and
+ * redirect to views page on form submit.
+ */
+function ti_amg_fw_search_form_search_block_form_alter(&$form, &$form_state) {
+  unset($form['#submit']);
+  $form['keyword'] = $form['search_block_form'];
+  unset($form['search_block_form']);
+  if (isset($_COOKIE['TI_PREFS']) && $_COOKIE['TI_PREFS'] == 'phone') {
+    $form['#action'] = 'http://www.foodandwine.com/search.mobi';
+  }
+  else {
+    $form['#action'] = 'http://www.foodandwine.com/search';
+  }
+  $form['#method'] = 'GET';
+  unset($form['form_build_id']);
+  unset($form['form_token']);
+  unset($form['form_id']);
+}
+
+/**
+ * Implements hook_facetapi_filters().
+ */
+function ti_amg_fw_search_facetapi_filters() {
+  return array(
+    'fw_complex_theme_filter' => array(
+      'handler' => array(
+        'label' => t('Display only specific terms from Complex Theme'),
+        'class' => 'FWComplexThemeFilter',
+        'query types' => array('term'),
+      ),
+    ),
+    'custom_fw_content_type' => array(
+      'handler' => array(
+        'label' => t('Custom FW Content Type Filter'),
+        'class' => 'CustomContentTypeFilter',
+        'query types' => array('string'),
+      ),
+    ),
+    'custom_fw_primary_ingredients' => array(
+      'handler' => array(
+        'label' => t('Custom FW Primary Ingredients Filter'),
+        'class' => 'CustomPrimaryIngredientsFilter',
+        'query types' => array('term'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_facetapi_facet_info_alter().
+ */
+function ti_amg_fw_search_facetapi_facet_info_alter(array & $facet_info, array $searcher_info) {
+  $facet_info['type']['label'] = t('Result Type');
+  $facet_info['field_issue']['label'] = t('Issue Date');
+  $facet_info['field_column']['label'] = t('Column');
+  $facet_info['field_complex_theme:parents_all']['label'] = '';
+  $facet_info['field_ingredient_category']['label'] = t('Recipe Attributes');
+  $facet_info['field_ingredients:field_ingredient_primary']['label'] = t('Ingredients');
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fw_search_block_info() {
+  $block['search_tabs'] = array(
+    'info' => t('Search Tabs'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['search_text'] = array(
+    'info' => t('Search Text'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['facet_title'] = array(
+    'info' => t('Facet Title'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $block;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fw_search_block_view($delta) {
+  if ($delta == 'search_tabs') {
+    $block['content'] = get_search_page_tabs();
+  }
+  if ($delta == 'search_text') {
+    $keyword = '';
+    if (isset($_GET['keyword'])) {
+      $keyword = check_plain(trim($_GET['keyword']));
+    }
+    $block['content'] = t(':test', array(':test' => 'Your search results for: ')) . $keyword;
+  }
+  if ($delta == 'facet_title') {
+    $block['content'] = fw_get_facet_title();
+  }
+  return $block;
+}
+
+/**
+ * Generate search page Facet Title.
+ *
+ * @return string
+ *   HTML for Filter title display
+ */
+function fw_get_facet_title() {
+  $block = array();
+  $content = theme('fw_facet_title');
+  return $content;
+}
+
+/**
+ * Generate search page tabs (on content type).
+ *
+ * @return string
+ *   HTML for tabs display
+ */
+function get_search_page_tabs() {
+  $block = array();
+  $tabs = array();
+  $current_tab = '';
+  $keyword = '';
+  if (isset($_GET['keyword'])) {
+    $keyword = trim($_GET['keyword']);
+  }
+
+  $id = '';
+  if (isset($_GET['f'])) {
+    foreach ($_GET['f'] as $key => $value) {
+      if (substr($value, 0, 5) == 'type:') {
+        $current_tab = $value;
+      }
+    }
+  }
+  // All Tab.
+  if (!$current_tab) {
+    $class = array('active-tab');
+  }
+  else {
+    $class = array();
+  }
+
+  $tabs[] = array(
+    'data' => l(t('ALL'), 'search', array(
+      'query' => array(
+        'keyword' => $keyword,
+      ),
+    )), 'class' => $class,
+  );
+  // Article Tab.
+  if ($current_tab == 'type:article') {
+    $class = array('active-tab');
+    $id = 'article';
+  }
+  else {
+    $class = array();
+  }
+  $tabs[] = array(
+    'data' => l(t('ARTICLES'), 'search', array(
+      'query' => array(
+        'keyword' => $keyword,
+        'f[0]' => 'type:article',
+      ),
+    )), 'class' => $class,
+    'id' => $id,
+  );
+
+  // Recipe Tab.
+  if ($current_tab == 'type:recipe') {
+    $class = array('active-tab');
+    $id = 'recipe';
+  }
+  else {
+    $class = array();
+  }
+  $tabs[] = array(
+    'data' => l(t('RECIPES'), 'search', array(
+      'query' => array(
+        'keyword' => $keyword,
+        'f[0]' => 'type:recipe',
+      ),
+    )), 'class' => $class,
+    'id' => $id,
+  );
+
+  $content = theme('item_list', array('items' => $tabs, 'attributes' => array('id' => 'search-tab')));
+
+  return $content;
+}
+
+/**
+ * Implements hook_facetapi_widgets().
+ */
+function ti_amg_fw_search_facetapi_widgets() {
+  return array(
+    'fw_facetapi_select' => array(
+      'handler' => array(
+        'label' => t('Select List'),
+        'class' => 'FacetapiWidgetSelect',
+        'query types' => array('term'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements template_preprocess_views_view_field().
+ */
+
+function ti_amg_fw_search_preprocess_views_view_field(&$vars) {
+
+  if ($vars['view']->name == 'foodandwine_search' && $vars['view']->current_display == 'page') {
+    if ($vars['field']->options['id'] == 'field_images') {
+      if (!empty($vars['output']) && is_numeric($vars['output'])) {
+          $style_name = 'media_thumbnail';
+          $node = node_load($vars['output']);
+          $image_field_items = reset(field_get_items('node', $node, 'field_image'));
+          $image_url = $image_field_items['uri'];
+          $image_url = image_style_url($style_name, $image_url);
+      }
+
+      else {
+        $image_url = '/sites/all/themes/foodandwine/images/recipe-placeholder.gif';
+      }
+      $image_markup = theme('html_tag', array(
+        'element' => array(
+          '#tag' => 'img',
+          '#attributes' => array(
+            'class' => '',
+            'src' => $image_url,
+            'width' => 100,
+            'height' => 100,
+          ),
+          '#value' => '',
+        ),
+      ));
+
+      $vars['output'] = $image_markup;
+    }
+    elseif ($vars['field']->options['id'] == 'field_complex_theme') {
+      if (!empty($vars['output'])) {
+
+        $recipe_type = get_recipe_type_terms();
+        $node_terms = explode(',', $vars['output']);
+
+        $items = array();
+        foreach ($recipe_type as $label => $name) {
+          if (in_array($name, $node_terms)) {
+            $items[] = array('data' => $name, 'class' => array($label));
+          }
+        }
+        $vars['output'] = theme('item_list', array('items' => $items));
+      }
+    }
+    elseif ($vars['field']->options['id'] == 'field_deck') {
+      if ($vars['row']->entity->type == 'recipe') {
+        $vars['output'] = '';
+      }
+    }
+    elseif ($vars['field']->options['id'] == 'type') {
+      // Hide this field if content type facet is active.
+      if (isset($_GET['f'])) {
+        foreach ($_GET['f'] as $key => $value) {
+          if (substr($value, 0, 5) == 'type:') {
+            $vars['output'] = '';
+          }
+        }
+      }
+    }
+  }
+  if ($vars['view']->name == 'foodandwine_mobile_search' && $vars['view']->current_display == 'page') {
+    if ($vars['field']->options['id'] == 'field_images') {
+      if (!empty($vars['output']) && is_numeric($vars['output'])) {
+        $fid = db_select('field_data_field_image', 'i')->fields('i', array('field_image_fid'))->condition('entity_type', 'node', '=')->condition('entity_id', $vars['output'], '=')->execute()->fetchField();
+        $style_name = '200x250';
+
+        if (!empty($fid)) {
+          $path = file_load($fid)->uri;
+          $image_url = image_style_url($style_name, $path);
+        }
+      }
+      else {
+        $image_url = '/sites/all/themes/foodandwine/images/recipe-placeholder.gif';
+      }
+      $image_markup = theme('html_tag', array(
+        'element' => array(
+          '#tag' => 'img',
+          '#attributes' => array(
+            'class' => '',
+            'src' => $image_url,
+          ),
+          '#value' => '',
+        ),
+      ));
+
+      $vars['output'] = $image_markup;
+    }
+    elseif ($vars['field']->options['id'] == 'field_complex_theme') {
+      if (!empty($vars['output'])) {
+
+        $recipe_type = get_recipe_type_terms();
+        $node_terms = explode(',', $vars['output']);
+
+        $items = array();
+        foreach ($recipe_type as $label => $name) {
+          if (in_array($name, $node_terms)) {
+            $items[] = array('data' => $name, 'class' => array($label));
+          }
+        }
+        $vars['output'] = theme('item_list', array('items' => $items));
+      }
+    }
+    elseif ($vars['field']->options['id'] == 'field_deck') {
+      if ($vars['row']->entity->type == 'recipe') {
+        $vars['output'] = '';
+      }
+    }
+    elseif ($vars['field']->options['id'] == 'type') {
+      // Hide this field if content type facet is active.
+      if (isset($_GET['f'])) {
+        foreach ($_GET['f'] as $key => $value) {
+          if (substr($value, 0, 5) == 'type:') {
+            $vars['output'] = '';
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_views_pre_build().
+ */
+function ti_amg_fw_search_views_pre_build(&$view) {
+  if (($view->name == 'foodandwine_search' && $view->current_display == 'page') || $view->name == 'ti_amg_fw_recipe_finder_child') {
+
+    switch ($view->name) {
+      case 'foodandwine_search':
+        $view->results_per_page = array(10, 25, 50);
+        break;
+
+      case 'ti_amg_fw_recipe_finder_child':
+        $view->results_per_page = array(10, 15, 20);
+        break;
+    }
+
+    // $view->results_per_page = array(10, 25, 50);.
+    if (isset($_GET['page-items-count'])) {
+      $results_per_page = $_GET['page-items-count'];
+      if (in_array($results_per_page, $view->results_per_page)) {
+        $view->set_items_per_page($results_per_page);
+      }
+    }
+  }
+
+  // If no search keyword, unset the the filter to display all results.
+  if ($view->name == 'foodandwine_search' && $view->current_display == 'page') {
+    $keyword = '';
+    if (isset($_GET['keyword'])) {
+      $keyword = check_plain(trim($_GET['keyword']));
+      $_GET['keyword'] = html_entity_decode(str_replace(array(
+        "{", "}", "\"", "&lt;", "&gt;", "%7D", "%7B", "%22", "%3C", "%3E",
+      ), '', filter_xss($_GET['keyword'])));
+    }
+    if (!$keyword) {
+      unset($view->filter['search_api_views_fulltext']);
+    }
+  }
+}
+
+/**
+ * Implements hook_current_search_items().
+ */
+function ti_amg_fw_search_current_search_items() {
+  return array(
+    'fw_active' => array(
+      'handler' => array(
+        'label' => t('FW Active items'),
+        'class' => 'FWCurrentSearchItemActive',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fw_search_theme() {
+  return array(
+    'fw_active_facets_link' => array(
+      'arguments' => array('variables' => array()),
+    ),
+    'fw_facet_title' => array(
+      'arguments' => array(),
+    ),
+    'fw_empty_search_result' => array(
+      'arguments' => array('variables' => array()),
+    ),
+  );
+}
+
+/**
+ * Implements theme_fw_facet_title.
+ */
+function foodandwine_fw_facet_title($variables) {
+  $output = '<div class="facet-heading">
+              <img src="/sites/all/themes/foodandwine/images/filter-heading.png" alt="Filter-heading">
+             </div>';
+  return $output;
+}
+
+/**
+ * Implements theme_active_facets_link.
+ */
+function foodandwine_fw_active_facets_link($variables) {
+  // Sanitizes the link text if necessary.
+  $sanitize = empty($variables['options']['html']);
+  $link_text = ($sanitize) ? check_plain($variables['text']) : $variables['text'];
+
+  $accessible_vars = array(
+    'text' => $variables['text'],
+    'active' => TRUE,
+  );
+
+  // Builds link, passes through t() which gives us the ability to change the
+  // position of the widget on a per-language basis.
+  $replacements = array(
+    '!facetapi_deactivate_widget' => theme('facetapi_deactivate_widget', $variables),
+    '!facetapi_accessible_markup' => theme('facetapi_accessible_markup', $accessible_vars),
+  );
+  $variables['text'] = $link_text . t('!facetapi_deactivate_widget !facetapi_accessible_markup', $replacements);
+  $variables['options']['html'] = TRUE;
+  return theme_link($variables);
+}
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function ti_amg_fw_search_block_view_alter(&$data, $block) {
+  if ($block->delta == 'fw_search_active_facets') {
+    $block->title = t('Your Filters');
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function ti_amg_fw_search_views_pre_render(&$view) {
+  if ($view->name == 'foodandwine_search' && $view->current_display == 'page') {
+    $view->empty['area']->options['content'] = fw_search_no_results_content();
+
+    // Append Content Type label to views result summary.
+    $type = '';
+    $label = '';
+    if (isset($_GET['f'])) {
+      foreach ($_GET['f'] as $key => $value) {
+        if (substr($value, 0, 5) == 'type:') {
+          $type = substr($value, 5);
+        }
+      }
+    }
+    if ($type == 'recipe') {
+      $label = t('Recipes');
+    }
+    elseif ($type == 'article') {
+      $label = t('Articles');
+    }
+    $header_content = $view->header['result']->options['content'];
+    $view->header['result']->options['content'] = '<div class="search-header-wrapper">' . $header_content . $label . '</div>';
+  }
+}
+
+/**
+ * Generates content for No Results on search page.
+ */
+function fw_search_no_results_content() {
+
+  $type = '';
+  if (isset($_GET['f'])) {
+    foreach ($_GET['f'] as $key => $value) {
+      if (substr($value, 0, 5) == 'type:') {
+        $type = substr($value, 5);
+      }
+    }
+  }
+
+  $formatted_type = ucfirst($type) . " ";
+
+  $title = t("No @typeMatches Found", array('@type' => $formatted_type));
+
+  $keyword = '';
+  if (isset($_GET['keyword'])) {
+    $keyword = check_plain(trim($_GET['keyword']));
+  }
+
+  $output = theme('fw_empty_search_result', array(
+    'title' => $title,
+    'content_type' => array('article, recipe'),
+    'active_facet_type_value' => $type,
+    'keyword' => $keyword,
+  ));
+  return $output;
+}
+
+/**
+ * Implements theme_fw_empty_search_result.
+ *
+ * @param array $variables
+ *   An associative array containing
+ *     title: Title to be displayed
+ *     content_type: Array of machine names of content type (Tabs) allowed
+ *      in search.
+ *     active_facet_type_value: value of content type facet currently active
+ *      (for example, 'article', 'recipe')
+ *     keyword: Search Keyword.
+ *
+ * @return string
+ *   HTML Output
+ */
+function theme_fw_empty_search_result($variables) {
+  $output = "<h2>" . $variables['title'] . "</h2>";
+  $output .= "<p>" . t("Still haven't found what you're looking for?") . "</p>";
+
+  $items = array();
+  $items[] = array('data' => 'Check your spelling', 'class' => array('important'));
+
+  $data = t("Try more general words, e.g.");
+  $data .= l(t('mushrooms'), 'search', array('query' => array('keyword' => 'mushrooms', 'f[0]' => 'type:recipe')));
+  $data .= t(':instead', array(':instead' => ' instead of '));
+  $data .= l(t('shiitake mushrooms'), 'search', array('query' => array('keyword' => 'shiitake mushrooms', 'f[0]' => 'type:recipe')));
+  $items[] = array('data' => $data, 'class' => array('important'));
+
+  $content_types = explode(',', $variables['content_type'][0]);
+
+  if ($variables['active_facet_type_value']) {
+    foreach ($content_types as $key => $value) {
+      $value = trim($value);
+      $searchval = t(':search', array(':search' => 'Search for '));
+      if ($value != $variables['active_facet_type_value']) {
+        $items[] = l($searchval . $value . 's', 'search', array(
+          'query' =>
+                array(
+                  'keyword' => $variables['keyword'],
+                  'f[0]' => 'type:' .
+                  $value,
+                ),
+        )) . t(':match', array(':match' => 'matching "'))
+            . $variables['keyword'] . '"';
+      }
+    }
+  }
+
+  $output .= theme('item_list', array('items' => $items));
+  return $output;
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Creation of hidden links for sorting handled through javascript.
+ */
+function ti_amg_fw_search_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#id'] == 'views-exposed-form-foodandwine-search-page') {
+
+    // Display the keyword text field even if keyword filter is disabled.
+    if (!isset($form['keyword'])) {
+      // $form['keyword'] = array(.
+      $keyword = array();
+      $form['keyword'] = array(
+        '#type' => 'textfield',
+        '#size' => 30,
+        '#weight' => -1,
+      );
+      $form['#info']['keyword'] = array(
+        'value' => 'keyword',
+      );
+    }
+    // Making the search with autocomplete results.
+    $form['keyword']['#autocomplete_path'] = 'search_auto_suggestions';
+    $form['keyword']['#attributes'] = array('class' => array('auto_submit'));
+    // Construct Sort Links.
+    $sort_links = array();
+    $query = $_GET;
+    unset($query['q']);
+    $query['sort_by'] = 'search_api_relevance';
+    $query['sort_order'] = 'DESC';
+    $id = 'fw_search_api_relevance';
+    $relevance_sort_link = l(NULL, $_GET['q'], array(
+      'query' => $query,
+      'attributes' => array('id' => $id),
+    ));
+    $form['sort_search_api_relevance_desc'] = array('#markup' => $relevance_sort_link);
+
+    $query = $_GET;
+    unset($query['q']);
+    $query['sort_by'] = 'published_at';
+    $query['sort_order'] = 'DESC';
+    $id = 'fw_published_at';
+    $published_date_sort_link = l(NULL, $_GET['q'], array(
+      'query' => $query,
+      'attributes' => array('id' => $id),
+    ));
+    $form['sort_published_at_desc'] = array('#markup' => $published_date_sort_link);
+
+    // Display PHOTOS ONLY sort only on recipes tab.
+    $current_tab = '';
+    if (isset($_GET['f'])) {
+      foreach ($_GET['f'] as $key => $value) {
+        if (substr($value, 0, 5) == 'type:') {
+          $current_tab = $value;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_facetapi_sort_info().
+ */
+function ti_amg_fw_search_facetapi_sort_info() {
+  $sorts = array();
+
+  $sorts['fw_issue_date'] = array(
+    'label' => t('FW Issue Date'),
+    'callback' => 'fw_issue_date',
+    'description' => t('Applies only to Issue taxonomy'),
+  );
+
+  return $sorts;
+}
+
+/**
+ * Implements hook_context_plugins().
+ */
+function ti_amg_fw_search_context_plugins() {
+  $plugins = array(
+    'fw_context_condition_search' => array(
+      'handler' => array(
+        'path' => drupal_get_path('module', 'ti_amg_fw_search') . '/plugins/context',
+        'file' => 'fw_context_condition_search.inc',
+        'class' => 'fw_context_condition_search',
+        'parent' => 'context_condition',
+      ),
+    ),
+  );
+  return $plugins;
+}
+
+/**
+ * Implements hook_context_registry().
+ */
+function ti_amg_fw_search_context_registry() {
+  $registry = array(
+    'conditions' => array(
+      'fw_search' => array(
+        'title' => t('Search Page'),
+        'description' =>
+        t('Search Page Tabs'),
+        'plugin' => 'fw_context_condition_search',
+      ),
+    ),
+  );
+  return $registry;
+}
+
+/**
+ * Implements hook_context_page_condition().
+ */
+function ti_amg_fw_search_context_page_reaction() {
+  $plugin = context_get_plugin('condition', 'fw_search');
+  if ($plugin) {
+    $plugin->execute();
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fw_search_menu() {
+  $items['fw_search/advanced'] = array(
+    'title' => 'Advanced Recipe Search',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('advanced_recipe_search_form'),
+    'file' => 'advanced_search.inc',
+    'file path' => drupal_get_path('module', 'ti_amg_fw_search'),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * Returns vocabulary data for given machine name .
+ *
+ * @param string $vocabulary_name
+ *   Taxonomy Vocabulary Machine Name.
+ *
+ * @return array
+ *   Associative array decribed as follows
+ *     key: Vocabulary ID (vid)
+ *     value: Vocabulary Name
+ */
+function fw_get_vocabulary_from_machine_name($vocabulary_name) {
+  $vocalbulary = db_query('SELECT vid, name FROM {taxonomy_vocabulary}' . ' WHERE machine_name = :machine_name', array(':machine_name' => $vocabulary_name)
+  )->fetch();
+  return $vocalbulary;
+}
+
+/**
+ * Implements hook_default_search_api_index_alter().
+ */
+function ti_amg_fw_search_default_search_api_index_alter(&$defaults) {
+  $current_fields = $defaults['editorial_search']->options['fields'];
+
+  // Removing an existing field.
+  unset($current_fields['field_caption']);
+  unset($current_fields['field_credit']);
+
+  // Updating an existing field.
+  $new_fields = array(
+    'field_legacy_id' => array('type' => 'string'),
+    'field_author' => array('type' => 'list<integer>', 'entity_type' => 'node'),
+  );
+
+  $current_fields = is_array($current_fields) ? $current_fields : array();
+
+  // Merge the new fields that need to be indexed.
+  $defaults['editorial_search']->options['fields'] = array_merge($current_fields, $new_fields);
+}

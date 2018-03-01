@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the ti_amg_fw_partner_blog_context_mobile feature.
+ */
+
+include_once 'ti_amg_fw_partner_blog_context_mobile.features.inc';

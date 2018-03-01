@@ -1,0 +1,8 @@
+name = XMLSitemap Field Collection Formatter
+description = XMLSitemap formatter for FieldCollection fields.
+core = 7.x
+package = XML sitemap
+
+
+
+dependencies[] = xmlsitemap_field_formatters

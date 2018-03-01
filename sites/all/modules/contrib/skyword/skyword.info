@@ -1,0 +1,4 @@
+name = Skyword
+description = Plugin for connecting to the Skyword content production system.
+package = Skyword
+core = 7.x

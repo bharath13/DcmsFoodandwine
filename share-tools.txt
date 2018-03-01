@@ -1,0 +1,14 @@
+<script type="text/javascript">
+   				$(document).ready(function(){
+   					if (!(false || this_c_type === 'lu-homepage')) {
+   						var sidebar_config = {
+   							badges: {
+   								facebook_link: hasFacebookLink(),facebook_like: hasFacebookLike(),google_plusone: hasGooglePlusOne(),pinterest: hasPinterest(),twitter:
+   hasTwitter(),email_badge: hasEmailBadge(),print_badge: hasPrintBadge(),mobile_badge: hasMobileBadge()
+   							}
+   						};
+   						$('#social-sidebar').fw_core('social_sidebar_init', sidebar_config);
+   					}
+   				});
+
+</script>

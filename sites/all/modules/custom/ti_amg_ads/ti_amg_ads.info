@@ -1,0 +1,7 @@
+name = TI AMG FW Advertisements
+description = TI AMG FW Advertisements
+package = AMG
+core = 7.x
+
+stylesheets[all][0] = css/ti_amg_ads.css
+

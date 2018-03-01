@@ -1,0 +1,23 @@
+name = "Migrate FWx to FW"
+description = "Module for FWx to FW Migration"
+core = 7.x
+version = 7.x-1.0
+
+dependencies[] = migrate
+dependencies[] = migrate_ui
+dependencies[] = migrate_d2d
+
+;Include Person Migration File
+files[] = classfiles/person/person.inc
+
+;Include Image Migration File
+files[] = classfiles/image/image.inc
+
+;Include Blogs Migration File
+files[] = classfiles/blogs/blogs.inc
+
+;Include Gallery Migration File
+files[] = classfiles/gallery/gallery.inc
+
+;Include Redirect URL Migration File
+files[] = classfiles/redirect_url/redirect_url.inc

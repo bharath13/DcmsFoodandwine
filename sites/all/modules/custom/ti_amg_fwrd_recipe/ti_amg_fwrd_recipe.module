@@ -1,0 +1,2353 @@
+<?php
+
+/**
+ * @file
+ * To create custom functionalities to responsive FW site.
+ */
+
+  define('MAX_RELATED_CONTENT_TOUTS', 6);
+  define('MAX_RELATED_CONTENTS_RESULT', 25);
+  define('MAX_RELATED_ARTICLE_TOUTS', 3);
+  define('MAX_RELATED_GALLERY_TOUTS', 3);
+  define('RESIPE_CAROUSEL_SLIDES', 12);
+  define('RESIPE_CAROUSEL_TOTAL_SLIDES', 46);
+  define('TOTAL_CAROUSEL_RECIPES', 48); // Excluding the current loaded one.
+  define('RELATED_CONTENT_IMAGE_STYLE', 'rd_related_content_190x190');
+  define('DEFAULT_IMAGE_URI', 'public://recipe-placeholder.gif');
+  define('TI_AMG_FW_RELATED_RECIPE_CACHE', 'cache_ti_amg_fw_related_recipe');
+
+/**
+ * Implements hook_html_head_alter().
+ */
+ function ti_amg_fwrd_recipe_html_head_alter(&$head_elements) {
+  $node = menu_get_object();
+// alter a few pieces of the HEAD for the recipe detail page
+  if (isset($node) && $node->type == 'recipe' && (arg(2) == 'print')) {
+// Reset the og:url for the print page
+   $og_url = $head_elements['metatag_og:url'];
+   $replaced_og_url = str_replace('/'.arg(2),'',$og_url);
+   $head_elements['metatag_og:url'] = $replaced_og_url;
+
+// Reset the canonical url for the print page
+   $canonical_url = $head_elements['metatag_canonical'];
+   $replaced_canonical_url = str_replace('/'.arg(2),'',$canonical_url);
+   $head_elements['metatag_canonical'] = $replaced_canonical_url;
+
+// Invisible to search engines
+    $head_elements['robots'] = array(
+      '#type' => 'html_tag',
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'name' => 'robots',
+        'content' => 'noindex, follow'
+      ),
+    );
+  }
+
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fwrd_recipe_block_info() {
+  $block['bottom_module_first'] = array(
+    'info' => t('Responsive Bottom Module First'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['bottom_module_second'] = array(
+    'info' => t('Responsive Bottom Module Second'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['bottom_module_third'] = array(
+    'info' => t('Responsive Bottom Module Third'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['bottom_module_forth'] = array(
+    'info' => t('Responsive Bottom Module Forth'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['recipe_hero_carousel'] = array(
+    'info' => t('Recipe Hero Carousel'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  return $block;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fwrd_recipe_block_view($block_key = '') {
+  $block = array();
+
+  switch ($block_key) {
+    case 'bottom_module_first':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('bottom-module-first'),
+      );
+      break;
+    case 'bottom_module_second':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('bottom-module-second'),
+      );
+      break;
+   case 'bottom_module_third':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('bottom-module-third'),
+      );
+      break;
+   case 'bottom_module_forth':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('bottom-module-forth'),
+      );
+      break;
+   case 'recipe_hero_carousel':
+      $block['subject'] = NULL;
+      //$block['content'] = _ti_amg_fwrd_recipe_carousel();
+      break;
+
+   default:
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Implements hook_menu()
+ */
+function ti_amg_fwrd_recipe_menu() {
+  $items['carousel/%'] = array (
+    'page callback' => '_ti_amg_fwrd_recipe_carousel_node_load',
+    'access callback' => 'user_access',
+    'access arguments' => array('access content'),
+    'page arguments' => array(1),
+    'theme callback' => 'ti_amg_fwrd_recipe_default_node_theme',
+    'type' => MENU_CALLBACK
+  );
+  $items['recipeset'] = array (
+    'page callback' => '_ti_amg_fwrd_recipe_carousel_next_set',
+    'access callback' => 'user_access',
+    'access arguments' => array('access content'),
+    'theme callback' => 'ti_amg_fwrd_recipe_default_node_theme',
+    'delivery callback' => 'drupal_json_output',
+    'type' => MENU_CALLBACK
+  );
+
+  $items['admin/config/fw_settings/recipe_solr_settings'] = array(
+    'title' => 'Settings for SOLR Recipe Carousel',
+    'description' => 'Implementing Solr Settings for Recipe Carousel',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ti_amg_fwrd_recipe_carousel_solr_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+    'file' => 'includes/ti_amg_fwrd_recipe.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/fw_settings/recipe_solr_settings/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Solr Settings for Recipe Carousel',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -12,
+  );
+
+  $items['admin/config/fw_settings/recipe_solr_settings/cache_settings'] = array(
+    'title' => 'Cache Settings',
+    'description' => 'SOLR Recipe Carousel Cache Settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ti_amg_fwrd_recipe_carousel_cache_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+    'file' => 'includes/ti_amg_fwrd_recipe.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  return $items;
+}
+
+/**
+ * Refresh recipe content on carousel slide change
+ */
+function _ti_amg_fwrd_recipe_carousel_node_load($nid = 0) {
+  $node = node_load($nid);
+  drupal_add_js(array('current_nid' => $node->nid), 'setting');
+  if(isset($node)) {
+    $vnode = node_view($node, 'full');
+    $rendered_node = drupal_render($vnode);
+    $rendered_ad_panes = ti_amg_fwrd_custom_load_ads_mini_panels();
+    echo $rendered_node . $rendered_ad_panes;
+  }
+
+  exit;
+}
+
+/**
+ * Defaults to using the 'fwresponsive' theme for recipe node stitching.
+ */
+function ti_amg_fwrd_recipe_default_node_theme() {
+  return 'fwresponsive';
+}
+
+/**
+ * Add variables on the page level
+ */
+function ti_amg_fwrd_recipe_preprocess_page(&$vars) {
+  setlocale(LC_CTYPE, 'nl_BE.utf8');
+  if (isset($vars['node']->type)) {
+    if ($vars['node']->type == 'recipe') {
+      $vars['recipe_info'] = array();
+      $vars['recipe_info']['spot_id'] = variable_get('spot_id', 'sp_b3BDxGSu');
+      $vars['recipe_info']['mobile_leaderboard_ad'] = '';
+      $vars['recipe_info']['ffx_leaderboard_ad'] = '';
+      $vars['recipe_info']['tablet_leaderboard_ad'] = '';
+      drupal_add_css(
+        drupal_get_path('module', 'ti_amg_fwrd_recipe')
+        . '/css/video_player.css');
+
+      $vars['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+
+      // Video player
+      if ($vars['detect_device'] == 'mobile') {
+        $player_id = '3866761842001';
+        $player_key = 'AQ~~,AAAAAGL7jok~,vslbwQw3pdXn5PSsSjmiZNRU4ChTuD39';
+      //  $player_id = '4066850662001';
+      //  $player_key = 'AQ~~,AAAAAGL7jok~,vslbwQw3pdViubO4peidiQm3L4nyveDa';
+        $player_width = "480";
+        $player_height = "450";
+        // Creating Leaderboard Ad Block only for Mobile
+        $vars['recipe_info']['mobile_leaderboard_ad'] =
+          module_invoke('ti_amg_ads', 'block_view', 'mobile_320x50');
+      } else {
+        //$player_id = '3866761842001';
+        //$player_key = 'AQ~~,AAAAAGL7jok~,vslbwQw3pdXn5PSsSjmiZNRU4ChTuD39';
+        $player_id = "4724779710001";
+        $player_key = "AQ~~,AAAAAGL7jok~,vslbwQw3pdXV00J3Q5PeBIAy8E7JDXf0";
+        $player_width = "640";
+        $player_height = "400";
+      }
+
+      $vars['recipe_info']['recipe_top_carousel'] = _ti_amg_fwrd_recipe_carousel();
+
+      if ($vars['detect_device'] == 'mobile') {
+      }
+      else {
+        $videoHandler = _ti_amg_fwrd_recipe_get_video_handler($player_id);
+        // Add it to the footer of the page.
+        if(!empty($videoHandler)) {
+          drupal_add_js($videoHandler, array(
+          'type' => 'inline',
+          'scope' => 'footer',
+          'weight' => -130,
+          'group' => JS_THEME,
+          ));
+        }
+      }
+      drupal_add_js(drupal_get_path('module', 'ti_amg_fwrd_recipe') . '/js/' . 'tracking_invoke.js',
+      array(
+      'type' => 'file',
+      'scope' => 'footer',
+      'weight' => -132,
+      'group' => JS_THEME,
+      ));
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fwrd_recipe_theme($existing, $type, $theme, $path) {
+  return array(
+    'recipe-carousel' => array(
+      'template' => 'recipe-carousel',
+      'path' => $path . '/templates/modules/recipe',
+      'variables' => array(
+        'classes' => array(),
+	    'slide_switcher' => array(),
+	    'prefetch_carousel' => array(),
+	    'main_image_alt' => array(),
+      )
+    ),
+    'rating-stars' => array(
+      'template' => 'rating-stars',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'rating' => NULL,
+        'classes' => array(),
+        'img_path' => array(),
+      ),
+    ),
+    'ingredients-list' => array(
+      'template' => 'ingredients-list',
+      'path' => $path . '/templates/modules/recipe',
+      'variables' => array(
+        'items' => array(),
+        'classes' => array(),
+      ),
+    ),
+    'steps-list' => array(
+      'template' => 'steps-list',
+      'path' => $path . '/templates/modules/recipe',
+      'variables' => array(
+        'steps' => array(),
+        'classes' => array(),
+        'device' => array(),
+      ),
+    ),
+    'recipe-notes' => array(
+      'template' => 'recipe-notes',
+      'path' => $path . '/templates/modules/recipe',
+      'variables' => array(
+        'make_ahead' => array(),
+        'pairing_notes' => array(),
+        'serve_notes' => array(),
+        'serve_with' => array(),
+        'classes' => array(),
+      ),
+    ),
+    'top-video-tout' => array(
+      'template' => 'top-video-tout',
+      'path' => $path . '/templates/modules/recipe',
+      'variables' => array(
+        'classes_list' => array(),
+        'video_data' => array(),
+      ),
+    ),
+    'video-player' => array(
+      'template' => 'video-player',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'video_id' => array(),
+      ),
+    ),
+    'recipe-details' => array(
+      'template' => 'recipe-details',
+      'path' => $path . '/templates/modules/recipe',
+      'variables' => array(
+        'classes' => array(),
+        'active_time' => array(),
+        'other_time' => array(),
+        'time' => array(),
+        'servings' => array(),
+      ),
+    ),
+    'adv' => array(
+      'template' => 'adv',
+      'path' => $path . '/templates/modules',
+      'variables' => array('classes' => array(), 'ad_resolution' => array()),
+    ),
+    'bottom-module-first' => array(
+      'template' => 'bottom-module-first',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+      ),
+    ),
+    'bottom-module-second' => array(
+      'template' => 'bottom-module-second',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'popular_recipes_title' => NULL,
+        'popular_recipes_content' => NULL,
+      ),
+    ),
+    'bottom-module-third' => array(
+      'template' => 'bottom-module-third',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'related_videos' => NULL,
+        'related_videos_title' => NULL,
+      ),
+    ),
+    'bottom-module-forth' => array(
+      'template' => 'bottom-module-forth',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'related_title' => NULL,
+        'related_contents' => NULL
+      ),
+    ),
+    'tag-set' => array(
+      'template' => 'tag-set',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'tags' => array(),
+        'classes' => array(),
+      ),
+    ),
+    'recipe-rating' => array(
+      'template' => 'recipe-rating',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'nid' => NULL,
+        'spot_im_id' => NULL,
+        'rating_info' => array(),
+        'static_ratings' => array(),
+        'enable_spot_im' => NULL,
+        'enable_static_schema_org' => NULL,
+      ),
+    ),
+    'recipe-reviews' => array(
+      'template' => 'recipe-reviews',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'recipe_reviews' => array(),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_cron().
+ */
+function ti_amg_fwrd_recipe_cron() {
+  //If the custom recipe module exists, proceed
+  if (!(module_exists("ti_amg_fwrd_recipe"))) {
+    return;
+  }
+
+  $queue = DrupalQueue::get('ti_amg_fwrd_recipe_schema_api_queue');
+  $queue->createQueue();
+
+  $spotim_recipe_nids = json_decode(variable_get('cronjob_recipe_nids',''));
+  if (!empty($spotim_recipe_nids)) {
+    $queue_items = array_chunk($spotim_recipe_nids, 24);
+    watchdog('cron', 'Recipe SpotIM Cron scheduled:'.json_encode($queue_items[0]), WATCHDOG_INFO);
+    if (count($queue_items) > 0) {
+      $queue->createItem($queue_items[0]);
+    }
+  }
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function ti_amg_fwrd_recipe_cron_queue_info() {
+  $queues = array();
+  $queues['ti_amg_fwrd_recipe_schema_api_queue'] = array(
+    'worker callback' => 'ti_amg_fwrd_recipe_spotim_trigger',
+    'time' => 900,
+  );
+
+  return $queues;
+}
+
+/**
+ * Implements hook_content_api_output_build_alter().
+ */
+function ti_amg_fwrd_recipe_content_api_output_build_alter(&$new_document, $node) {
+  $spotim_rating_data = array();
+  $workflow_flags_data = array();
+  global $base_url;
+  $spot_id = variable_get('spot_id', 'sp_b3BDxGSu');
+  $enable_spot_im = variable_get('enable_spot_im', 'TRUE');
+  $spotim_schema_api = variable_get('schema_api', '');
+  if (isset($node->type) && $node->type == 'recipe') {
+    $recipe_nid = $node->nid;
+    $recipe_url = drupal_get_path_alias('node/' . $recipe_nid);
+    if (isset($node->field_rating_info[LANGUAGE_NONE])) {
+      $rating_info_value = $node->field_rating_info[LANGUAGE_NONE][0]['value'];
+      $spotim_rating_data['rating_review'] = ti_amg_fwrd_recipe_get_rating_info($rating_info_value);
+      $new_document = array_merge((array) $new_document, (array) $spotim_rating_data);
+    }
+  }
+  /* Workflow flags */
+  $workflow_flags_data['workflow_flags'][0]['title'] = 'Make Ahead';
+  $workflow_flags_data['workflow_flags'][0]['description'] =
+    (isset($node->field_make_ahead[LANGUAGE_NONE][0]['value'])) ?
+      ti_amg_fwrd_custom_convert_accented_char($node->field_make_ahead[LANGUAGE_NONE][0]['value']) : '';
+  $workflow_flags_data['workflow_flags'][1]['title'] = 'Notes';
+  $workflow_flags_data['workflow_flags'][1]['description'] =
+    (isset($node->field_serve_notes[LANGUAGE_NONE][0]['value'])) ?
+      ti_amg_fwrd_custom_convert_accented_char($node->field_serve_notes[LANGUAGE_NONE][0]['value']) : '';
+  $workflow_flags_data['workflow_flags'][2]['title'] = 'Serve With';
+  $workflow_flags_data['workflow_flags'][2]['description'] =
+    (isset($node->field_serve_with[LANGUAGE_NONE][0]['value'])) ?
+      ti_amg_fwrd_custom_convert_accented_char($node->field_serve_with[LANGUAGE_NONE][0]['value']) : '';
+  $workflow_flags_data['workflow_flags'][3]['title'] = 'Suggested Pairing';
+  $workflow_flags_data['workflow_flags'][3]['description'] =
+    (isset($node->field_pairing_notes[LANGUAGE_NONE][0]['value'])) ?
+      ti_amg_fwrd_custom_convert_accented_char($node->field_pairing_notes[LANGUAGE_NONE][0]['value']) : '';
+  $new_document = array_merge((array) $new_document, (array) $workflow_flags_data);
+}
+
+function ti_amg_fwrd_recipe_spotim_trigger($items) {
+  global $base_url;
+  $spot_id = variable_get('spot_id', 'sp_b3BDxGSu');
+  $enable_spot_im = variable_get('enable_spot_im', 'TRUE');
+  $spotim_schema_api = variable_get('schema_api', '');
+  $spot_im_data = '';
+
+  if (count($items) > 0) {
+    foreach ($items as $recipe_nid) {
+      $recipe_url = drupal_get_path_alias('node/' . $recipe_nid);
+      // Making service all with SpotIM to get updated rating values.
+      if ($enable_spot_im && $spotim_schema_api != '') {
+        $url = $base_url . '/' . $recipe_url;
+        // Getting SpotIM data.
+        $spot_im_data = ti_amg_fwrd_recipe_get_spot_im_data($recipe_nid, $url, $spot_id, $spotim_schema_api);
+        if (!empty($spot_im_data)) {
+          // Updating SpotIM data to the node object.
+          $recipe_node = node_load($recipe_nid);
+          ti_amg_fwrd_recipe_update_spot_im_data($recipe_node, $spot_im_data);
+        }
+      }
+    }
+    $spotim_recipe_nids = json_decode(variable_get('cronjob_recipe_nids',''));
+    variable_set('cronjob_recipe_nids', json_encode(array_values(array_diff($spotim_recipe_nids, $items))));
+    watchdog('cron', 'Recipe SpotIM Cron executed:'.json_encode($items), WATCHDOG_INFO);
+  }
+}
+
+/**
+ * To updating the recipe nids list for processing SpotIM cron call.
+ *
+ * @param string $nid
+ *   Recipe Node id.
+ * @param array $cronjob_recipe_nids
+ *   List of recipe nids to process by cron job which we require.
+ */
+function ti_amg_fwrd_recipe_updating_nids_list($nid = NULL) {
+  // Updating the recipe nids for processing SpotIM cron call.
+  $recipe_cronids = json_decode(variable_get('cronjob_recipe_nids',''));
+  if (!empty($recipe_cronids)) {
+    if (!in_array($nid, $recipe_cronids)) {
+      array_push($recipe_cronids, $nid);
+      variable_set('cronjob_recipe_nids', json_encode($recipe_cronids));
+      // Setting the recipe_nids_cache for 1 day.
+      cache_set("recipe_nids_cache_".$nid, 'empty_data_set', 'recipe_cron_cache', time() + 3600 * 24);
+    }
+  }
+  else {
+    if (!empty($nid)) {
+      $recipe_cronids[] = $nid;
+      variable_set('cronjob_recipe_nids', json_encode($recipe_cronids));
+      // Setting the recipe_nids_cache for 1 day.
+      cache_set("recipe_nids_cache_".$nid, 'empty_data_set', 'recipe_cron_cache', time() + 3600 * 24);
+    }
+  }
+}
+
+/*
+ * Implementing hook_preprocess_node(&$vars)
+ */
+function ti_amg_fwrd_recipe_preprocess_node(&$vars) {
+  if ($vars['node']->type == 'recipe') {
+    global $base_url, $og_img_path, $conf;
+    $img_path = url(drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/spritemap.svg', array('absolute' => TRUE));
+
+    $node = $vars['node'];
+    $vars['recipe_content'] = array();
+    $recipe_cronids = array();
+    $path = current_path();
+    $vars['recipe_content']['url'] = drupal_get_path_alias('node/' . $node->nid);
+    $vars['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+    $path_alias = drupal_lookup_path('alias', $path);
+    $share_url = $base_url . '/' . $path_alias;
+    $vars['recipe_content']['path'] = $path_alias;
+    $vars['recipe_content']['share_url'] = $share_url;
+    $vars['recipe_content']['title'] = $node->title;
+    $vars['recipe_content']['nid'] = $node->nid;
+    $vars['recipe_content']['spot_id'] = variable_get('spot_id', 'sp_b3BDxGSu');
+    $vars['recipe_content']['enable_spot_im'] = variable_get('enable_spot_im', 'TRUE');
+    $vars['recipe_content']['spotim_schema_api'] = variable_get('schema_api', '');
+    $spot_im_data = '';
+
+    // Add recipes to cron job queue for updating spot im schema
+    $recipe_nids_cached = cache_get("recipe_nids_cache_".$node->nid, 'recipe_cron_cache');
+    if (!$recipe_nids_cached || empty($recipe_nids_cached->data)) {
+      ti_amg_fwrd_recipe_updating_nids_list($node->nid);
+    }
+
+    // To get Cached SpotIM data.
+    $spotim_schema_cache = cache_get("spotim_schema_cache" . $node->nid, 'cache');
+    if (!$spotim_schema_cache || empty($spotim_schema_cache->data)) {
+      // If no cache, getting from node object.
+      $rating_info_value = ti_amg_fwrd_custom_get_field_value('node', $node, 'field_rating_info');
+      if (!empty($rating_info_value)) {
+        $spot_im_data = $rating_info_value['#markup'];
+      }
+      // Setting the cache for 1 day.
+      cache_set("spotim_schema_cache" . $node->nid, $spot_im_data, 'cache', time() + 3600 * 24);
+    }
+    else {
+      // Fetching the cached data.
+      $spot_im_data = $spotim_schema_cache->data;
+    }
+    // If no SpotIM data available and SpotIM is disbled.
+    // Bringing Static Schema.org information.
+    if (empty($spot_im_data) && !$vars['recipe_content']['enable_spot_im']) {
+      $enable_static_schema_org = TRUE;
+    }
+    else {
+      $enable_static_schema_org = FALSE;
+    }
+
+    $vars['recipe_content']['spot_im_schema_output'] = html_entity_decode($spot_im_data);
+    // Building Static ratings.
+    $recipe_rating = ti_amg_fwrd_recipe_get_rating_info($spot_im_data);
+
+    $static_ratings = theme('rating-stars', array('rating' => $recipe_rating['aggregate_rating'], 'img_path' => $img_path));
+    // Recipe rating Information.
+    $vars['recipe_content']['recipe_rating'] = theme('recipe-rating', array(
+      'nid' => $node->nid,
+      'spot_im_id' => $vars['recipe_content']['spot_id'],
+      'static_ratings' => $static_ratings,
+      'rating_info' => $recipe_rating,
+      'enable_spot_im' => $vars['recipe_content']['enable_spot_im'],
+      'enable_static_schema_org' => $enable_static_schema_org,
+        )
+    );
+    // To print recipe ratings and reviews to the page.
+    $vars['recipe_content']['recipe_reviews'] = theme('recipe-reviews', array('recipe_reviews' => $recipe_rating));
+    $vars['recipe_content']['deck'] = ti_amg_fwrd_custom_get_field_value('node', $node, 'field_deck');
+    // Converting Accented Characters.
+    if (!empty($vars['recipe_content']['deck'])) {
+      $vars['recipe_content']['deck']['#markup'] = ti_amg_fwrd_custom_convert_accented_char($vars['recipe_content']['deck']['#markup']);
+    }
+
+    // Removing the slideshow broken deck image from recipe deck.
+    if (!empty($vars['recipe_content']['deck']['#markup'])) {
+      $vars['recipe_content']['deck']['#markup'] = _ti_amg_fwrd_custom_remove_broken_deck_image($vars['recipe_content']['deck']['#markup']);
+    }
+    // preprocessing image
+    $vars['recipe_content']['image'] = _ti_amg_fwrd_custom_process_image($node);
+    // preprocessing time
+    $vars['recipe_content']['time'] = _ti_amg_fwrd_custom_preprocessing_time($node);
+    // preprocessing active time
+    $vars['recipe_content']['active_time'] = _ti_amg_fwrd_custom_preprocessing_active_time($node);
+    // preprocessing active time
+    $vars['recipe_content']['other_time'] = _ti_amg_fwrd_custom_preprocessing_other_time($node);
+    // preprocessing ingredient
+    $vars['recipe_content']['ingredients'] = _ti_amg_fwrd_custom_ingredients($node);
+    // instructions
+    $vars['recipe_content']['instructions'] = _ti_amg_fwrd_custom_instructions($node);
+
+    $vars['recipe_content']['make_ahead'] =
+      (isset($node->field_make_ahead[LANGUAGE_NONE][0]['value'])) ?
+        ti_amg_fwrd_custom_convert_accented_char($node->field_make_ahead[LANGUAGE_NONE][0]['value']) : '';
+
+    $vars['recipe_content']['pairing_notes'] =
+      (isset($node->field_pairing_notes[LANGUAGE_NONE][0]['value'])) ?
+        ti_amg_fwrd_custom_convert_accented_char($node->field_pairing_notes[LANGUAGE_NONE][0]['value']) : '';
+
+    $vars['recipe_content']['serve_notes'] =
+      (isset($node->field_serve_notes[LANGUAGE_NONE][0]['value'])) ?
+        ti_amg_fwrd_custom_convert_accented_char($node->field_serve_notes[LANGUAGE_NONE][0]['value']) : '';
+
+    $vars['recipe_content']['serve_with'] =
+      (isset($node->field_serve_with[LANGUAGE_NONE][0]['value'])) ?
+        ti_amg_fwrd_custom_convert_accented_char($node->field_serve_with[LANGUAGE_NONE][0]['value']) : '';
+
+    // preprocessing issue
+    $vars['recipe_content']['issue_name'] = _ti_amg_fwrd_recipe_issue($node);
+
+    // preprocessing recipe rating
+    $vars['recipe_content']['rating'] = _ti_amg_fwrd_recipe_rate($node);
+    $vars['recipe_content']['servings'] =
+      (isset($node->field_yield[LANGUAGE_NONE][0]['value'])) ?
+        strip_tags($node->field_yield[LANGUAGE_NONE][0]['value']) : '';
+    $vars['recipe_content']['related_link'] = _ti_amg_fwrd_recipe_tag_links($node);
+    $vars['recipe_content']['contrib_name'] = _ti_amg_fwrd_recipe_author($node);
+
+    // Building Jumpstart Video object for desktop.
+    if ($vars['detect_device'] == 'desktop') {
+      $vars['recipe_content']['top_video_tout'] =
+      _ti_amg_fwrd_custom_top_video_tout($node, $vars['detect_device']);
+      $video_id = $vars['recipe_content']['top_video_tout']['video']['video_id'];
+      $vars['recipe_content']['top_video_hidden_player'] =
+        _ti_amg_fwrd_custom_get_html5_video($video_id, $vars['detect_device'], 'recipe');
+    }
+    else {
+      $vars['recipe_content']['top_video_tablet_mobile'] =
+      _ti_amg_fwrd_custom_top_video_tout($node, $vars['detect_device']);
+    }
+    //Building the social share media section for recipe page
+    $recipe_social_share_img_path = $vars['recipe_content']['image']['social_share_img_path'];
+    $og_img_path = $recipe_social_share_img_path;
+    $vars['recipe_content']['social_share_section'] =
+      _ti_amg_fwrd_recipe_social_share_section($node->title,
+    $vars['recipe_content']['contrib_name'],
+    $recipe_social_share_img_path,
+    drupal_get_path_alias('node/'.$node->nid));
+
+    $carousel_slide_url = drupal_get_path_alias('node/'.$node->nid);
+    $vars['recipe_content']['desktop_right_rail_ad_block2'] =
+      theme('ti_amg_fw_outbrain_redesign',
+        array(
+        'widget_id' => 'SB_4',
+        'title' => '',
+        'carousel_slide_url' => $carousel_slide_url
+        )
+      );
+
+    //Fetching the already existing recipe rating values if existed
+    if ($node->field_recipe_rating[LANGUAGE_NONE][0]['average'] == 0
+    && isset($node->field_rating[LANGUAGE_NONE])) {
+      $rating_value = $node->field_rating[LANGUAGE_NONE][0]['value'];
+      preg_match('/\d/', $rating_value, $matches);
+      if (!empty($matches) && $rating_value <= 5) {
+        $recipe_rating = $rating_value * 20;
+        $node->field_recipe_rating[LANGUAGE_NONE][0]['average'] = $recipe_rating;
+        $node->field_recipe_rating[LANGUAGE_NONE][0]['count'] = 1;
+        $vars['content']['field_recipe_rating'][0]['vote']['vote']['#default_value'] = $recipe_rating;
+        $vars['content']['field_recipe_rating'][0]['vote']['vote']['#value'] = $recipe_rating;
+        $vars['content']['field_recipe_rating']['#items'][0]['average'] = $recipe_rating;
+        $vars['content']['field_recipe_rating']['#items'][0]['count'] = 1;
+      }
+    }
+    //Fetching the recipe rating value for schema.org
+    $avarage_rating_val = ($node->field_recipe_rating[LANGUAGE_NONE][0]['average'])/20;
+    $vars['recipe_content']['recipe_rating_value'] = number_format($avarage_rating_val, 1);
+    $vars['recipe_content']['total_rating_reviews'] = _ti_amg_fwrd_get_total_reviews($node->nid);
+    // Recipe page breadcrumb
+    $vars['recipe_content']['breadcrumbs'] = _ti_amg_fwrd_recipe_breadcrumbs($node);
+    // To select node template for print page
+    if (arg(2) == 'print') {
+      $vars['theme_hook_suggestions'][0] = 'node__print';
+      $vars['recipe_content']['print_page_url'] = $base_url.'/'.drupal_get_path_alias('node/'.$node->nid);
+      // Removing the slideshow link from recipe deck for print page.
+      if (!empty($vars['recipe_content']['deck']['#markup'])) {
+        $vars['recipe_content']['deck']['#markup'] = _ti_amg_fwrd_recipe_remove_slideshow_link($vars['recipe_content']['deck']['#markup']);
+      }
+    }
+    // Omniture Variables
+    $vars['recipe_content']['tracking'] = _ti_amg_fwrd_omniture_sets($node);
+    $vars['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+
+    // Campaign recipe page
+    $vars['recipe_content']['in_campaign'] = FALSE;
+    $campaign_list = ti_amg_fw_sponsor_logo_campaign_get_content();
+    // Checking the current node id is added under campaign list.
+    if (in_array($node->nid, $campaign_list)) {
+      $vars['recipe_content']['in_campaign'] = TRUE;
+    }
+
+    if (module_exists('editorial_ecommerce_workflow')) {
+      if (!empty($vars['recipe_content']['deck']['#markup'])) {
+        $vars['recipe_content']['deck']['#markup'] = _ecommerce_product_afl_replacer($vars['recipe_content']['deck']['#markup'], $node);
+      }
+
+      if (!empty($vars['recipe_content']['instructions'])) {
+        foreach ($vars['recipe_content']['instructions'] as &$instruction) {
+          if (!empty($instruction['content']['#markup'])) {
+            $instruction['content']['#markup'] = _ecommerce_product_afl_replacer($instruction['content']['#markup'], $node);
+          }
+        }
+      }
+    }
+
+  }
+}
+
+/**
+ * Replace recipe set on carousel by Ajax call
+ */
+function _ti_amg_fwrd_recipe_carousel_next_set() {
+  $current_nid = (isset($_GET['main_recipe'])) ? $_GET['main_recipe'] : 0;
+  $page_no = (isset($_GET['page_number'])) ? $_GET['page_number'] : 0;
+  $current_node = node_load($current_nid);
+  $recipe_array = $carousel_script = array();
+
+  // Checking the solr connection and setting to enable solr on recipe carousel.
+  if (ti_amg_fwrd_recipe_test_solr() && variable_get('enable_solr_on_recipe_carousel', FALSE) && (is_numeric($current_nid) && $current_nid > 0)) {
+    $next_page_recipe_data = ti_amg_fwrd_recipe_get_carousel_recipies_from_solr($current_node, $page_no);
+    if (!empty($next_page_recipe_data)) {
+      foreach ($next_page_recipe_data as $recipe_item) {
+        if (!$recipe_item['default_image_flag']) {
+          $slide_image = image_style_url('551x551', $recipe_item['image']);
+        }
+        else {
+          $slide_image = file_create_url($recipe_item['image']);
+        }
+        // For Replacing the long dashes in the slide title
+        $replace_long_dashes_in_title = preg_replace('/–+/', '-', $recipe_item['title']);
+        $slide_title = preg_replace('/[^A-Za-z0-9-\ ]/', '', $replace_long_dashes_in_title);
+        $slide_url = $base_url . '/' . $recipe_item['url'];
+        $carousel_script[] = array(
+          'id' => $recipe_item['nid'],
+          'title' => $slide_title,
+          'url' => $slide_url,
+          'image' => $slide_image,
+        );
+      }
+    }
+  }
+  else {
+    $recipe_nids = _ti_amg_fwrd_recipe_get_latest_recipies($current_node, $page_no);
+
+    if (!empty($recipe_nids) && count($recipe_nids) > 0) {
+      $entity_set = entity_load('node', $recipe_nids);
+
+      foreach ($entity_set as $node) {
+        $slide_url = $base_url . '/' . drupal_get_path_alias('node/' . $node->nid);
+        $slide_process_image = _ti_amg_fwrd_custom_process_image($node);
+        $slide_image = $slide_process_image['recipe_carousel_img'];
+        // For Replacing the long dashes in the slide title
+        $replace_long_dashes_in_title = preg_replace('/–+/', '-', $node->title);
+        $slide_title = preg_replace('/[^A-Za-z0-9-\ ]/', '', $replace_long_dashes_in_title);
+        $carousel_script[] = array(
+          'id' => $node->nid,
+          'title' => $slide_title,
+          'url' => $slide_url,
+          'image' => $slide_image,
+        );
+      }
+    }
+
+    if (isset($_COOKIE['carousel_recipe_ids'])) {
+      $recipe_total = $_COOKIE['carousel_recipe_ids'] . ',' . implode(",", $recipe_nids);
+      setcookie('carousel_recipe_ids', $recipe_total, time() + 3600 * 24);
+      $_COOKIE['carousel_recipe_ids'] = $recipe_total;
+    }
+  }
+
+
+  return $carousel_script;
+}
+
+/**
+ * Implementing hook_init.
+ */
+function ti_amg_fwrd_recipe_boot() {
+  if(arg(0) != 'recipeset') {
+    setcookie('carousel_recipe_ids', '', time()-3600, '/');
+    unset($_COOKIE['carousel_recipe_ids']);
+  }
+}
+
+/**
+ * Hero carousel header block for recipe page.
+ */
+function _ti_amg_fwrd_recipe_carousel() {
+  global $base_url;
+  static $stop_script;
+  $result_count = 0;
+  $tid = 0;
+  $slide_id = 1;
+  $num_rows = 0;
+  $carousel_length = 12;
+  $carousel_script = '';
+  $main_slide_alt='';
+  $current_nid = arg(1);
+  $recipe_nids = array();
+  $related_recipes = array();
+  $prefetch_main_image = '';
+  $current_node = node_load($current_nid);
+  $prefetch_carousel = array();
+  $slide_url = $base_url.'/'.drupal_get_path_alias('node/'.$current_node->nid);
+  $slide_process_image = _ti_amg_fwrd_custom_process_image($current_node);
+  $slide_image = $slide_process_image['recipe_carousel_img'];
+  $prefetch_main_image = $slide_image;
+  $main_slide_alt = isset($slide_process_image['alt_text']) ? $slide_process_image['alt_text'] : '';
+  // For Replacing the long dashes in the slide title
+  $replace_long_dashes_in_title = preg_replace('/–+/', '-', $current_node->title);
+  $slide_title = preg_replace('/[^A-Za-z0-9-\ ]/', '', $replace_long_dashes_in_title);
+  $prefetch_main_title = $slide_title;
+  $carousel_content = '{
+    id: '.$current_node->nid.',
+    title: "'.$slide_title.'",
+    url: "'.$slide_url.'",
+    image: "'.$slide_image.'"';
+
+  $carousel_content .= '},';
+
+  $carousel_script .= 'var recipesConfig = {
+    baseUrl: "/carousel/",
+    currentRecipeId: '.$current_node->nid.',
+    collectionUrl: "/recipeset",
+    numRecipesPerPage: '.RESIPE_CAROUSEL_SLIDES.',
+    recipes: [';
+  // Checking the solr connection.
+  if (ti_amg_fwrd_recipe_test_solr() && variable_get('enable_solr_on_recipe_carousel', FALSE)) {
+    // If yes fetching the recipe data from solr.
+    $first_page_recipe_data = ti_amg_fwrd_recipe_get_carousel_recipies_from_solr($current_node, 0);
+    foreach ($first_page_recipe_data as $recipe_item) {
+      $replace_long_dashes_in_title = preg_replace('/–+/', '-', $recipe_item['title']);
+      $slide_title = preg_replace('/[^A-Za-z0-9-\ ]/', '', $replace_long_dashes_in_title);
+      // Creating slide image.
+      if (!$recipe_item['default_image_flag']) {
+        $slide_image = image_style_url('551x551', $recipe_item['image']);
+      }
+      else {
+        $slide_image = file_create_url($recipe_item['image']);
+      }
+
+      $prefetch_carousel['image'][] = $slide_image;
+      $prefetch_carousel['title'][] = $slide_title;
+      $slide_url = $base_url . '/' . $recipe_item['url'];
+      $carousel_script .= '{
+            id: ' . $recipe_item['nid'] . ',
+            title: "' . $slide_title . '",
+            url: "' . $slide_url . '",
+            image: "' . $slide_image . '"';
+
+      $carousel_script .= '},';
+
+      $slide_id++;
+      if ($slide_id == 2) {
+        $carousel_script .= $carousel_content;
+        $prefetch_carousel['image'][] = $prefetch_main_image;
+        $prefetch_carousel['title'][] = $prefetch_main_title;
+        $slide_id++;
+      }
+    }
+  }
+  else {
+    $cache = cache_get($current_node->nid, TI_AMG_FW_RELATED_RECIPE_CACHE);
+
+    if (!$cache || empty($cache->data) || count($cache->data < 3)) {
+      // Get related nodes if $cache is empty.
+      $recipe_nids = _ti_amg_fwrd_recipe_get_latest_recipies($current_node);
+      cache_set($current_node->nid, $recipe_nids, TI_AMG_FW_RELATED_RECIPE_CACHE, time() + 3600 * 24);
+      watchdog('Recipe Carousel', 'Cachebin is not set', WATCHDOG_INFO);
+    }
+    else {
+      $recipe_nids = $cache->data;
+    }
+
+    if (isset($recipe_nids) && count($recipe_nids) > 0) {
+      $entity_set = entity_load('node', $recipe_nids);
+      foreach ($entity_set as $node) {
+        $slide_url = $base_url . '/' . drupal_get_path_alias('node/' . $node->nid);
+        $slide_process_image = _ti_amg_fwrd_custom_process_image($node);
+        $slide_image = $slide_process_image['recipe_carousel_img'];
+        $prefetch_carousel['image'][] = $slide_image;
+        $prefetch_carousel['title'][] = $slide_title;
+        // For Replacing the long dashes in the slide title
+        $replace_long_dashes_in_title = preg_replace('/–+/', '-', $node->title);
+        $slide_title = preg_replace('/[^A-Za-z0-9-\ ]/', '', $replace_long_dashes_in_title);
+        $carousel_script .= '{
+            id: ' . $node->nid . ',
+            title: "' . $slide_title . '",
+            url: "' . $slide_url . '",
+            image: "' . $slide_image . '"';
+
+        $carousel_script .= '},';
+
+        // Stitching the main recipe at the fourth place in the carousel
+        // for smooth prev/next scrolling effect.
+        // This logic might be changed in the future.
+        $slide_id++;
+        if ($slide_id == 2) {
+          $carousel_script .= $carousel_content;
+          $prefetch_carousel['image'][] = $prefetch_main_image;
+          $prefetch_carousel['title'][] = $prefetch_main_title;
+          $slide_id++;
+        }
+      }
+    }
+  }
+
+
+  $carousel_script .= ']};';
+
+  // Stop loading inline script multiple times on the same page
+  //if (!$stop_script) {
+    drupal_add_js($carousel_script, array(
+      'type' => 'inline',
+      'scope' => 'footer',
+      'group' => JS_DEFAULT,
+      'weight' => -1,
+    ));
+
+    $stop_script = true;
+  //}
+
+  $slide_switcher = theme("pagination-arrow");
+  $result = theme("recipe-carousel", array(
+    'slide_switcher' => $slide_switcher,
+    'prefetch_carousel' => $prefetch_carousel,
+    'main_image_alt' => $main_slide_alt,
+    )
+  );
+
+  $carousel_cookie_ids = implode(",", $recipe_nids);
+  setcookie('carousel_recipe_ids', $carousel_cookie_ids, time()+3600*24);
+  $_COOKIE['carousel_recipe_ids'] = $carousel_cookie_ids;
+  return $result;
+}
+
+function _ti_amg_fwrd_recipe_get_latest_recipies($node, $page_no = 0) {
+  $recipe_nids = array();
+  $result_count = 0;
+  $from_date = mktime(0, 0, 0, 1, 1, 2014);
+  $range_starts = ($page_no > 0) ? (($page_no - 1) * RESIPE_CAROUSEL_SLIDES) : 0;
+
+  if ($page_no < 5) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'recipe')
+      ->range($range_starts, RESIPE_CAROUSEL_SLIDES)
+      ->propertyCondition('status', 1)
+      ->propertyCondition('nid', $node->nid, '<>')
+      ->propertyCondition('created', $from_date, '>')
+      ->propertyOrderBy('changed', 'DESC');
+
+    $result = $query->execute();
+    if (isset($result['node'])) {
+      $recipe_nids = array_keys($result['node']);
+    }
+  }
+
+  return $recipe_nids;
+}
+/**
+ * Builds list of related recipes for carousel
+ *
+ * solr search for similar nodes
+ */
+function _ti_amg_fwrd_recipe_get_related_nodes() {
+  $node = menu_get_object();
+  $related = array();
+  $mlt_block = apachesolr_search_mlt_block_load('mlt-001');
+  $solr = apachesolr_get_solr();
+  $doc_id = apachesolr_document_id($node->nid);
+
+  $docs = apachesolr_search_mlt_suggestions($mlt_block, $doc_id, $solr);
+  if ($docs) {
+    foreach ($docs as $doc) {
+      $related[] = $doc->entity_id;
+    }
+  }
+
+  return $related;
+}
+
+/**
+ * Preparing Recipe Ingredients.
+ */
+function _ti_amg_fwrd_recipe_prepare_ingredients($ing_entity = NULL) {
+  $preparation = array();
+  if (!empty($ing_entity)) {
+    foreach ($ing_entity as $ing_index => $ingid) {
+      foreach ($ingid as $ing_entityid => $ing_entityobject) {
+        $ing_qty = '';
+        $ing_whole_str = '';
+        $ing_fraction = '';
+        $ing_unit_str = '';
+        $ing_meas_notes_str = '';
+        $ing_prep_notes_str = '';
+        $ing_name_str = '';
+        $ing_title = '';
+        if (isset($ing_entityobject->field_ingredient_quantity[LANGUAGE_NONE]
+                [0]['value']
+            ) && $ing_entityobject->field_ingredient_quantity
+            [LANGUAGE_NONE][0]['value'] != 0
+        ) {
+          $ing_qty = $ing_entityobject->field_ingredient_quantity[LANGUAGE_NONE]
+              [0]['value'];
+          $ing_qty_str = $ing_qty . " ";
+        }
+        if (isset($ing_entityobject->field_ingredient_whole[LANGUAGE_NONE]
+                [0]['value']
+            ) && $ing_entityobject->field_ingredient_whole
+            [LANGUAGE_NONE][0]['value'] != 0
+        ) {
+          $ing_whole = $ing_entityobject->field_ingredient_whole[LANGUAGE_NONE]
+              [0]['value'];
+          $ing_whole_str = $ing_whole . " ";
+        }
+
+        if (isset($ing_entityobject->field_ingredient_fraction[LANGUAGE_NONE]
+                [0]['tid']
+            )) {
+          $ing_fraction_tid = $ing_entityobject->field_ingredient_fraction
+              [LANGUAGE_NONE][0]['tid'];
+          $ing_fraction = db_query('SELECT name FROM {taxonomy_term_data} ' .
+              'WHERE ' . 'tid = :tid', array(':tid' => $ing_fraction_tid)
+              )->fetchField();
+          if ($ing_fraction != 0) {
+            $ing_fraction_str = $ing_fraction . " ";
+          }
+        }
+        if (isset($ing_entityobject->field_ingredient_unit[LANGUAGE_NONE]
+                [0]['tid']
+            )) {
+          $ing_unit_tid = $ing_entityobject->field_ingredient_unit[LANGUAGE_NONE]
+              [0]['tid'];
+          $ing_unit = db_query('SELECT name FROM {taxonomy_term_data} WHERE '
+              . 'tid = :tid', array(':tid' => $ing_unit_tid))
+              ->fetchField();
+          $ing_unit_str = $ing_unit . " ";
+        }
+        if (isset($ing_entityobject->field_ingredient_mea_notes[LANGUAGE_NONE]
+                [0]['value']
+            )) {
+          $ing_meas_notes = $ing_entityobject->field_ingredient_mea_notes
+              [LANGUAGE_NONE][0]['value'];
+          $ing_meas_notes_str = $ing_meas_notes . " ";
+        }
+        if (isset($ing_entityobject->field_prep_notes[LANGUAGE_NONE]
+                [0]['value']
+            )) {
+          $ing_prep_notes = $ing_entityobject->field_prep_notes[LANGUAGE_NONE]
+              [0]['value'];
+          $ing_prep_notes_str = ", " . $ing_prep_notes;
+        }
+        if (isset($ing_entityobject->field_ingredient_primary[LANGUAGE_NONE]
+                [0]['tid']
+            ) && !isset($ing_entityobject->field_ingredient_name
+                [LANGUAGE_NONE][0]['value']
+            )) {
+          $ing_name_tid = $ing_entityobject->field_ingredient_primary
+              [LANGUAGE_NONE][0]['tid'];
+          $ing_name = db_query('SELECT name FROM {taxonomy_term_data} WHERE '
+              . 'tid = :tid', array(':tid' => $ing_name_tid))
+              ->fetchField();
+        }
+        elseif (!isset($ing_entityobject->field_ingredient_primary[LANGUAGE_NONE]
+                [0]['tid']
+            ) && isset($ing_entityobject->field_ingredient_name
+                [LANGUAGE_NONE][0]['value']
+            )) {
+          $ing_name = $ing_entityobject->field_ingredient_name[LANGUAGE_NONE]
+              [0]['value'];
+        }
+        elseif (isset($ing_entityobject->field_ingredient_primary[LANGUAGE_NONE]
+                [0]['tid']
+            ) && isset($ing_entityobject->field_ingredient_name
+                [LANGUAGE_NONE][0]['value']
+            )) {
+          $ing_name = $ing_entityobject->field_ingredient_name[LANGUAGE_NONE]
+              [0]['value'];
+        }
+        if (isset($ing_entityobject->field_ingredient_list_title[LANGUAGE_NONE]
+                [0]['value']
+            )) {
+          $ing_title = $ing_entityobject
+              ->field_ingredient_list_title[LANGUAGE_NONE][0]['value'];
+        }
+        if (empty($ing_title)) {
+          if (!empty(array_keys($preparation))) {
+            $preparation_keys = array_keys($preparation);
+            $ing_title = end($preparation_keys);
+          }
+          else {
+            $ing_title = '';
+          }
+        }
+        if (isset($ing_entityobject->field_ingredient_display_text[LANGUAGE_NONE][0]['value'])) {
+          $ingredient = drupal_html_to_text(strip_tags($ing_entityobject->field_ingredient_display_text[LANGUAGE_NONE][0]['value']));
+        }
+        else {
+          $ingredient = $ing_qty_str . $ing_whole_str . $ing_fraction_str . $ing_unit_str . $ing_meas_notes_str . $ing_name . $ing_prep_notes_str;
+        }
+        // Applying kill switch condition to load the ingredients with links.
+        if (variable_get('recipe_clickable_ingredients_switch', '')) {
+          $preparation[$ing_title][] = ti_amg_fwrd_recipe_alter_ingredients($ingredient, 'fw_category');
+        }
+        else {
+          $preparation[$ing_title][] = $ingredient;
+        }
+      }
+    }
+  }
+  return $preparation;
+}
+
+/*
+ * Function to search term and alter ingredient.
+ */
+
+function ti_amg_fwrd_recipe_alter_ingredients($ingredient, $vocabulory) {
+
+  $taxonomy_terms = ti_amg_fwrd_custom_get_taxonomy($vocabulory);
+  foreach ($taxonomy_terms as $taxonomy_term) {
+    $term_tids = array();
+    $term_name = strtolower($taxonomy_term->name);
+    if (preg_match('/\b' . $term_name . '\b/i', $ingredient, $matches)) {
+      $replace_term = $matches[0];
+      $term_tids[] = $taxonomy_term->tid;
+      $term_path = ti_amg_fwrd_custom_get_category_page($term_tids);
+      if (!empty($term_path)) {
+        $term_url = l($replace_term, $term_path[0]['url']);
+        $ingredient = preg_replace('/\b' . $replace_term . '\b/i', $term_url, $ingredient);
+      }
+    }
+  }
+  return $ingredient;
+}
+
+
+
+function _ti_amg_fwrd_recipe_issue($node) {
+  $issue_name ='';
+  if (isset($node->field_issue[LANGUAGE_NONE][0]['tid'])) {
+    $tid = $node->field_issue[LANGUAGE_NONE][0]['tid'];
+    $issue_obj = taxonomy_term_load($tid);
+    $issue = $issue_obj->name;
+    if (isset($issue_obj->field_taxo_issue_label[LANGUAGE_NONE][0]['value'])) {
+      $issue_label = $issue_obj->field_taxo_issue_label[LANGUAGE_NONE]
+          [0]['value'];
+      $issue_url = "monthly" . "/" . $issue_label;
+      $issue_name = l($issue, $issue_url, array(
+        'attributes' => array(
+          'class' => array('issue-link'),
+          'title' => "Food and Wine's " . $issue . " Issue",
+        ),
+      ));
+    }
+  }
+  return $issue_name;
+}
+
+function _ti_amg_fwrd_recipe_rate($node) {
+  $recipe_rating = 0;
+  if (isset($node->field_rating[LANGUAGE_NONE])) {
+    $rating_value = $node->field_rating[LANGUAGE_NONE][0]['value'];
+    preg_match('/\d/', $rating_value, $matches);
+    if (!empty($matches) && $rating_value <= 5) {
+      $recipe_rating = $rating_value;
+    }
+  }
+
+  return $recipe_rating;
+}
+
+/**
+ * Implementing clickable tags on recipe key section.
+ *
+ * @param type $node
+ * @return tags
+ */
+function _ti_amg_fwrd_recipe_tag_links($node) {
+  $tid = ti_amg_fwrd_category_get_category_tid($node);
+  if ($tid != '') {
+    $category_items = ti_amg_fwrd_custom_category_breadcrumb_items($tid, FALSE);
+  }
+
+  $term_url = array();
+  foreach ($category_items as $category_item) {
+    $term_url[]['title'] = l($category_item['label'], $category_item['url']);
+  }
+
+  $output = theme('tag-set', array(
+    'tags' => array_reverse($term_url)
+  ));
+
+  return $output;
+}
+
+/**
+ * Implementing Recipes Related Tags Which are Pulling from Complex Themes
+ */
+function _ti_amg_fwrd_recipe_related_links($node) {
+  $output = '';
+  $related_link = array();
+  $servings_sizes = array();
+  $vacObj = taxonomy_vocabulary_machine_name_load('complex_themes');
+  if(!empty($vacObj)) {
+    $termObj = taxonomy_get_term_by_name('Servings', $vacObj->machine_name);
+    if(!empty($termObj)) {
+      foreach ($termObj as $term_obj) {
+        $servings_term_arr = taxonomy_get_children($term_obj->tid, $term_obj->vid);
+        if(!empty($servings_term_arr)) {
+          foreach ($servings_term_arr as $servings_term) {
+            $servings_sizes[] = $servings_term->tid;
+          }
+        }
+      }
+    }
+  }
+  if (isset($node->field_complex_theme[LANGUAGE_NONE])) {
+    if (count($node->field_complex_theme[LANGUAGE_NONE])>0) {
+      foreach ($node->field_complex_theme[LANGUAGE_NONE] as $key => $related_tag) {
+        $link = array();
+        if (!in_array($related_tag['taxonomy_term']->tid, $servings_sizes)) {
+          if (isset($related_tag['taxonomy_term']->name)) {
+            $link['title'] = $related_tag['taxonomy_term']->name;
+          }
+          $related_link[] = $link;
+        }
+      }
+    }
+  }
+  $output = theme('tag-set', array(
+		'tags' => $related_link
+	    ));
+  return $output;
+}
+
+function _ti_amg_fwrd_recipe_author($node) {
+  $chef_ids = array();
+  $chef_authors = array();
+  $chef_first_name = '';
+  $chef_last_name = '';
+  $contrib_name = '';
+  if (isset($node->field_chefs_author[LANGUAGE_NONE])) {
+    foreach ($node->field_chefs_author[LANGUAGE_NONE] as $index => $id) {
+      $chef_ids = $id['target_id'];
+      $chef_first_name = db_query('SELECT field_given_name_value FROM ' .
+          '{field_data_field_given_name} WHERE entity_id = :nid',
+        array(':nid' => $chef_ids)
+      )->fetchField();
+      $chef_last_name = db_query('SELECT field_last_name_value FROM ' .
+          '{field_data_field_last_name} WHERE entity_id = :nid',
+        array(':nid' => $chef_ids)
+      )->fetchField();
+
+      if ($chef_first_name == '' && $chef_last_name == '') {
+        $chef_authors[$chef_ids] =
+          db_query('SELECT title FROM ' . '{node} WHERE nid = :nid',
+            array(':nid' => $chef_ids))->fetchField();
+      }
+      else {
+        $chef_authors[$chef_ids] = $chef_first_name . " " .
+          $chef_last_name;
+      }
+    }
+  }
+  $source_ids = array();
+  $source_authors = array();
+  if (isset($node->field_source_author[LANGUAGE_NONE])) {
+    foreach ($node->field_source_author[LANGUAGE_NONE] as
+      $source_index => $source_nid
+    ) {
+      $source_ids = $source_nid['target_id'];
+      $variables['source_authors'][$source_ids] =
+          db_query('SELECT title FROM ' . '{node} WHERE nid = :nid',
+              array(':nid' => $source_ids))->fetchField();
+    }
+  }
+  if (!empty($chef_authors)) {
+    $count_people = count($chef_authors);
+    $contrib_name = '';
+    foreach ($chef_authors as $chef_nid => $chef_title) {
+
+      if ($contrib_name != '') {
+        $contrib_name = $contrib_name . " and " .
+            l($chef_title,
+          drupal_get_path_alias("node" . "/" . $chef_nid),
+          array('attributes' => array('class' => array('chef-link'),
+              'title' => 'Chef ' . $chef_title,
+            ))
+        );
+      }
+      else {
+        $contrib_name = $contrib_name . l($chef_title,
+          drupal_get_path_alias("node" . "/" . $chef_nid),
+          array('attributes' => array('class' => array('chef-link'),
+              'title' => 'Chef ' . $chef_title,
+            ))
+        );
+      }
+
+    } // for chef_authors
+  }
+  elseif (!empty($source_authors)) {
+    $count_source = count($source_authors);
+    $contrib_name = '';
+    foreach ($source_authors as $source_nid => $source_title) {
+
+      if ($contrib_name != '') {
+        $contrib_name = $contrib_name . " and " .
+            $source_title;
+      }
+      else {
+        $contrib_name .= $source_title;
+      }
+
+    }  // for source_authors
+  }
+
+  return $contrib_name;
+
+}
+
+/** Calling recipe-social-share to build
+  * social share media section
+  */
+ function _ti_amg_fwrd_recipe_social_share_section($recipe_title = '', $recipe_authors = '', $recipe_social_share_img_path = '', $page_alias = '') {
+  global $base_url;
+  $current_url = $base_url . '/'. $page_alias;
+  $img_path = url(drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/spritemap.svg', array('absolute' => TRUE));
+  $site_name = variable_get('site_name');
+  $social_share_content['title'] = urlencode($recipe_title);
+  $social_share_content['pinit_title'] = urlencode($recipe_title . ' | ' . $site_name);
+  $social_share_content['social_share_img_path'] = $recipe_social_share_img_path;
+  $social_share_content['mail_subject'] = $social_share_content['title'];
+  if ($recipe_authors != '') {
+    $social_share_content['mail_body'] = urlencode($recipe_title) . '%0A+Recipes+%0A' . urlencode(strip_tags($recipe_authors)) . '%0A' . urlencode($current_url);
+    $social_share_content['twitter_text'] = 'original_referer=' . urlencode($current_url) . '&amp;text=' . rawurlencode($recipe_title) . ' Recipe - ' . rawurlencode(strip_tags($recipe_authors)) . rawurlencode(' | ' . $site_name) . '&amp;url=' . urlencode($current_url) . '%3Fxid%3Dtwsharebar&amp;via=foodandwine';
+  }
+  else {
+    $social_share_content['mail_body'] = urlencode($recipe_title) . '%0A+Recipes+%0A' . urlencode($current_url);
+    $social_share_content['twitter_text'] = 'original_referer=' . urlencode($current_url) . '&amp;text=' . rawurlencode($recipe_title) . ' Recipe' . rawurlencode(' | ' . $site_name) . '&amp;url=' . urlencode($current_url) . '%3Fxid%3Dtwsharebar&amp;via=foodandwine';
+  }
+  $social_share_content['show_print_button'] = TRUE;
+  return theme('social-share', array(
+    'url' => $current_url,
+    'img_path' => $img_path,
+    'social_share_content' => $social_share_content,
+  ));
+}
+
+/**
+ * Calling popular recipes using this function
+ */
+function _ti_amg_fwrd_recipe_popular_recipes($node) {
+  $recipe_items_nids = array();
+  $popular_recipes_content = '';
+  // Updating the Popular Recipes Title By Editor's Override
+  $popular_recipes_title = (isset($node->field_popular_recipes_title[LANGUAGE_NONE][0]['value'])) ? $node->field_popular_recipes_title[LANGUAGE_NONE][0]['value'] : 'Popular Recipes';
+  // Updating the Popular Recipes Content By Editor's Override
+  if (isset($node->field_popular_recipes_recipe[LANGUAGE_NONE])) {
+    foreach ($node->field_popular_recipes_recipe[LANGUAGE_NONE] as $popular_recipes) {
+      $recipe_items_nids[] = $popular_recipes['target_id'];
+    }
+    $popular_recipes_content = _ti_amg_fwrd_recipe_get_popular_recipes($recipe_items_nids);
+  }
+  else {
+    // Checking whether the seasonal tags are exist are not
+    if (isset($node->field_seasonal_tags[LANGUAGE_NONE])) {
+      $tid = $node->field_seasonal_tags[LANGUAGE_NONE][0]['tid'];
+      $recipe_items_nids = _ti_amg_fwrd_recipe_get_recipe_nids_by_seasonal_tags($tid, $node);
+      $popular_recipes_content = _ti_amg_fwrd_recipe_get_popular_recipes($recipe_items_nids);
+    }
+    // Checking whether the primary ingredients tags are exist are not
+    elseif (isset($node->field_ingredients[LANGUAGE_NONE])) {
+      if (count($node->field_ingredients[LANGUAGE_NONE]) > 0) {
+        foreach ($node->field_ingredients[LANGUAGE_NONE] as $ingredient) {
+          $ingredient_data = entity_load('field_collection_item', array($ingredient['value']));
+          $ingredient_id = $ingredient['value'];
+          if ($ingredient_data[$ingredient_id]->field_ingredient_is_primary[LANGUAGE_NONE][0]['value'] == 1) {
+            if ($ingredient_data[$ingredient_id]->field_ingredient_primary[LANGUAGE_NONE][0]['tid'] != '') {
+              $primary_ingrd_term_id = $ingredient_data[$ingredient_id]->field_ingredient_primary[LANGUAGE_NONE][0]['tid'];
+            }
+          }
+        }
+        if (isset($primary_ingrd_term_id) && $primary_ingrd_term_id != '') {
+          $recipe_items_nids = _ti_amg_fwrd_recipe_get_recipe_nids_by_primary_ingredients($primary_ingrd_term_id, $node, $recipe_items_nids);
+          $popular_recipes_content = _ti_amg_fwrd_recipe_get_popular_recipes($recipe_items_nids);
+        }
+        // Implement the Fallback mechanism to pull the latest 6 recipes if primary ingredients tags are empty
+        else {
+          $recipe_items_nids = _ti_amg_fwrd_recipe_get_latest_recipes($node, $recipe_items_nids);
+          $popular_recipes_content = _ti_amg_fwrd_recipe_get_popular_recipes($recipe_items_nids);
+        }
+      }
+    }
+    // Implement the Fallback mechanism to pull the latest 6 recipes if seasonal tags and primary ingredients tags are empty
+    else {
+      $recipe_items_nids = _ti_amg_fwrd_recipe_get_latest_recipes($node, $recipe_items_nids);
+      $popular_recipes_content = _ti_amg_fwrd_recipe_get_popular_recipes($recipe_items_nids);
+    }
+  }
+  return theme('bottom-module-second', array(
+    'popular_recipes_title' => $popular_recipes_title,
+    'popular_recipes_content' => $popular_recipes_content
+  ));
+}
+
+/**
+ * Getting recipe nids by seasonal tags respective tid
+ */
+function _ti_amg_fwrd_recipe_get_recipe_nids_by_seasonal_tags($tid=NULL, $node) {
+  $recipe_nids_output = taxonomy_select_nodes($tid, $pager = FALSE, $limit = (MAX_RELATED_CONTENT_TOUTS + 1), $order = array('t.sticky' => 'DESC', 't.created' => 'DESC'));
+  if (count($recipe_nids_output)>0) {
+    if (in_array($node->nid, $recipe_nids_output)) {
+      $exist_key = array_search($node->nid, $recipe_nids_output);
+      unset($recipe_nids_output[$exist_key]);
+      $recipe_nids_output = array_values($recipe_nids_output);
+    } else {
+      unset($recipe_nids_output[count($recipe_nids_output)-1]);
+      $recipe_nids_output = array_values($recipe_nids_output);
+    }
+  }
+  // Checking whether the rcipes count is equal to 6 or not
+  if (count($recipe_nids_output) == MAX_RELATED_CONTENT_TOUTS) {
+    return $recipe_nids_output;
+  }
+  // If recipes count is less than 6 then pull the remaing recipes from primary ingredients tags
+  else {
+    if (isset($node->field_ingredients[LANGUAGE_NONE])) {
+      if (count($node->field_ingredients[LANGUAGE_NONE]) > 0) {
+        foreach ($node->field_ingredients[LANGUAGE_NONE] as $ingredient) {
+          $ingredient_data = entity_load('field_collection_item', array($ingredient['value']));
+          $ingredient_id = $ingredient['value'];
+          if ($ingredient_data[$ingredient_id]->field_ingredient_is_primary[LANGUAGE_NONE][0]['value'] == 1) {
+            if ($ingredient_data[$ingredient_id]->field_ingredient_primary[LANGUAGE_NONE][0]['tid'] != '') {
+              $primary_ingrd_term_id = $ingredient_data[$ingredient_id]->field_ingredient_primary[LANGUAGE_NONE][0]['tid'];
+            }
+          }
+        }
+        if (isset($primary_ingrd_term_id) && $primary_ingrd_term_id != '') {
+          $recipe_nids_output = _ti_amg_fwrd_recipe_get_recipe_nids_by_primary_ingredients($primary_ingrd_term_id, $node, $recipe_nids_output);
+          // Checking whether the rcipes count is equal to 6 or not
+          if (count($recipe_nids_output) == MAX_RELATED_CONTENT_TOUTS) {
+            return $recipe_nids_output;
+          }
+          // If recipes count is less than 6 then pull the remaing recipes from latest recipes
+          else {
+            $recipe_nids_output = _ti_amg_fwrd_recipe_get_latest_recipes($node, $recipe_nids_output);
+            return $recipe_nids_output;
+          }
+        }
+        // If recipes count is less than 6 then pull the remaing recipes from latest recipes
+        else {
+          $recipe_nids_output = _ti_amg_fwrd_recipe_get_latest_recipes($node, $recipe_nids_output);
+          return $recipe_nids_output;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Getting recipe nids by primary ingredients tags respective tid
+ */
+function _ti_amg_fwrd_recipe_get_recipe_nids_by_primary_ingredients($tid=NULL, $node, $recipe_nids_output) {
+  if (count($recipe_nids_output)>0) {
+    $limit = ((MAX_RELATED_CONTENT_TOUTS)-(count($recipe_nids_output)));
+  }
+  else {
+    $limit = MAX_RELATED_CONTENT_TOUTS;
+  }
+  $query = db_select('field_data_field_ingredient_primary', 'fpi');
+  $query->join('field_data_field_ingredients', 'fi', 'fi.field_ingredients_value = fpi.entity_id');
+  $query->join('node', 'node', 'fi.entity_id = node.nid');
+  $query->fields('node', array('nid'));
+  $query->condition('fpi.field_ingredient_primary_tid', $tid, '=');
+  $query->condition('node.status', '1', '=');
+  $query->condition('node.nid', array($node->nid), 'NOT IN');
+  $query->orderBy("node.created", "DESC");
+  if (count($recipe_nids_output)>0) {
+    $query->range(0, $limit);
+    $query->condition('node.nid', $recipe_nids_output, 'NOT IN');
+  }
+  else {
+    $query->range(0, $limit);
+  }
+  $result = $query->execute();
+  while($row = $result->fetchAssoc()) {
+    $recipe_nids_output[] =  $row['nid'];
+  }
+  if (count($recipe_nids_output)>0) {
+    $recipe_nids_output = array_values($recipe_nids_output);
+  }
+  // Checking whether the rcipes count is equal to 6 or not
+  if (count($recipe_nids_output) == MAX_RELATED_CONTENT_TOUTS) {
+    return $recipe_nids_output;
+  }
+  // If recipes count is less than 6 then pull the remaing recipes from latest recipes
+  else {
+    $recipe_nids_output = _ti_amg_fwrd_recipe_get_latest_recipes($node, $recipe_nids_output);
+    return $recipe_nids_output;
+  }
+}
+
+/**
+ * Getting recipe nids by latest recipes
+ */
+function _ti_amg_fwrd_recipe_get_latest_recipes($node, $recipe_nids_output) {
+  if (count($recipe_nids_output)>0) {
+    $limit = ((MAX_RELATED_CONTENT_TOUTS)-(count($recipe_nids_output)));
+  }
+  else {
+    $limit = MAX_RELATED_CONTENT_TOUTS;
+  }
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node');
+  $query->entityCondition('bundle', 'recipe');
+  if (count($recipe_nids_output)>0) {
+    $query->range(0, $limit);
+    $query->propertyCondition('nid', $recipe_nids_output, 'NOT IN');
+  }
+  else {
+    $query->range(0, $limit);
+  }
+  $query->propertyCondition('status', 1);
+  $query->propertyCondition('nid', array($node->nid), 'NOT IN');
+  $query->propertyOrderBy('created', 'DESC');
+  $result = $query->execute();
+  foreach ($result['node'] as $row) {
+    $recipe_nids_output[] =  $row->nid;
+  }
+  if (count($recipe_nids_output)>0) {
+    $recipe_nids_output = array_values($recipe_nids_output);
+  }
+  return $recipe_nids_output;
+}
+
+/**
+ * Manipulating the recipes content by recipes nids
+ */
+function _ti_amg_fwrd_recipe_get_popular_recipes($recipe_items_nids) {
+  global $base_url;
+  $recipe_content = array();
+  $output = '';
+  $recipe_items = entity_load('node', $recipe_items_nids);
+  $recipe_img_style = 'rd_related_content_190x190';
+
+  foreach ($recipe_items as $recipe) {
+    if (isset($recipe->title)) {
+      $recipe_content['title'] = $recipe->title;
+    }
+    if (isset($recipe->nid)) {
+      $recipe_content['url'] = $base_url . '/' .
+          drupal_get_path_alias('node/' . $recipe->nid);
+    }
+    if (!empty($recipe->field_images)) {
+      if (isset($recipe->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $recipe_nid = $recipe->field_images[LANGUAGE_NONE][0]['target_id'];
+        // Load the image node by using given recipe nid
+        $image_node = node_load($recipe_nid);
+        // Load the image_uri from large image field
+        if (!empty($image_node->field_large_image)) {
+          $image_file = $image_node->field_large_image[LANGUAGE_NONE][0];
+          $recipe_content['image_uri'] = image_style_url($recipe_img_style, $image_file['uri']);
+        }
+        // Load the image_uri from image field
+        elseif (!empty($image_node->field_image)) {
+          $image_file = $image_node->field_image[LANGUAGE_NONE][0];
+          $recipe_content['image_uri'] = image_style_url($recipe_img_style, $image_file['uri']);
+        }
+        // Load the default recipe image
+        else {
+          $recipe_content['image_uri'] = image_style_url($recipe_img_style, DEFAULT_IMAGE_URI);
+        }
+      }
+    }
+    else {
+      // Load the default recipe image
+      $recipe_content['image_uri'] = image_style_url($recipe_img_style, DEFAULT_IMAGE_URI);
+    }
+    $recipe_content['default_image_uri'] = image_style_url($recipe_img_style, DEFAULT_IMAGE_URI);
+
+    $output .= theme('story-card', array(
+      'title' => $recipe_content['title'],
+      'image_url' => $recipe_content['image_uri'],
+      'image_alt' => $recipe_content['title'],
+      'placeholder_url' => $recipe_content['default_image_uri'],
+      'url' => $recipe_content['url'],
+      'classes_list' => 'story-card--related grid__item'
+    ));
+  }
+  return $output;
+}
+
+/**
+ * Preprocessing Related Videos -
+ * default by publlished date, overwrite - editor's picks
+ */
+function _ti_amg_fwrd_recipe_related_videos($node) {
+  global $base_url;
+
+  $related_videos_title = (isset($node->field_related_videos_title[LANGUAGE_NONE][0]['value'])) ? $node->field_related_videos_title[LANGUAGE_NONE][0]['value'] : 'Latest Food & Wine Videos';
+
+  if (isset($node->field_related_videos[LANGUAGE_NONE])) {
+    foreach ($node->field_related_videos[LANGUAGE_NONE] as $key => $related_video) {
+      $video_items_nids[] = $related_video['target_id'];
+      if ($key == MAX_RELATED_CONTENT_TOUTS - 1) break;
+    }
+  }
+  else{
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', array('video'))
+      ->propertyCondition('status', 1)
+      ->propertyOrderBy('changed', 'DESC')
+      ->range(0, MAX_RELATED_CONTENT_TOUTS);
+
+    $result = $query->execute();
+
+    if (isset($result['node'])) {
+      $video_items_nids = array_keys($result['node']);
+    }
+  }
+
+  return theme('bottom-module-third', array(
+   'related_videos' => _ti_amg_fwrd_get_related_videos($video_items_nids),
+   'related_videos_title' => $related_videos_title
+  ));
+}
+
+function _ti_amg_fwrd_get_related_videos($node_ids) {
+  global $base_url;
+  $related_videos = array();
+  $videos_array = array_values(entity_load('node', $node_ids));
+  foreach ($videos_array as $video) {
+    $video_obj = array();
+    $video_nid = $video->nid;
+    $video_obj['url'] =$base_url . '/' . drupal_get_path_alias('node/' . $video->nid);
+    $video_obj['title'] = (isset($video->title)) ? $video->title : '';
+    $video_thumbnail_uri = (isset($video->field_video_still[LANGUAGE_NONE][0]['uri'])) ?
+      $video->field_video_still[LANGUAGE_NONE][0]['uri'] : DEFAULT_IMAGE_URI;
+    $video_obj['image']['uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, $video_thumbnail_uri);
+    $video_obj['image']['default_image_uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+
+    $related_videos[] = $video_obj;
+  }
+
+  return $related_videos;
+}
+
+/**
+  * Preprocessing Related Articles and Galleries -
+  * default: galleries contents, categorized to Recipes, sorted by publlished date,
+  * overwrite - editor's picks
+  */
+function _ti_amg_fwrd_related_contents($node) {
+  global $base_url;
+
+  if (isset($node->field_articles_and_galleries[LANGUAGE_NONE])) {
+    $related_contents_title =
+      (isset($node->field_related_contents_title[LANGUAGE_NONE][0]['value'])) ?
+      $node->field_related_contents_title[LANGUAGE_NONE][0]['value'] : 'Related Articles and Galleries';
+    foreach ($node->field_articles_and_galleries[LANGUAGE_NONE] as $key => $related_content) {
+      $items_nids[] = $related_content['target_id'];
+      if ($key == MAX_RELATED_CONTENT_TOUTS - 1) break;
+    }
+  }
+  else {
+    $related_contents_title = 'Related Articles and Galleries';
+    $items_nids = array();
+
+    // Get 3 random articles from the total of 25
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', array('article'))
+      ->propertyCondition('status', 1)
+      ->propertyOrderBy('changed', 'DESC')
+     // ->fieldCondition($field_to_check, 'tid', $tid_to_check)
+      ->range(0, MAX_RELATED_CONTENTS_RESULT);
+    $result = $query->execute();
+    if (isset($result['node'])) {
+      $list_nids = array_keys($result['node']);
+      $rand_keys = array_rand($list_nids, MAX_RELATED_ARTICLE_TOUTS);
+      foreach($rand_keys as $key => $random_key) {
+        $rand_nid = $rand_keys[$key];
+        $items_nids[] = $list_nids[$rand_nid];
+      }
+    }
+
+    // Get 3 random galleries from the total of 25
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', array('gallery'))
+      ->propertyCondition('status', 1)
+      ->propertyOrderBy('changed', 'DESC')
+      ->range(0, MAX_RELATED_CONTENTS_RESULT);
+    $result = $query->execute();
+    if (isset($result['node'])) {
+      $list_nids = array_keys($result['node']);
+      $rand_keys = array_rand($list_nids, MAX_RELATED_GALLERY_TOUTS);
+      foreach($rand_keys as $key => $random_key) {
+        $rand_nid = $rand_keys[$key];
+        $items_nids[] = $list_nids[$rand_nid];
+      }
+    }
+  }
+
+  return theme('bottom-module-forth', array(
+   'related_title' => $related_contents_title,
+   'related_contents' => _ti_amg_fwrd_get_related_contents($items_nids)
+  ));
+}
+
+function _ti_amg_fwrd_get_related_contents($node_ids) {
+  global $base_url;
+  $related_contents = array();
+  $contents_array = array_values(entity_load('node', $node_ids));
+  foreach ($contents_array as $content) {
+    $content_item = array();
+    $content_item['title'] = $content->title;
+    $content_item['url'] = $base_url . '/' .
+      drupal_get_path_alias('node/' . $content->nid);
+    if ($content->type == 'article') {
+      if (isset($content->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $image_tid = $content->field_images[LANGUAGE_NONE][0]['target_id'];
+        $lead_image = _ti_amg_fwrd_recipe_get_image($image_tid);
+        $lead_image_credit = '';
+        if (isset($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['value'])) {
+            $lead_image_credit =
+              strip_tags($content->field_overwrite_image_credit[LANGUAGE_NONE][0]['value']);
+        }
+        $content_item['image'] = $lead_image;
+        $content_item['image']['credit'] = ($lead_image_credit) ?
+          $lead_image_credit : $content_item['image']['credit'];
+      }
+      else {
+        // Load the default recipe image
+        $content_item['image']['uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+        $content_item['image']['default_image_uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+        $content_item['image']['credit'] = '';
+        $content_item['image']['alt'] = '';
+      }
+    }
+    else if ($content->type == 'gallery') {
+      if (isset($content->field_slide_info[LANGUAGE_NONE][0])) {
+        $first_slide_nid = $content->field_slide_info[LANGUAGE_NONE][0]['value'];
+        $slide_entity = entity_load('field_collection_item',
+                array($first_slide_nid));
+        if (isset($slide_entity[$first_slide_nid]->field_slide_image[LANGUAGE_NONE][0]['target_id'])) {
+           $lead_image_nid = $slide_entity[$first_slide_nid]->field_slide_image[LANGUAGE_NONE][0]['target_id'];
+           $lead_image = _ti_amg_fwrd_recipe_get_image($lead_image_nid);
+           $content_item['image'] = $lead_image;
+        }
+      }
+      else {
+        // Load the default recipe image
+        $content_item['image']['uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+        $content_item['image']['default_image_uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+        $content_item['image']['credit'] = '';
+        $content_item['image']['alt'] = '';
+      }
+    }
+    $related_contents[] = $content_item;
+  }
+
+  return $related_contents;
+}
+
+/**
+  * Preprocessing image, required param: image node id
+  */
+function _ti_amg_fwrd_recipe_get_image($node_id) {
+  $image = array();
+  $image_node = node_load($node_id);
+  //Load the image_uri from large image field
+  if (!empty($image_node->field_large_image)) {
+    $image_file = $image_node->field_large_image[LANGUAGE_NONE][0];
+    $image['uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, $image_file['uri']);
+  }
+  //Load the image_uri from image field
+  elseif (!empty($image_node->field_image)) {
+    $image_file = $image_node->field_image[LANGUAGE_NONE][0];
+    $image['uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, $image_file['uri']);
+  }
+  //Load the default recipe image
+  else {
+    $image['uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+  }
+  //Load the image_credit
+  if (!empty($image_node->field_credit)) {
+    $image['credit'] = $image_node->field_credit[LANGUAGE_NONE][0]['value'];
+  }
+  else {
+    $image['credit'] = '';
+  }
+  $image['default_image_uri'] = image_style_url(RELATED_CONTENT_IMAGE_STYLE, DEFAULT_IMAGE_URI);
+
+  return $image;
+}
+
+function _ti_amg_fwrd_recipe_breadcrumbs($node) {
+  $breadcrumbs = ti_amg_fwrd_custom_get_page_breadcrumbs($node);
+  return theme('breadcrumbs-section', array(
+    'links' => $breadcrumbs,
+  ));
+}
+
+// To Get Total Rating Reviews of Particular Recipe
+function _ti_amg_fwrd_get_total_reviews($node_id){
+ return db_query("select count(*) from votingapi_vote where entity_id=:nid and entity_type='node'",
+     array(':nid'=>$node_id))->fetchField();
+}
+
+function _ti_amg_fwrd_omniture_sets($node) {
+  $omniture_set = array();
+  if (!empty($node->published_at)) {
+    $date = $node->published_at;
+    $omniture_set['slide_published_date'] = gmdate('c', $date);
+    //date("Y-m-d", $date);
+  }
+
+  if ($node->field_complex_theme) {
+    foreach ($node->field_complex_theme[LANGUAGE_NONE] as $cat) $theme[] = $cat['tid'];
+    $themes = taxonomy_term_load_multiple($theme);
+    $theme = array();
+    foreach ($themes as $term) $theme[] = (isset($term->field_complex_theme_label[LANGUAGE_NONE][0]['value'])) ? $term->field_complex_theme_label[LANGUAGE_NONE][0]['value'] : "";
+  }
+  // Omniture Authors
+  $auth_name = '';
+  $contributors = '';
+  if (!empty($node->field_chefs_author[LANGUAGE_NONE])) {
+    $contributors = $node->field_chefs_author[LANGUAGE_NONE];
+  }
+  elseif (!empty($node->field_source_author[LANGUAGE_NONE])) {
+    $contributors = $node->field_source_author[LANGUAGE_NONE];
+  }
+   $omniture_set['slide_authors'] = '';
+  if ($contributors != '') {
+    $total_authors = count($contributors);
+    foreach ($contributors as $key => $auth) {
+      $author = node_load($auth['target_id']);
+      $separator = ($key == ($total_authors - 1)) ? '' : ', ';
+      $auth_name .= $author->title . $separator;
+    }
+    $omniture_set['slide_authors'] = $auth_name;
+  }
+  $omniture_set['slide_terms'] = (isset($theme)) ? implode('|', $theme) : '';
+
+  //Update adFactory sub, theme, and nid when recipe carousel changes
+  $omniture_set['adfactory_theme'] = '';
+  if (isset($node->field_issue[LANGUAGE_NONE][0]['tid'])) {
+    $label_name = $node->field_issue[LANGUAGE_NONE][0]['taxonomy_term']
+        ->field_taxo_issue_label[LANGUAGE_NONE][0]['value'];
+    $omniture_set['adfactory_theme'] = $label_name;
+  }
+  if (isset($node->metatags[LANGUAGE_NONE]['keywords']['value'])) {
+    $keywords = explode(',', $node->metatags[LANGUAGE_NONE]['keywords']['value']);
+    foreach ($keywords as $word) {
+      if($omniture_set['adfactory_theme'] == '')
+        $omniture_set['adfactory_theme'] = trim($word);
+      else
+        $omniture_set['adfactory_theme'] .= "," . trim($word);
+    }
+  }
+
+  $omniture_set['adfactory_sub'] = '';
+  $path_alias = drupal_get_path_alias('node/'.$node->nid);
+  if($path_alias){
+    $path_alias_array = explode('/',$path_alias);
+    $omniture_set['adfactory_sub'] = implode(',', $path_alias_array);
+  }
+
+  $omniture_set['adfactory_nid'] = $node->nid;
+
+  return $omniture_set;
+}
+/*
+ * To get the video handler for video player integraion
+ *
+ * @param player_id
+ *    player_id to play brightcove video
+ *
+ * @return the player configuration
+ */
+function _ti_amg_fwrd_recipe_get_video_handler($player_id = '') {
+  $video_handler = '';
+  if(isset($player_id)) {
+  $video_handler = '';
+  }
+  return $video_handler;
+}
+
+/*
+ * Remove slideshow link from recipe deck.
+ *
+ * @param $recipe_deck
+ *    Recipe Deck Field Content.
+ *
+ * @return Removed slideshow link from Recipe Deck Field Content.
+ */
+
+function _ti_amg_fwrd_recipe_remove_slideshow_link($recipe_deck) {
+  $dom = new DOMDocument;
+  $dom->loadHTML(mb_convert_encoding($recipe_deck, 'HTML-ENTITIES', 'UTF-8'));
+  $xpath = new DOMXPath($dom);
+  $detected_items = $xpath->query(".//div[@class='plus']");
+  foreach ($detected_items as $item) {
+    if (preg_match('/slideshow:/i', $item->textContent)) {
+      $item->parentNode->removeChild($item);
+    }
+  }
+  return utf8_encode($dom->saveHTML());
+}
+
+
+
+/**
+ * To get rating values of recipe.
+ *
+ * @param string $spot_im_data
+ *   SpotIM json data.
+ *
+ * @return array
+ *   Parsed data from Spot-IM json data.
+ */
+function ti_amg_fwrd_recipe_get_rating_info($spot_im_data) {
+  $recipe_rating_info = array(
+    'aggregate_rating' => 0,
+    'review_count' => 0,
+    'worst_rating' => 0,
+    'best_rating' => 5,
+    'reviews' => '',
+  );
+  if (!empty($spot_im_data)) {
+    // Fetching the json object from Spot-IM data.
+    if (preg_match_all('/(<script[^>]*>(.*?)<\/script>)/', $spot_im_data, $matches)) {
+      if (!empty($matches) && !empty($matches[2])) {
+        foreach ($matches[2] as $key => $match) {
+          $schema_json = trim($match);
+          $schema_data = json_decode($schema_json, TRUE);
+          if (isset($schema_data['@type'])) {
+            if ($schema_data['@type'] == 'Recipe' && !empty($schema_data['aggregateRating'])) {
+              $recipe_rating_info['aggregate_rating'] = round($schema_data['aggregateRating']['ratingValue']);
+              $recipe_rating_info['review_count'] = $schema_data['aggregateRating']['reviewCount'];
+            }
+          }
+          else {
+            $recipe_rating_info['reviews'] = $schema_data;
+          }
+        }
+      }
+    }
+  }
+  return $recipe_rating_info;
+}
+
+/**
+ * To get custom schema output.
+ *
+ * @param object $node
+ *   Recipe node object.
+ *
+ * @param string $spot_im_data
+ *   SpotIM json data.
+ *
+ * @return array
+ *   Parsed data from Spot-IM json data.
+ */
+function ti_amg_fwrd_recipe_get_custom_schema($node, $spot_im_data = NULL) {
+  $schema_data_output = '';
+  if (!empty($spot_im_data)) {
+    // Fetching the json object from Spot-IM data.
+    if (preg_match_all('/(<script[^>]*>(.*?)<\/script>)/', $spot_im_data, $matches)) {
+      if (!empty($matches) && !empty($matches[2])) {
+        foreach ($matches[2] as $key => $match) {
+          $schema_json[$key] = trim($match);
+          $schema_data = json_decode($schema_json[$key], TRUE);
+          if (!empty($schema_data['@type']) && 'Recipe' == $schema_data['@type'] && !empty($schema_data['aggregateRating'])) {
+            unset($schema_data['@type']);
+            if (!empty($schema_data['name'])) {
+              unset($schema_data['name']);
+            }
+            if (!empty($schema_data['description'])) {
+              unset($schema_data['description']);
+            }
+            if (!empty($schema_data['image'])) {
+              unset($schema_data['image']);
+            }
+            $schema_data = array_merge($schema_data, $schema_data['aggregateRating']);
+            unset($schema_data['aggregateRating']);
+            if (!empty($node->title)) {
+              $schema_data['itemReviewed'] = $node->title;
+            }
+          }
+          $schema_data_output  .= '<script type="application/ld+json">'. json_encode($schema_data,JSON_UNESCAPED_SLASHES) . '</script>';
+        }
+      }
+    }
+  }
+  return $schema_data_output;
+}
+
+/**
+ * Doing a service call with Spot-Im and getting recipe rating information.
+ *
+ * @param string $nid
+ *   recipe node id.
+ * @param string $url
+ *   current page url.
+ * @param string $spot_im_id
+ *   Spot-IM ID.
+ * @param string @schema_api
+ *   Existing schema API https://seo.spot.im/stars-and-reviews
+ *
+ * @return string
+ *   Recipe rating informatin with review comments.
+ */
+function ti_amg_fwrd_recipe_get_spot_im_data($nid, $url, $spot_im_id, $schema_api) {
+  $recipe_url = array(
+    'url' => $url,
+    'noItemType' => true,
+    'itemReviewedType' => 'Thing'
+  );
+
+  $spot_im_schema_url = $schema_api."/" . $spot_im_id . "/" . $nid;
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $spot_im_schema_url);
+  curl_setopt($ch, CURLOPT_POST, TRUE);
+  curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+  curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($recipe_url));
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+  curl_setopt($ch, CURLOPT_FRESH_CONNECT, TRUE);
+  $spot_im_schema_result = curl_exec($ch);
+
+  $log_file = variable_get('spotim_log_file', '');
+  $is_log_enabled = variable_get('enable_custom_log', FALSE);
+  // Check for errors and log the error message
+  if($err = curl_errno($ch) && $is_log_enabled && $log_file != '') {
+    $error_message = curl_error($ch);
+    $toal_trans_time = curl_getinfo($ch, CURLINFO_TOTAL_TIME);
+    $log_file_path = 'sites/default/files/'.$log_file;
+    $file = $log_file_path;
+    $log_record = $nid . " | Error code = ".$err." | Total time = ".$toal_trans_time." | ".$error_message."\n";
+    file_put_contents($file, $log_record, FILE_APPEND);
+  }
+
+  curl_close($ch);
+  return $spot_im_schema_result;
+}
+
+/**
+ * To update the recipe node with spot-im data.
+ *
+ * @param object $node
+ *   Recipe node object.
+ * @param array $spot_im_data
+ *   SpotIM json data.
+ */
+function ti_amg_fwrd_recipe_update_spot_im_data($node, $spot_im_data) {
+  if (!empty($spot_im_data)) {
+    //$spot_im_data = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', mb_convert_encoding($spot_im_data, "UTF-8"));
+    // Saving the SpotIM rating information in our FW recipe node field.
+    try {
+      // If spot-im data having any emoji symbols it will fails to store the data in mysql.
+      $node->field_rating_info[LANGUAGE_NONE][0]['value'] = $spot_im_data;
+      field_attach_update('node', $node);
+      entity_get_controller('node')->resetCache(array($node->nid));
+    }
+    catch(Exception $e) {
+      watchdog('SpotIM Error', 'Import rating info failed for nid = '. $node->nid . '. ' . $e->getMessage(), NULL, WATCHDOG_ERROR);
+      $failed_json = fopen("sites/default/files/spotim_import_logs/failed_nodes_list.txt", "a+");
+      fwrite($failed_json, $node->nid . "\n");
+      fwrite($failed_json, $e->getMessage() . "\n");
+      fclose($failed_json);
+    }
+  }
+}
+
+/**
+ * Making filters ready for solr query.
+ *
+ * @param type $node
+ * @param type $page_no
+ * @return type
+ */
+function ti_amg_fwrd_recipe_get_carousel_recipies_from_solr($node, $page_no = 0) {
+  $exclude_recipe_nids = array($node->nid);
+  $total_related_recipes = array();
+  // Getting the cache bin for SOLR recipe carousel.
+  $cache_bin = variable_get('recipe_carousel_cache_bin', 'cache_recipe_carousel');
+  if (variable_get('enable_cache_on_solr_carousel', FALSE)) {
+    // Fetching the data from cache.
+    $cached_carousel_recipes = cache_get('recipe_page_' . $node->nid, $cache_bin);
+  }else{
+    $cached_carousel_recipes = '';
+  }
+
+  if (empty($cached_carousel_recipes)) {
+    // If cache is empty.
+    $seasonal_tag = (isset($node->field_seasonal_tags[LANGUAGE_NONE])) ? $node->field_seasonal_tags[LANGUAGE_NONE][0]['tid'] : '';
+    $global_tag = $node->field_global_tags[LANGUAGE_NONE][0]['tid'];
+    // Setting content type filter.
+    $content_type = 'recipe';
+    $content_type_filter = new SolrFilterSubQuery('OR');
+    $content_type_filter->addFilter('bundle', $content_type);
+    // Setting date filter.
+    $from_date = date("Y-m-d\TH:i:s\Z", mktime(0, 0, 0, 1, 1, 2014));
+    $content_creation_date = "[" . $from_date . " TO NOW]";
+    $content_creation_date_filter = new SolrFilterSubQuery('OR');
+    $content_creation_date_filter->addFilter('ds_created', $content_creation_date);
+
+    $fetch_count = TOTAL_CAROUSEL_RECIPES;
+
+    // Fetching based on seasonal tag.
+    if ($fetch_count > 0 && isset($seasonal_tag) && !empty($seasonal_tag)) {
+      $seasonal_tag_filter = new SolrFilterSubQuery('OR');
+      $seasonal_tag_filter->addFilter('im_field_seasonal_tags', $seasonal_tag);
+      $seasonal_or_global = new SolrFilterSubQuery('AND');
+      $seasonal_or_global->addFilterSubQuery($seasonal_tag_filter);
+      $recipe_data = _ti_amg_fwrd_recipe_execute_solr_search($content_type_filter, $content_creation_date_filter, $seasonal_or_global, $fetch_count, $exclude_recipe_nids);
+      if (isset($recipe_data)) {
+        $fetch_count = $fetch_count - count($recipe_data);
+        $total_related_recipes = array_merge($total_related_recipes, $recipe_data);
+        if ($fetch_count > 0) {
+          foreach ($recipe_data as $recipe) {
+            $exclude_recipe_nids[] = $recipe['nid'];
+          }
+        }
+      }
+    }
+
+    // Fetching based on global tag.
+    if ($fetch_count > 0 && isset($global_tag) && !empty($global_tag)) {
+      // Build the Global Tags filter.
+      $global_tag_filter = new SolrFilterSubQuery('OR');
+      $global_tag_filter->addFilter('im_field_global_tags', $global_tag);
+      $seasonal_or_global = new SolrFilterSubQuery('AND');
+      $seasonal_or_global->addFilterSubQuery($global_tag_filter);
+      $recipe_data = _ti_amg_fwrd_recipe_execute_solr_search($content_type_filter, $content_creation_date_filter, $seasonal_or_global, $fetch_count, $exclude_recipe_nids);
+      if (isset($recipe_data)) {
+        $fetch_count = $fetch_count - count($recipe_data);
+        $total_related_recipes = array_merge($total_related_recipes, $recipe_data);
+        if ($fetch_count > 0) {
+          foreach ($recipe_data as $recipe) {
+            $exclude_recipe_nids[] = $recipe['nid'];
+          }
+        }
+      }
+    }
+    // Fallback: Fetching the latest recipes.
+    if ($fetch_count > 0) {
+      $seasonal_or_global = array();
+      $recipe_data = _ti_amg_fwrd_recipe_execute_solr_search($content_type_filter, $content_creation_date_filter, $seasonal_or_global, $fetch_count, $exclude_recipe_nids);
+      if (isset($recipe_data)) {
+        $total_related_recipes = array_merge($total_related_recipes, $recipe_data);
+      }
+    }
+    // Setting the total carousel recipe data in cache.
+    if (variable_get('enable_cache_on_solr_carousel', FALSE)) {
+      cache_set('recipe_page_' . $node->nid, $total_related_recipes, $cache_bin, time() + 3600 * 24);
+    }
+  }
+  else {
+    // If already cache available, fetching from cache.
+    $total_related_recipes = $cached_carousel_recipes->data;
+  }
+  // Setting the start range for every page.
+  $range_starts = ($page_no > 0) ? (($page_no - 1) * RESIPE_CAROUSEL_SLIDES) : 0;
+  $current_page_recipe_data = array_slice($total_related_recipes, $range_starts, RESIPE_CAROUSEL_SLIDES);
+
+  return $current_page_recipe_data;
+}
+
+/**
+ *
+ * Solr search for similar nodes.
+ *
+ * @param object $content_type_filter
+ *    Content Type Filter.
+ *
+ * @param object $content_creation_date_filter
+ *    Content Type Creation Date Filter.
+ *
+ * @param object $seasonal_or_global
+ *    Seasonal or Global Tags Filter.
+ *
+ * @param string $fetch_count
+ *    Total Numbers of records that needs to be fetched.
+ *
+ * @param array $exclude_nodes
+ *    Nodes to exclude for solr query.
+ *
+ * @param $global_tag_filter
+ *    Global Tag Filter
+ *
+ * @return array
+ *   Recipe nodes data.
+ *
+ */
+function _ti_amg_fwrd_recipe_execute_solr_search($content_type_filter, $content_creation_date_filter, $seasonal_or_global, $fetch_count, $exclude_nodes = array()) {
+
+  // Group conditions together.
+  $main_filter = new SolrFilterSubQuery('AND');
+  $main_filter->addFilterSubQuery($content_type_filter);
+  $main_filter->addFilterSubQuery($content_creation_date_filter);
+  if ((array) $seasonal_or_global) {
+    $main_filter->addFilterSubQuery($seasonal_or_global);
+  }
+  // Create the query and then configure it.
+  $get_random_number = mt_rand();
+  $query = apachesolr_drupal_query('custom_' . $get_random_number);
+
+  // Specify that fields that need to be returned.
+  $query->addParam('fl', 'id, entity_id, path_alias, label, ss_image_uri, ss_large_image_flag, ss_default_image_flag');
+
+  // Set the total matches.
+  $query->addParam('rows', $fetch_count);
+
+  // Add the above filters.
+  $query->addFilterSubQuery($main_filter);
+
+  $exclude_node_filter = new SolrFilterSubQuery('OR');
+  if (!empty($exclude_nodes)) {
+    foreach ($exclude_nodes as $exclude_item) {
+      $exclude_node_filter->addFilter('entity_id', $exclude_item, 'TRUE');
+    }
+  }
+
+  $query->addFilterSubQuery($exclude_node_filter);
+
+  // Sort by publish date in descending order.
+  $sort_field = 'ds_published_at';
+  $sort_direction = 'desc';
+  $query->setAvailableSort($sort_field, $sort_direction);
+  $query->setSolrsort($sort_field, $sort_direction);
+
+  // Run query and render results if matches are found.
+  list($final_query, $response) = apachesolr_do_query($query);
+  if ($response->code == '200' && $response->response->numFound > 0) {
+    // Extract nids from the response and return them.
+    $recipes_data = array();
+    foreach ($response->response->docs as $key => $result) {
+      $recipes_data[$key]['nid'] = $result->entity_id;
+      $recipes_data[$key]['url'] = $result->path_alias;
+      $recipes_data[$key]['title'] = $result->label;
+      $recipes_data[$key]['image'] = $result->ss_image_uri;
+      $recipes_data[$key]['large_image_flag'] = $result->ss_large_image_flag;
+      $recipes_data[$key]['default_image_flag'] = $result->ss_default_image_flag;
+    }
+  }
+  return $recipes_data;
+}
+
+/**
+ * Testing the SOLR Connection.
+ *
+ * @return boolean.
+ *
+ */
+function ti_amg_fwrd_recipe_test_solr() {
+  $id = apachesolr_default_environment();
+  $solr = apachesolr_get_solr($id);
+  $ping = @$solr->ping(variable_get('apachesolr_ping_timeout', 4));
+  if ($ping) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Implementing hook_apachesolr_index_document_build_node().
+ *
+ * @return Object.
+ *   Apache Solr document.
+ */
+function ti_amg_fwrd_recipe_apachesolr_index_document_build_node(ApacheSolrDocument $document, $entity, $env_id) {
+  if (property_exists($entity, 'type')) {
+    $entity_ancestor_id = $entity_parent_id = $entity_privacy = $parent_id = $entity_visibility = 0;
+    switch ($entity->type) {
+      case 'recipe':
+        //print $entity->nid;
+        $image_uri = 'public://recipe-placeholder.gif';
+        $is_large_image_flag = 0;
+        $is_default_image = 1;
+        if (isset($entity->field_images['und']['0'])) {
+          $image_object = $entity->field_images['und']['0']['entity'];
+          if (isset($image_object->field_large_image[LANGUAGE_NONE][0])) {
+            $image_uri = $image_object->field_large_image[LANGUAGE_NONE][0]['uri'];
+            $is_large_image_flag = 1;
+            $is_default_image = 0;
+          }
+          elseif (isset($image_object->field_image[LANGUAGE_NONE][0])) {
+            $image_uri = $image_object->field_image[LANGUAGE_NONE][0]['uri'];
+            $is_default_image = 0;
+            $is_large_image_flag = 0;
+          }
+        }
+        $document->ss_image_uri = $image_uri;
+        $document->ss_large_image_flag = $is_large_image_flag;
+        $document->ss_default_image_flag = $is_default_image;
+        $document->ds_published_at = date("Y-m-d\TH:i:s\Z", $entity->published_at);
+        break;
+    }
+  }
+}

@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @file
+ * Implement pronto title with subheader component.
+ */
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function ti_amg_fw_pronto_component_itemhash_field_extra_fields() {
+  $extra = array();
+  $entity_info = entity_get_info('node');
+  $bundles = array_keys($entity_info['bundles']);
+  foreach ($bundles as $bundle) {
+    $extra['node'][$bundle] = array(
+      'display' => array(
+        'pronto_component_item_hash' => array(
+          'label' => t('Pronto Component: Item Hash v1.0'),
+          'weight' => 0,
+          'visible' => FALSE,
+          'extra field type' => 'text',
+          'extra field load callback' => '_ti_amg_fw_pronto_component_itemhash',
+        ),
+      ),
+    );
+  }
+
+  return $extra;
+}
+
+function _ti_amg_fw_pronto_component_itemhash($entity_type, $entity, $field_info, $settings) {
+  $current_path = explode('/', current_path());
+  if ('node' == $current_path[0]) {
+    $gallery_entity = entity_load('node', array($current_path[1]));
+    if (!empty($gallery_entity)) {
+      $gallery_entity = reset($gallery_entity);
+
+      if ('Vertical' == $gallery_entity->field_gallery_template['und'][0]['value']) {
+        $headline = trim(strtolower(strip_tags($entity->field_headline[LANGUAGE_NONE][0]['value'])));
+        $item_hash = str_replace(' ', '-', $headline);
+      }
+      else {
+        $slides = $gallery_entity->field_multiple_images[LANGUAGE_NONE];
+        $item_hash = array_search($entity->nid, array_column($slides, 'target_id'));
+        $item_hash++;
+        settype($item_hash, "string");
+      }
+      return array(
+        'value' => $item_hash,
+      );
+    }
+  }
+  return array(
+    'value' => '',
+  );
+}

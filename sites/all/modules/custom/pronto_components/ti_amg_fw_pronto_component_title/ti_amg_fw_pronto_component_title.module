@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file
+ * Implement pronto title with subheader component.
+ */
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function ti_amg_fw_pronto_component_title_field_extra_fields() {
+  $extra = array();
+  $entity_info = entity_get_info('node');
+  $bundles = array_keys($entity_info['bundles']);
+  foreach ($bundles as $bundle) {
+    $extra['node'][$bundle] = array(
+      'display' => array(
+        'pronto_component_node_title' => array(
+          'label' => t('Pronto Component: Node Title v1.0'),
+          'weight' => 0,
+          'visible' => FALSE,
+          'extra field type' => 'text',
+          'extra field load callback' => 'field_extra_fields_load_callback_title_load',
+        ),
+      ),
+    );
+  }
+
+  return $extra;
+}
+

@@ -1,0 +1,101 @@
+/*-----------------------------------------------------------------------------
+ *-----------------------------------------------------------------------------
+ *
+ * HELPERS
+ *
+ * Define any custom site-wide helper classes below. Utility classes such as
+ * .centered or .hidden are good candidates to live in this file.
+ *
+ *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------- */
+ 
+/**
+ * Applies the common site border top to an element 
+ */
+.divider {
+  margin-top: 20px;
+  border-top: 1px solid $border-color;
+}
+
+.device-divider {
+  margin-top: 20px;
+  border-top: 1px solid $border-color;
+  @include respond-to('medium and up') {
+    border:none;
+    margin:0px;
+  }
+}
+
+/**
+ * Used for text links
+ */
+.more-link {
+  font-size: rem(11);
+  text-transform: uppercase;
+
+  &:after {
+    content: '>';
+  }
+}
+
+.centered {
+  text-align: center;
+}
+
+/**
+ * Quickly clearfix an element
+ */
+.clearfix {
+  @include clearfix;
+}
+
+.fine-print {
+  font-size: rem(11);
+}
+
+/**
+ * Responsive Visibility
+ */
+.hide {
+  display: none !important;
+}
+
+.hide-tout {
+  display: none !important;
+}
+
+.hide-at-small {
+  @include respond-to('small and up') {
+    display: none !important;
+  }
+}
+
+.hide-at-medium {
+  @include respond-to('medium and up') {
+    display: none !important;
+  }
+}
+
+.hide-at-large {
+  @include respond-to('large and up') {
+    display: none !important;
+  }
+}
+
+.show-at-small {
+  @include respond-to('small and up') {
+    display: block !important;
+  }
+}
+
+.show-at-medium {
+  @include respond-to('medium and up') {
+    display: block !important;
+  }
+}
+
+.show-at-large {
+  @include respond-to('large and up') {
+    display: block !important;
+  }
+}

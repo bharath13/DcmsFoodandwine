@@ -1,0 +1,31 @@
+/**
+ * Block: tag-set
+ * Element: tag-set__element
+ * Modifier: tag-set--modifier
+ */
+
+ $block: tag-set;
+ .tag-set {
+  @include ui-list;
+  
+  &__tag {
+    float: left;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    
+    &__text {
+      display: block;
+      padding: 5px 12px;
+      background-color: #dddddd;
+      color: #333333;
+      font-size: rem(14);
+      text-decoration: none;
+      text-transform: uppercase;
+
+      &[href]:hover {
+        background-color: $brand-primary;
+        color: #ffffff;  
+      }
+    }
+  }
+}

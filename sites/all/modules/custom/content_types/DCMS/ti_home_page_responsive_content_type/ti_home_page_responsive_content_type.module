@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the FoodandWine DCMS Home Page Responsive Content Type feature.
+ */
+
+include_once 'ti_home_page_responsive_content_type.features.inc';

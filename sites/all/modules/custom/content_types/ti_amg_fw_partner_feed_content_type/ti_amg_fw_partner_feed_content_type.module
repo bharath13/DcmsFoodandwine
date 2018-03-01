@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the ti_amg_fw_partner_feed_content_type feature.
+ */
+
+include_once 'ti_amg_fw_partner_feed_content_type.features.inc';

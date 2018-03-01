@@ -1,0 +1,123 @@
+/**
+ * Block: rating-stars
+ * Element: rating-stars__element
+ * Modifier: rating-stars--modifier
+ */
+
+$block: rating-stars;
+.rating-stars {
+  @include ui-list;
+  display: inline-block;
+  line-height: 1;
+
+  &__star {
+    float: left;
+    margin-left: 3px;
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    svg {
+      @include size(18px);
+      fill: lighten($brand-primary, 30%);
+    }
+  }
+
+  &__star--active {
+    svg {
+      fill: $brand-primary;
+    }
+  }
+  .schema-rating-value{
+      display:none;
+  }
+}
+
+/* newsfeed styling */
+.node-type-recipe {
+  .sp_ticker {
+    display:none !important;
+  }
+}
+
+/* SpotIM rating star */
+.node-type-recipe {
+  .spot-im-social-reviews-widget {
+    .schema-rating-value{
+      display:none;
+    }
+  }
+}
+
+.social-reviews-wrapper {
+  border-top: none !important;
+  border-bottom: none !important;
+  margin: 0 auto;
+  width: 170px;
+
+  .spot-im-social-reviews-widget-summary {
+    display: block !important;
+    text-align: center;
+  }
+
+  .total-comments-container {
+    vertical-align: top;
+    margin-top: 2px;
+  }
+
+  div {
+    display: inline-block !important;
+    float: none !important;
+  }
+
+  .no-ratings {
+    .spot-im-social-reviews-widget-summary {
+      .info {
+        span {
+          display: none;
+        }
+
+        &:before {
+          content: 'Rate Now';
+        }
+      }
+    }
+  }
+
+  .inpage-header-view {
+    display: none;
+  }
+  .stars-rating-summary {
+    .stars-rating.no-rating + .rating-text {
+      span {
+        display: none;
+      }
+
+      &:before {
+        content: 'Rate Now';
+      }
+    }
+  }
+}
+
+.spot-im-recommendations-widget {
+  .spot-im-recommendations-widget-body {
+    .spot-im-header {
+      text-align: center;
+      @include font-droid-sans;
+      text-transform: uppercase;
+      border-bottom: 0;
+
+      .spot-im-title {
+        float: none !important;
+        text-transform: uppercase;
+        font-size: 1.2222222222rem;
+
+        @include respond-to('small and up') {
+          font-size: 1.4444444444rem;
+        }
+      }
+    }
+  }
+}

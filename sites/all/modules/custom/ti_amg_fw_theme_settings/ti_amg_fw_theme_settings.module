@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Foodandwine Responsive theme setting feature.
+ */
+
+include_once 'ti_amg_fw_theme_settings.features.inc';

@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Springboard Article feature.
+ */
+
+include_once 'ti_amg_fw_springboard_article.features.inc';
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function ti_amg_fw_springboard_article_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'feeds_tamper' && $plugin_type == 'plugins') {
+    return 'plugins/tamper/';
+  }
+}

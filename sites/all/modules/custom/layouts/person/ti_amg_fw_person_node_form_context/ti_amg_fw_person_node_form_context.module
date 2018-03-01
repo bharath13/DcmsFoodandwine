@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Person Node Form Context feature.
+ */
+
+include_once 'ti_amg_fw_person_node_form_context.features.inc';

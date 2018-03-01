@@ -1,0 +1,153 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for TI LSG Devel module.
+ *
+ * \addtogroup ti_lsg_devel
+ * \brief Provides install, update, and uninstall functions for TI LSG Devel
+ *        module. The update functions in this module will always run on an
+ *        update, to enable us to develop efficiently and with minimal manual
+ *        interaction with the database.
+ *
+ * @{
+ */
+
+/**
+ * Implements hook_install().
+ */
+function ti_lsg_devel_install() {
+  _ti_lsg_devel_set_schema_version();
+}
+
+/**
+ * The perpetual update.
+ *
+ * The last act of this update will register a shutdown function to reset the
+ * schema version to 7000, so that it will always run on update.
+ */
+function ti_lsg_devel_update_7001() {
+
+  // Uninstall modules.
+  ti_lsg_devel_uninstall_modules();
+
+  // Enable themes.
+  ti_lsg_devel_enable_themes();
+
+  // Delete fields.
+  ti_lsg_devel_delete_fields();
+
+  // Delete fields by setting
+  ti_lsg_devel_delete_fields_by_settings();
+
+  // Hide DCMS fields
+  ti_lsg_devel_hide_dcms_fields_devel();
+
+  // Delete variables.
+  ti_lsg_devel_delete_variables();
+
+  // Set variables.
+  ti_lsg_devel_set_variables();
+
+  // Set the date formats.
+  ti_lsg_devel_set_date_formats();
+
+  // Set the node types for State Machine to ignore.
+  ti_lsg_devel_workflow_set_ignored();
+
+  // Clean the State Flow Scheduled table - https://drupal.org/node/1863158.
+  ti_lsg_devel_workflow_clean_scheduled();
+
+  // Reset the feeds importers.
+  $reset_feeds = variable_get('ti_lsg_devel_reset_feeds', 0);
+  $reset_feeds_last = variable_get('ti_lsg_devel_reset_feeds_last', 0);
+  if ($reset_feeds > $reset_feeds_last) {
+    ti_lsg_devel_reset_feeds();
+    variable_set('ti_lsg_devel_reset_feeds_last', $reset_feeds);
+  }
+
+  // Register a shutdown function to reset the schema version.
+  _ti_lsg_devel_set_schema_version();
+
+  $ret = t('The ti_lsg_devel update functions have run.');
+  watchdog('ti_lsg_devel', $ret, NULL, WATCHDOG_WARNING);
+  return $ret;
+}
+
+/**
+ * The perpetual module enable update.
+ */
+function ti_lsg_devel_update_7002(&$sandbox) {
+  // Set variables on the first pass.
+  if (!isset($sandbox['total'])) {
+    if ($modules = ti_lsg_devel_get_modules_to_enable()) {
+      $sandbox['total'] = count($modules);
+      $sandbox['modules'] = $modules;
+    }
+    else {
+      $sandbox['total'] = 0;
+    }
+
+    $sandbox['current'] = 0;
+    $sandbox['enabled'] = 0;
+    $sandbox['failed'] = 0;
+  }
+
+  if ($sandbox['total'] != 0 && !empty($sandbox['modules'])) {
+    // Get the module name.
+    $module = array_shift($sandbox['modules']);
+
+    // Check if the module is already enabled.
+    if (!module_exists($module)) {
+      // If not, then try to enable it.
+      if (module_enable(array($module), TRUE)) {
+        $message = t('Enabling module !module.', array('!module' => $module));
+        drupal_set_message($message, 'success');
+        // Increment enabled by 1.
+        $sandbox['enabled']++;
+      }
+      else {
+        $message = t('The @module module could not be enabled.', array('@module' => $module));
+        drupal_set_message($message, 'error');
+        // Increment failed by 1.
+        $sandbox['failed']++;
+      }
+    }
+  }
+
+  // Increment current by 1.
+  $sandbox['current']++;
+
+  // Set the value for finished. If current == total then finished will be 1,
+  // signifying we are done.
+  $sandbox['#finished'] = empty($sandbox['total']) ? 1 : ($sandbox['current'] / $sandbox['total']);
+
+  if ($sandbox['#finished'] === 1) {
+    drupal_set_message(t('Enabled @enabled modules of @total, and had @failed failures.', array(
+      '@enabled' => $sandbox['enabled'],
+      '@total' => $sandbox['total'],
+      '@failed' => $sandbox['failed'],
+    )));
+  }
+}
+
+/**
+ * The perpetual user, role, and permissions update.
+ *
+ * Update users, roles, and permissions after modules are enabled.
+ */
+function ti_lsg_devel_update_7003() {
+  // Delete content types.
+  ti_lsg_devel_delete_content_types();
+
+  // Create and update roles.
+  ti_lsg_devel_create_roles();
+
+  // Grant permissions.
+  ti_lsg_devel_grant_permissions();
+
+  // Create and update users.
+  ti_lsg_devel_create_users();
+}
+
+/**@}*/

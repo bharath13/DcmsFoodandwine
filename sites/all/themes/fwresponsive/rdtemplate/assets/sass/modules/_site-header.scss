@@ -1,0 +1,433 @@
+/**
+ * Block: site-header
+ * Element: site-header__element
+ * Modifier: site-header--modifier
+ */
+
+%header-logo {
+  &,
+  &:hover {
+    color: #000000;
+  }
+}
+
+$block: site-header;
+
+.#{$block} {
+  $padding-top-bottom: 28px;
+
+  position: relative;
+  z-index: $z-zeus;
+  margin-bottom: 20px;
+  border-bottom: 1px solid $border-color;
+  background-color: #ffffff;
+
+  &.is-stick {
+    position: fixed;
+    top: 0px;
+    width: 100%;
+  }
+
+  &__content {
+    @include clearfix;
+    position: relative;
+    padding-top: 16px;
+    padding-bottom: 10px;
+    box-sizing: border-box;
+
+    @include respond-to('large and up') {
+      height: auto;
+      padding-top: 18px;
+      padding-bottom: 10px;
+    }
+  }
+
+  &__logo {
+    @extend %header-logo;
+    display: none;
+    &, svg {
+      width: 345px;
+      height: 45px;
+    }
+    h1 {
+      float: left;
+      position: absolute;
+      text-indent: -9999px;
+    }
+    margin-left: auto;
+    margin-right: auto;
+
+    @include respond-to('large and up') {
+      margin-bottom: 25px;
+      display: block;
+    }
+  }
+
+  &__print-logo {
+    @extend %header-logo;
+    display: block;
+    &, svg {
+      width: 380px;
+      height: 40px;
+    }
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 15px;
+  }
+
+  /*-------------------------------------------- */
+  /** Search */
+  /*-------------------------------------------- */
+
+  &__search {
+    $height: 35px;
+
+    position: absolute;
+    right: 0;
+    bottom: 7px;
+    z-index: $z-10;
+    height: $height;
+
+    @include respond-to('large and up') {
+      top: $padding-top-bottom;
+      bottom: auto;
+    }
+
+    // The below classes target Drupal search module markup
+
+    .element-invisible { display: none; }
+
+    .form-item-search-block-form, .form-item-keyword {
+      display: none;
+      float: left;
+      width: 200px;
+      height: $height;
+
+      @include respond-to('small and up') {
+        display: inline-block;
+        border-right-width: 0;
+      }
+    }
+
+    .form-text {
+      width: 100%;
+      height: 100%;
+
+      @include respond-to('small and up') {
+        border-right-width: 0;
+      }
+    }
+
+    .form-actions {
+      float: left;
+      height: $height;
+    }
+
+    .form-item,
+    .form-actions {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    .form-submit {
+      @include naked-btn;
+      display: block;
+      width: $height;
+      height: 100%;
+      line-height: 0;
+    }
+
+    .form-submit {
+      @include hide-text;
+      float: left;
+      text-indent: -9999px;
+      background: #ffffff url(#{$img-base-path}/search-icon-red.svg) no-repeat center right;
+      background-position: center center;
+      box-shadow: none;
+      &:focus { outline: 0; }
+
+      @include respond-to('small and up') {
+        background: $brand-primary url(#{$img-base-path}/search-icon-white.svg) no-repeat center center;
+      }
+    }
+
+    .head_adv_search_link {
+      position: absolute;
+      bottom: -24px;
+      right: 0;
+      display: none;
+      clear: both;
+      margin-top: 5px;
+      color: $color-dark-grey;
+      &:hover { color: #000000; }
+      font-size: rem(12);
+      text-decoration: underline;
+
+      @at-root .is_stuck & {
+        display: none !important;
+      }
+
+      @include respond-to('large and up') {
+        display: block;
+      }
+    }
+
+    &.mobile-search-is-open {
+      width: 100%;
+
+      .form-item-search-block-form, .form-item-keyword {
+        display: block !important;
+        @include calc('width', '100% - 35px');
+        max-width: 300px;
+      }
+    }
+  }
+
+  /*-------------------------------------------- */
+  /** When header is stuck to top of page */
+  /*-------------------------------------------- */
+
+  &.is_stuck {
+
+    .#{$block}__search {
+      @include respond-to('large and up') {
+        top: auto;
+        bottom: 15px;
+
+        .form-item-search-block-form, .form-item-keyword {
+          display: none;
+        }
+
+        .form-submit {
+          background: #ffffff url(#{$img-base-path}/search-icon-red.svg) no-repeat center right;
+        }
+      }
+    }
+  }
+
+  /*-------------------------------------------- */
+  /** When Search Form Toggled */
+  /*-------------------------------------------- */
+
+  &.mobile-search-is-open {
+
+    // add white overlay to cover nav items while search is open
+    .#{$block}__content:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: $z-10;
+      display: block;
+      background-color: rgba(#ffffff, .9);
+    }
+
+    .#{$block}__search {
+      width: 100%;
+
+      .form-item-search-block-form, .form-item-keyword {
+        display: block !important;
+        @include calc('width', '100% - 35px');
+      }
+
+      .form-text {
+        border-right-width: 1px;
+      }
+
+      @include respond-to('medium and up') {
+        width: 300px;
+      }
+    }
+  }
+
+  &--alt {
+
+    .#{$block} {
+
+      &__logo {
+        padding-top: 15px;
+        margin-bottom: 0px;
+      }
+    }
+  }
+}
+
+.node-type-blog, .node-type-recipe, .node-type-article, .node-type-page, .node-type-category, .node-type-person, .page-partner, .page-taxonomy, .node-type-gallery, .node-type-video, .node-type-video-landing-page, .node-type-channel-landing-page-responsive, .node-type-home-page-responsive {
+  .site-header {
+    &.is_stuck {
+      position: fixed;
+      top: 0px;
+      width: 100%;
+      @include respond-to('large and up') {
+        top: -80px !important;
+        position: fixed;
+      }
+    }
+  }
+}
+
+.vertical-gallery {
+  .site-header {
+    &.is_stuck {
+      @include respond-to('large and up') {
+        top: 0px !important;
+      }
+      .site-header__search {
+        @include respond-to('large and up') {
+          top: 12px !important;
+        }
+      }
+    }
+    &.site-header--vertical {
+      .site-header__search {
+        @include respond-to('large and up') {
+          top: -70px;
+        }
+      }
+    }
+  }
+}
+
+.node-type-blog, .node-type-gallery, .node-type-category {
+    .campaign {
+    .site-header.campaign {
+        height: 60px;
+        border-bottom: none;
+        header {
+            * {
+                box-sizing: border-box;
+            }
+
+            box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            -o-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            -ms-box-sizing: border-box;
+            float: left;
+            width: 100%;
+            background: #000;
+            text-align: center;
+            padding: 0 17px 0 15px;
+            position: fixed !important;
+            z-index: 999999;
+            left: 0;
+            top: 0;
+            min-height: 60px;
+            margin-bottom: 0px !important;
+            @include respond-to('medium and up') {
+              padding: 0 24px 0 20px;
+            }
+            ul.logos {
+                width: 70px;
+                margin: 14px 0 0;
+                list-style: none;
+                float: left;
+                padding: 0;
+                position: absolute;
+                @include respond-to('medium and up') {
+                    width: auto;
+                    margin-top: 15px;
+                }
+
+                li:first-child {
+                    padding: 0 20px 0 0;
+                    line-height: 14px;
+                    border-left: none;
+                    @include respond-to('medium and up') {
+                        border-left: none;
+                        padding-left: 0;
+                    }
+
+                }
+
+                li {
+                    width: 100%;
+                    height: auto;
+                    line-height: 15px;
+                    display: block;
+                    padding: 0;
+                    border: none;
+                    @include respond-to('medium and up') {
+                        list-style: none;
+                        display: inline-block;
+                        width: auto;
+                        line-height: 30px;
+                        height: 30px;
+                        border-left: 1px solid rgba(255,255,255,0.3);
+                        padding: 0 20px 0 25px;
+                        a {
+                            display: inline-block;
+                            vertical-align: middle;
+                        }
+                    }
+                }
+
+                .tnl {
+                    position: relative;
+
+                    img {
+                        width: 69px;
+                    }
+                }
+
+                .fw a {
+                  line-height: normal;
+                }
+                .fw img {
+                    width: 96px;
+                }
+
+            }
+            position: absolute;
+            top: 0;
+            right: 0;
+
+            .right-logo {
+                top: 15px;
+                position: relative;
+                float: right;
+                width: 129px;
+                @include respond-to('medium and up') {
+                    margin-right: 29px;
+                    right: 0px;
+                    width: 145px;
+                }
+            }
+
+            .flavor-text {
+                margin: 0 auto;
+                line-height: 0;
+                display: none;
+                min-height: 60px;
+                @include respond-to('rightrail grid and up') {
+                  display: inline-block;
+                  text-align: center;
+                  margin-right: -140px;
+                  right: 50%;
+                  height: 60px;
+                }
+
+                p {
+                    color: #CCC;
+                    @include font-droid-serif;
+                    vertical-align: middle;
+                    line-height: normal;
+                }
+            }
+        }
+    }
+    #leaderboard_ad_holder {
+        margin: 0px auto 0px auto;
+        z-index: 99;
+        background: #fff;
+        top: 60px;
+        .ad--leaderboard {
+            &.sticky-ad {
+                top: 60px;
+            }
+        }
+    }
+    }
+}

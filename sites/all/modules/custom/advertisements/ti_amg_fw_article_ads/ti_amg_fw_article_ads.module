@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Article Ads feature.
+ */
+
+include_once 'ti_amg_fw_article_ads.features.inc';

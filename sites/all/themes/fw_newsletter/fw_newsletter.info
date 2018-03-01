@@ -1,0 +1,6 @@
+name = FW Newsletter
+description = A simple theme for FW newsletter.
+version = 7.x-1.0
+core = 7.x
+
+regions[content] = Content

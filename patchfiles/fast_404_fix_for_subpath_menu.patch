@@ -1,0 +1,14 @@
+diff --git a/fast_404.inc b/fast_404.inc
+index b188e27..1c65d2a 100644
+--- a/fast_404.inc
++++ b/fast_404.inc
+@@ -150,7 +150,8 @@ function fast_404_validate_path_drupal() {
+     return TRUE;
+   }
+   else {
+-    $res = db_query("SELECT pid FROM {url_alias} WHERE alias = :alias", array(':alias' => $query))->fetchField();
++    $sql = "SELECT pid FROM {url_alias} WHERE ? LIKE CONCAT(alias, '%')";
++    $res = db_query($sql, array($_GET['q']))->fetchField();
+     return $res == 0 ? FALSE : TRUE;
+   }
+ 

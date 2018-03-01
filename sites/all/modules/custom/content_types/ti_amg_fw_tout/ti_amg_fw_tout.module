@@ -1,0 +1,177 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Tout feature.
+ *
+ * \defgroup ti_amg_fw_tout FoodandWine.com Tout
+ * \ingroup Features
+ * \brief Provides the Tout content type and fields for COOK.com
+ *
+ * @{
+ */
+
+include_once 'ti_amg_fw_tout.features.inc';
+include_once 'ti_amg_fw_tout.ssi_callbacks.inc';
+
+/**
+ * Implements template_preprocess_node().
+ *
+ * \details Handle template preprocessing for tout nodes. One task is to act on
+ *          content in the ssi_callback field.
+ */
+function ti_amg_fw_tout_preprocess_node(&$variables) {
+  $view_mode = $variables['view_mode'];
+  $node = $variables['node'];
+
+  if ($node->type == 'tout') {
+    // Handle field_ssi_callback.
+    if ($items = field_get_items('node', $node, 'field_ssi_callback')) {
+      if ($data = field_view_value('node', $node, 'field_ssi_callback', $items[0])) {
+        $data = render($data);
+
+        // The first element (separate by ::) of the ssi_callback field will
+        // always be the identifier to determine the ssi functionality.
+        $identifier = current(explode('::', $data));
+
+        // Get the SSI function.
+        if ($function = ti_amg_fw_tout_get_ssi_function($identifier)) {
+          // Run the function against the current variables and ssi_callback
+          // field data, if necessary.
+          $function($variables, $data);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_init().
+ *
+ * \details Prevents Tout nodes from being viewed at their node/%nid path,
+ *          except by administrators. Touts are only allowed to be viewed within
+ *          the context of some other piece of content.
+ */
+function ti_amg_fw_tout_init() {
+  if (function_exists('ti_amg_fw_base_components_prevent_node_view')) {
+    ti_amg_fw_base_components_prevent_node_view('tout');
+  }
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function ti_amg_fw_tout_field_formatter_info() {
+  return array(
+    'ti_amg_fw_tout_headline' => array(
+      'label' => t("Tout Headline"),
+      'field types' => array('entityreference'),
+      'settings' => array(
+      ),
+    ),
+  );
+}
+/**
+ * Implements hook_field_formatter_Settings_form().
+ */
+function ti_amg_fw_tout_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $form = array();
+
+  if ($display['type'] == 'ti_amg_fw_tout_headline') {
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function ti_amg_fw_tout_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+
+  return $summary;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function ti_amg_fw_tout_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  if ($display['type'] == 'ti_amg_fw_tout_headline') {
+
+    $settings = $display['settings'];
+    $module = $field['module'];
+    $element = $list_items = array();
+
+    // Generate list
+    $list_items = ti_amg_fw_tout_field_create_list($entity_type, $entity, $field, $instance, $langcode, $items, $display);
+
+    // If there are no list items, return and render nothing.
+    if (empty($list_items)) {
+      return;
+    }
+
+    // CSS classes are checked for validity on submission. drupal_attributes()
+    // runs each attribute value through check_plain().
+
+    $elements = array();
+
+    // Render elements as one piece of markup and theme as item list.
+    foreach ($list_items as $nodeID => $link) {
+      $elements[] = array(
+        '#theme' => 'html_tag',
+        '#tag' => 'div',
+        '#value' => $link,
+        '#attributes' => array(
+        ),
+      );
+    }
+  }
+
+  return $elements;
+}
+
+/**
+ * Entity reference field listing callback.
+ */
+function ti_amg_fw_tout_field_create_list($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  // Load the target type for the field instance.
+  $target_type = $field['settings']['target_type'];
+  $list_items = $target_ids = $target_entities = array();
+
+  // Get an array of entity ids.
+  foreach ($items as $delta => $item) {
+    $target_ids[] = $item['target_id'];
+  }
+
+  // Load them all.
+  if ($target_ids) {
+    $target_entities = entity_load($target_type, $target_ids);
+  }
+
+  // Create a list item for each entity.
+  foreach ($target_entities as $id => $entity) {
+    // Only add entities to the list that the user will have access to.
+    if (isset($item['target_id']) && entity_access('view', $target_type, $entity)) {
+      // = entity_label($target_type, $entity);
+      $headline = ti_amg_fw_core_get_headline($entity);
+      $uri = entity_uri($target_type, $entity);
+      $target_type_class = drupal_html_class($target_type);
+      $classes = array($target_type_class, $target_type_class . '-' . $id, 'entityreference');
+      if (isset($entity->field_external_link) && !empty($entity->field_external_link)) {
+        $list_items[$id] = l($headline, $entity->field_external_link[LANGUAGE_NONE][0]['safe_value'], array('external' => TRUE,'attributes' => array('class' => $classes), 'html' => TRUE));
+      }
+      else {
+        $list_items[$id] = l($headline, $uri['path'], array('attributes' => array('class' => $classes), 'html' => TRUE));
+      }
+    }
+  }
+
+  return $list_items;
+}
+
+
+/**@}*/

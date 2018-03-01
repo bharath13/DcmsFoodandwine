@@ -1,0 +1,100 @@
+<?php
+
+/* 
+ * @file
+ * Implement pronto component for author entity reference.
+ */
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function ti_amg_fw_pronto_component_author_entity_field_formatter_info() {
+  return array(
+    'pronto_component_author_entity' => array(
+      'label' => t('Pronto Component: Author Entity'),
+      'field types' => array('entityreference'),
+      'settings' => array(
+        'ti_amg_fw_pronto_component_author_entity_default_value' => '',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function ti_amg_fw_pronto_component_author_entity_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $settings = $display['settings'];
+  $pronto_component = array(
+    'type' => "components/article/author",
+    'version' => 1,
+    'weight' => $display['weight'],
+    'data' => array(
+      'authors' => array(),
+    ),
+  );
+  switch ($display['type']) {
+    case 'pronto_component_author_entity':
+      if (!empty($items)) {
+        foreach ($items as $item) {
+          $referenced_node = node_load($item['target_id']);
+          $pronto_component['data']['authors'][] = array(
+              'name' => $referenced_node->title,
+            );
+        }
+      }
+      else {
+        // Get author default value from settings.
+        if (!empty($settings['ti_amg_fw_pronto_component_author_entity_default_value'])) {
+          $author_name = $settings['ti_amg_fw_pronto_component_author_entity_default_value'];
+        }
+
+        // If the author default value is not set,
+        // don't add the author component.
+        if (!empty($author_name)) {
+          $pronto_component['data']['authors'][] = array(
+            'name' => $author_name,
+          );
+        }
+      }
+      break;
+  }
+  if (!empty($pronto_component['data']['authors'])) {
+    $entity->json_elements[] = $pronto_component;
+  }
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function ti_amg_fw_pronto_component_author_entity_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  switch ($display['type']) {
+    case 'pronto_component_author_entity':
+      $form['ti_amg_fw_pronto_component_author_entity_default_value'] = array(
+        '#title' => t('Pronto Default Author Name'),
+        '#description' => t('Enter Default Author Name'),
+        '#type' => 'textfield',
+        '#default_value' => !empty($settings['ti_amg_fw_pronto_component_author_entity_default_value']) ? $settings['pronto_component_author_default_value'] : '',
+      );
+      break;
+  }
+
+  return $form;
+}
+
+/**
+ * Hook_field_formatter_settings_summary.
+ */
+function ti_amg_fw_pronto_component_author_entity_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $summary = '';
+
+  switch ($display['type']) {
+    case 'pronto_component_author_entity':
+      $summary = "Pronto Author settings. You can chose the default text";
+      break;
+  }
+  return $summary;
+}

@@ -1,0 +1,4 @@
+name = "Google Analytics Script"
+description = "Module used for adding the GA Script"
+package = "AMG"
+core = 7.x

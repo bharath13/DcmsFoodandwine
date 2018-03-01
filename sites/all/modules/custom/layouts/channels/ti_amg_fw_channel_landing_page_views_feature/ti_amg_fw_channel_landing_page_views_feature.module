@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Channel Landing Page Views Feature feature.
+ */
+
+include_once 'ti_amg_fw_channel_landing_page_views_feature.features.inc';

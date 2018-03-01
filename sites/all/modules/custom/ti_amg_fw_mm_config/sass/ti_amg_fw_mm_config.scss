@@ -1,0 +1,378 @@
+/******************************************/       
+/* MM fallback header brand style updates */
+/******************************************/
+$brand-color-accent: #e71f3d;
+$brand-color-dark: #e71f3d;
+$brand-primary-font-family: Droid Sans,Helvetica,sans-serif;
+$brand-secondary-font-family: Droid Serif,Times,serif;
+
+@mixin fill-circle-icon($name, $color) {
+  &.color-#{$name} {
+    g > path:first-child { stroke: $color; }
+    g > path:not(:first-child),
+    g > ellipse,
+    g > circle {
+      fill: $color;
+    }
+  }
+}
+
+.social-stroke-icon {
+  @include fill-circle-icon("accent", $brand-color-accent);
+  @include fill-circle-icon("dark", $brand-color-dark);
+}
+
+a {
+  color: $brand-color-dark;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+button {
+  outline: none;
+  a {
+   color: inherit;
+  }
+}
+
+/* navigation */
+.mm_leaderboard_ad {
+  padding: 48px 0px 10px;
+}
+
+.mm-nav__logo {
+  height: auto;
+  width: 165px;
+  margin: 14px auto 0;
+  img {
+    height: 22px;
+    width: auto;
+  }
+}
+
+.mm-nav-general {
+  font-family: $brand-primary-font-family;
+}
+
+.mm-nav__search-submit, .mm-nav__search-submit:hover, .mm-nav__search-close {
+  color: #282f2f;
+}
+
+.mm-nav__menu {
+  .mm-sub-menu {
+    border-top: 1px solid #c4c2c3;
+  }
+  
+  .mm-menu__link {
+    font-size: 12px;
+    color: #282f2f;
+    font-weight: 700;
+  }
+  .mm-menu__item:hover, .mm-menu__item:focus, .mm-menu__item:active {
+    border-bottom: $brand-color-dark 4px solid !important;
+  }
+  .mm-menu__item--sub-menu:hover, .mm-menu__link:hover {
+    color: $brand-color-dark 4px solid !important;
+  }
+  .mm-menu__item--sub-menu.last {
+    color: #00b3d8;
+  }  
+  .mm-menu__item--sub-menu.last:hover {
+    color: #00b3d8;
+  }  
+  .mm-sub-menu__link {
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 1;
+  }
+  .mm-menu__item--sub-menu {
+    .active-trail {
+       font-size: 12px;
+       color: #282f2f;
+       text-transform: uppercase;
+       line-height: 48px;
+       font-weight: 700;
+       height: 48px;
+       letter-spacing: .5px;
+       padding: 0 9px;
+       &:hover, &:active {
+         color: $brand-color-dark;
+       }
+     } 
+   }  
+  .mm-sub-menu__link:hover, .mm-sub-menu__link:active {
+    color: $brand-color-dark;
+  }
+}
+
+.mm-side-nav {
+  .active-trail {
+     .active-trail {
+        color: #000;
+        text-transform: uppercase;
+        font-size: 15px;
+        line-height: 35px;
+        height: 35px;
+        padding: 0 24px;
+        transition: none;
+     }
+     &:hover, &:active {
+       color: $brand-color-dark;
+     }
+   } 
+}
+
+.mm-side-nav__social-link {
+  background-color:$brand-color-dark;
+}
+
+a.mm-side-nav__social-link {
+  display: block;
+  width: 16px;
+  height: 16px;
+  float: left;
+  margin-right: 28px;
+  color: $brand-color-dark;
+  background-color: #ffffff;
+  border-radius: 15px;
+  text-align: center;
+
+  svg {
+    width: 36px;
+    height: 36px;
+    margin-top: 0;
+    
+    g>path:first-child {
+      stroke: $brand-color-dark;
+    }
+    g>circle,  g>ellipse,  g>path:not(:first-child) {
+      fill: $brand-color-dark;
+    }
+  }
+}
+
+.mm-side-nav__secondary .mm-menu__item:first-child .mm-menu__link {
+  color: $brand-color-dark;
+}
+
+@media all and (min-width: 1024px) {
+  .mm-nav-general .mm-menu__link:hover,
+  .mm-nav-general .mm-sub-menu__link:hover {
+    color: $brand-color-dark;
+  }
+
+  .mm-nav__menu .mm-menu__item:hover {
+    color: $brand-color-dark;
+  }
+}
+
+/* Footer customization */
+
+footer {
+  font-family: $brand-primary-font-family;
+  a {
+    color: $brand-color-dark;
+  }
+}
+
+footer.mm-main .mm-logo-container {
+  height: auto;
+  width: 165px; 
+  img {
+    height: 22px;
+    width: auto;
+  }  
+}
+
+/* above footer */
+
+.above-footer {
+    .media {
+        display: -webkit-flex;
+        display: -ms-flex;
+        display: -moz-flex;
+        display: flex;
+        -webkit-align-items: flex-start;
+        -moz-align-items: flex-start;
+        -ms-align-items: flex-start;
+        -o-align-items: flex-start;
+        align-items: flex-start;
+    }
+    
+    .media-img>img {
+        max-width: 100%;
+    }
+    
+    h3 {
+      font-size: 32px;
+      letter-spacing: .3px;
+      font-weight: 700;
+      font-family: $brand-secondary-font-family;
+    }
+    div {
+      box-sizing: border-box;
+    }
+    border-bottom: 1px solid #d7d7d9;
+    border-top: 1px solid #d7d7d9;
+    display: flex;
+    flex-wrap: wrap;
+    .partial {
+       &.tout {
+         text-align: center;
+         margin: 0 auto;
+         position: relative;
+          width: 270px;
+          h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-weight: 700;
+            font-family: $brand-secondary-font-family;
+          }
+          .tout-content {
+            font-family: $brand-primary-font-family;
+            font-size: 16px;
+            line-height: 1.38;
+            margin-bottom: 20px;
+          }
+       }
+       button {
+        font-family: $brand-primary-font-family;
+        background: none;
+        border: 2px solid $brand-color-dark;
+        border-radius: 3px;
+        color: $brand-color-dark;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        line-height: 16px;
+        padding: 9px 16px 8px;
+        transition: all .1s ease-in-out;
+        white-space: nowrap;
+        text-transform: uppercase;
+      }  
+    }  
+    .component {
+      align-items: center;
+      flex: 0 0 100%;
+      &.subscribe-callout {
+        flex-wrap: wrap;
+        padding: 28px 24px;
+        .media-body {
+            flex: 0 0 100%;
+        }
+        .tout {
+          button {
+            color: $brand-color-dark;
+            &:hover {
+              background-color: $brand-color-dark;
+              color: #ffffff;
+              a, a:hover {
+                color: #ffffff;
+              }
+            }
+          }
+        } 
+        .media-img {
+          flex: 0 0 100%;
+          margin-bottom: 20px;
+          position: relative;
+          >img {
+            display: block;
+            margin: 0 auto;
+            &.evergreen-cover {
+              position: absolute;
+              top: 20px;
+              width: 101px;
+              left: 50%;
+              transform: translateX(-95%);
+            }
+            &.latest-cover {
+              transform: translateX(10%);
+              width: 121px;
+            }
+          }
+        }   
+      }
+      &.newsletter-callout {
+        background-color: #f0f1f2;
+        background-size: cover;
+        background-image: url('../img/fw-subscribe-bg.png');
+        letter-spacing: .3px;
+        padding: 40px 24px;
+        position: relative;
+        color: #ffffff;
+        .tout {
+          h3 {
+            color: #ffffff;
+          }
+          button {
+            color: #ffffff;
+            &:hover {
+              background-color: $brand-color-dark;
+               color: #ffffff;
+               a, a:hover {
+                  color: #ffffff;
+               }
+            }
+          }
+        }
+        .partial {
+          margin-top: 0;
+          &.tout {
+            button {
+              color: #ffffff;
+              &:hover {
+                background: $brand-color-dark;
+              }
+            }
+          }
+        }
+        &:before {
+          content: "";
+          background: rgba(0,0,0,.4);
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          right: 0;
+          left: 0;
+        }  
+      }
+    } 
+    @media (min-width: 768px) {
+      .component.subscribe-callout {
+        padding: 40px 24px;
+      }
+    }
+      
+    @media (min-width: 768px) {
+      .above-footer .partial.tout {
+        width: 370px;       
+      }
+    }
+      
+    @media (min-width: 768px) {
+      .component.subscribe-callout .media-img {
+        flex: 1;
+        margin: 0;
+      }
+    }
+      
+    @media (min-width: 768px) {
+      .component.subscribe-callout .media-body {
+          flex: 1;
+      }
+    }
+    @media (min-width: 1024px) {
+      .component {
+        flex: 1 1 50%;
+      }
+      .partial.tout {
+        width: 400px;
+      }   
+    }  
+    @media (min-width: 768px) {
+     .partial.tout {
+       width: 370px;
+     }
+   }
+}

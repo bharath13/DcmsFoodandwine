@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Search Context feature.
+ */
+
+include_once 'ti_amg_fw_search_context.features.inc';

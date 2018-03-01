@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the FoodandWine DCMS Audio Taxonomy feature.
+ */
+
+include_once 'ti_audio_taxonomy.features.inc';

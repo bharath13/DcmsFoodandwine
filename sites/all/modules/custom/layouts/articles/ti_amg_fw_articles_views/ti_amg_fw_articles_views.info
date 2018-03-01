@@ -1,0 +1,12 @@
+name = TI AMG FW ARTICLES VIEWS
+description = Views feature for Articles Views
+core = 7.x
+package = FoodandWine DCMS
+version = 7.x-1.25
+project = ti_amg_fw_articles_views
+dependencies[] = strongarm
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = ti_amg_fw_featured_recipes
+features_exclude[dependencies][ctools] = ctools

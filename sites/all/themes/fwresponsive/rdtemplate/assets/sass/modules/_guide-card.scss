@@ -1,0 +1,77 @@
+/**
+ * Block: guide-card
+ * Element: guide-card__element
+ * Modifier: guide-card--modifier
+ */
+
+$block: guide-card;
+
+.#{$block} {
+  position: relative;
+  display: inline-block;
+  
+  .touch &,
+  &:hover,
+  &.#{$block}--show-title {
+    .#{$block}__title-container {
+      opacity: 1;
+    }  
+  }
+  
+  .recipe_slide {
+      img{
+          width : 100%;
+      }
+  }
+  
+  .descriptor {
+    margin-top: 5px;
+    margin-bottom: -5px;
+  }
+
+  img {
+    vertical-align: bottom;
+  }
+  
+  &__title-container {
+    @include position(absolute, 0 0 0 0);
+    z-index: $z-1;
+    background-color: rgba(#000000, .5);
+    opacity: 0;
+    transition: .15s ease-out;
+
+    &:hover {
+      background-color: rgba(#000000, .7);
+    }
+  }
+  
+  &__title {
+    position: absolute;
+    top: 50%;
+    @include transform( translateY(-50%) );
+    z-index: $z-2;
+    width: 100%;
+    padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+    color: #ffffff;
+    font-size: rem(20);
+    @include font-droid-sans-bold;
+    line-height: 1.2;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  &__headline {
+      width: 100%;
+      box-sizing: border-box;
+      color: black;
+      @include font-droid-sans;
+      font-weight: 400;
+      font-size: rem(20);
+      line-height: 1.2;
+      margin-top: 5px;
+      display: inline-block;
+      margin-bottom: 5px;
+  }
+}

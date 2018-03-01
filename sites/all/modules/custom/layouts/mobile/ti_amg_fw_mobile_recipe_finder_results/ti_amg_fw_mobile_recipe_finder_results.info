@@ -1,0 +1,12 @@
+name = TI AMG FW Mobile Recipe Finder Results
+description = Mobile Recipe Finder Results
+core = 7.x
+package = FoodandWine Layouts
+version = 7.x-1.3
+project = ti_amg_fw_mobile_recipe_finder_results
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = ti_amg_fw_mobile_recipe_finder_results
+features_exclude[dependencies][ctools] = ctools
+mtime = 1419371559

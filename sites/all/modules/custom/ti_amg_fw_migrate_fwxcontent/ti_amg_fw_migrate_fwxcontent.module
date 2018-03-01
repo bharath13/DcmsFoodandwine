@@ -1,0 +1,499 @@
+<?php
+
+/**
+ * @file
+ * Migration module.
+ */
+
+// Define the site constant variables for migration.
+define("TI_AMG_FW_MIGRATE_FWXCONTENT_UID", 1);
+define("TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_DATABASE", 'fwxdcms');
+define("TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_CONNECTION", 'legacy');
+define("TI_AMG_FW_MIGRATE_FWXCONTENT_TEXT_FORMAT", 'full_html');
+define('TI_AMG_FW_MIGRATE_FWXCONTENT_TIMESTAMP', 1451606400);
+define('TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_URL', 'http://www.foodandwine.com/fwx/sites/default/files/');
+
+/**
+ * Implements hook_migrate_api().
+ */
+function ti_amg_fw_migrate_fwxcontent_migrate_api() {
+  global $databases;
+  $api['api'] = 2;
+  $api['groups']['person']['title'] = t('Migrate FWx Person Content');
+  $api['groups']['image']['title'] = t('Migrate FWx Image Content');
+  $api['groups']['blogs']['title'] = t('Migrate FWx Blogs Content');
+  $api['groups']['gallery']['title'] = t('Migrate FWx Gallery Content');
+  $api['groups']['redirect_url']['title'] = t('Migrate FWx Url Redirects to FW');
+
+  /* Legacy database connection START */
+  $common_arguments['source_connection'] = TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_CONNECTION;
+  $common_arguments['source_version'] = 7;
+  $common_arguments['source_database']['driver'] = 'mysql';
+  $common_arguments['source_database']['database'] = TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_DATABASE;
+  $common_arguments['source_database']['username'] = $databases[TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_CONNECTION]['default']['username'];
+  $common_arguments['source_database']['password'] = $databases[TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_CONNECTION]['default']['password'];
+  $common_arguments['source_database']['host'] = $databases[TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_CONNECTION]['default']['host'];
+  $common_arguments['source_database']['port'] = $databases[TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_CONNECTION]['default']['port'];
+  $common_arguments['source_database']['prefix'] = '';
+  /* Legacy database connection STOP */
+
+  // Person Migration.
+  $common_arguments['group_name'] = 'person';
+  $api['migrations']['person'] = $common_arguments + array(
+    'description' => t('Migrate Person Content from FWx.'),
+    'class_name' => 'PersonMigration',
+    'source_type' => 'person',
+    'destination_type' => 'person',
+  );
+
+  // Image Migration.
+  $common_arguments['group_name'] = 'image';
+  $api['migrations']['image'] = $common_arguments + array(
+    'description' => t('Migrate Image Content from FWx.'),
+    'class_name' => 'ImageMigration',
+    'source_type' => 'image',
+    'destination_type' => 'image',
+  );
+
+  // Blogs Migration.
+  $common_arguments['group_name'] = 'blogs';
+  $api['migrations']['blogs'] = $common_arguments + array(
+    'description' => t('Migrate Blogs Content from FWx.'),
+    'class_name' => 'BlogsMigration',
+    'source_type' => 'blog',
+    'destination_type' => 'article',
+  );
+
+  // Gallery Migration.
+  $common_arguments['group_name'] = 'gallery';
+  $api['migrations']['gallery'] = $common_arguments + array(
+    'description' => t('Migrate Gallery Content from FWx.'),
+    'class_name' => 'GalleryMigration',
+    'source_type' => 'gallery',
+    'destination_type' => 'gallery',
+  );
+
+  // Redirect Url Migration.
+  $common_arguments['group_name'] = 'redirect_url';
+  $api['migrations']['redirect_url'] = $common_arguments + array(
+    'description' => t('Migrate Redirect Url from FWx.'),
+    'class_name' => 'MigrateRedirectTable',
+  );
+
+  return $api;
+}
+
+/**
+ * Verifing the person existance in F&W.
+ */
+function ti_amg_fw_migrate_fwxcontent_verify_person_existance($current_row) {
+  $result = db_select('node', 'n')
+    ->fields('n', array('nid'))
+    ->condition('n.title', $current_row->title)
+    ->execute()
+    ->fetchAll();
+  if (empty($result)) {
+    return '';
+  }
+  else {
+    $nid = $result[0]->nid;
+    return $nid;
+  }
+}
+
+/**
+ * Custom function for updating the metatag information.
+ *
+ * @param object $row
+ *   $Row object contains legacy data's.
+ *
+ * @return array
+ *   Metatag information of legacy node.
+ */
+function ti_amg_fw_migrate_fwxcontent_update_metatag_info($row = NULL) {
+  if (!empty($row)) {
+    // Retrive the existing metatag blob data by nid.
+    $result = Database::getConnection('default', TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_CONNECTION)
+      ->select('metatag', 'm')
+      ->fields('m', array('data'))
+      ->condition('m.entity_id', $row->nid)
+      ->condition('m.revision_id', $row->vid)
+      ->execute()
+      ->fetchAll();
+    if (!empty($result[0]->data)) {
+      $data = $result[0]->data;
+    }
+    else {
+      $data = '';
+    }
+    return $data;
+  }
+}
+
+/**
+ * To get existed author nid from legacy author nid.
+ *
+ * @param string $legacy_author_nid
+ *   Legacy author node id.
+ *
+ * @return string
+ *   Current author node id.
+ */
+function ti_amg_fw_migrate_fwxcontent_get_existed_author_nid($legacy_author_nid) {
+  if (!empty($legacy_author_nid)) {
+    // Retrive the existing metatag blob data by nid.
+    $result = Database::getConnection('default', TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_CONNECTION)
+      ->select('node', 'n')
+      ->fields('n', array('title'))
+      ->condition('n.nid', $legacy_author_nid)
+      ->execute()
+      ->fetchAll();
+    if (!empty($result)) {
+      $title = $result[0]->title;
+      $nid = ti_amg_fw_migrate_fwxcontent_get_nid_from_title($title);
+      return $nid;
+    }
+  }
+  return '';
+}
+
+/**
+ * To get node id from node title.
+ *
+ * @param string $title
+ *   Node Title.
+ *
+ * @return string
+ *   Nid of title.
+ */
+function ti_amg_fw_migrate_fwxcontent_get_nid_from_title($title) {
+  $result = db_select('node', 'n')
+    ->fields('n', array('nid'))
+    ->condition('n.title', $title)
+    ->execute()
+    ->fetchAll();
+  if (empty($result)) {
+    return '';
+  }
+  else {
+    $nid = $result[0]->nid;
+    return $nid;
+  }
+}
+
+/**
+ * Creating file object.
+ *
+ * @param string $url
+ *   URL of the file.
+ * @param string $file_name
+ *   Name of the file.
+ *
+ * @return object
+ *   Returning the file object.
+ */
+function ti_amg_fw_migrate_fwxcontent_create_embed_file($url, $type = 'videopost') {
+  $file = file_uri_to_object($url);
+  $file_name = $type;
+  $file->filename = $file_name;
+
+  return $file;
+}
+
+/**
+ * Fetching the brightcove parameters from brightcove URL.
+ *
+ * @param string $url
+ *   Brightcove URL.
+ *
+ * @return array
+ *   List of brightcove parameters.
+ */
+function ti_amg_fw_migrate_fwxcontent_get_brightcove_parameters($url) {
+  // parse_url is an easy way to break a url into its components.
+  $components = array(
+    'id' => array(
+      'start' => 'bcpid',
+      'finish' => '\?bckey',
+    ),
+    'key' => array(
+      'start' => 'bckey=',
+      'finish' => '&bctid',
+    ),
+    'player' => array(
+      'start' => 'bctid=',
+      'finish' => '',
+    ),
+  );
+
+  $matches = array();
+  $return = array();
+  foreach ($components as $key => $component) {
+    $string = "/(.*){$component['start']}(.*){$component['finish']}/";
+    preg_match($string, $url, $matches);
+    if ($matches && !empty($matches[2])) {
+      $return[$key] = $matches[2];
+    }
+  }
+  return $return;
+}
+
+/**
+ * Finding a video node with $video_id.
+ *
+ * @param string $video_id
+ *   Brightcove vodei id.
+ *
+ * @return string
+ *   Nid of the video node.
+ */
+function ti_amg_fw_migrate_fwxcontent_verify_video_exists($video_id) {
+  $query = db_select('field_data_field_video_id', 'field_video_id');
+  $query->fields('field_video_id', array('entity_id'));
+  $query->join('node', 'n', 'n.nid=field_video_id.entity_id ');
+  $query->condition('field_video_id.field_video_id_value', $video_id, '=');
+  $result = $query->execute()->fetchAll();
+  if (empty($result)) {
+    return '';
+  }
+  else {
+    $nid = $result[0]->entity_id;
+    return $nid;
+  }
+}
+
+/**
+ * Creating video object.
+ *
+ * @param string $video_id
+ *   Brightcove video id.
+ * @param object $row
+ *   Current Row object.
+ *
+ * @return string
+ *   Nid of the created video node.
+ */
+function ti_amg_fw_migrate_fwxcontent_create_video_node($video_id, $row) {
+  if ($video_id > 0 && is_numeric($video_id)) {
+    $response = drupal_http_request("http://api.brightcove.com/services/library"
+        . "?command=find_video_by_id&video_id=" .
+        $video_id . "&video_fields=id,name," .
+        "shortDescription,longDescription,creationDate,publishedDate," .
+        "lastModifiedDate,linkURL,linkText,tags,videoStillURL,thumbnailURL," .
+        "captioning,adKeys,itemState&media_delivery=default" .
+        "&callback=BCL.onSearchResponse&"
+        . "token=G0WAHddcP6XZOG9rNsyKkIyiDCGh9C7gfIxjRADssc0."
+    );
+    $response_json_data = $response->data;
+    $response_json_data = (string) $response_json_data;
+    $response_json_data =
+        str_replace('BCL.onSearchResponse(', '', $response_json_data);
+    $response_json_data = str_replace(');', '', $response_json_data);
+    $response_json_data = json_decode($response_json_data);
+    if (empty($response_json_data)) {
+      return '';
+    }
+    else {
+      $node = new stdClass();
+      $node->delta = 0;
+      $node->type = 'video';
+      $node->uid = TI_AMG_FW_MIGRATE_FWXCONTENT_UID;
+      $node->is_new = TRUE;
+      $node->language = LANGUAGE_NONE;
+      if (!empty($response_json_data->name)) {
+        $node->title = $response_json_data->name;
+        $node->field_headline[LANGUAGE_NONE][0]['value'] = $response_json_data->name;
+        $node->field_headline[LANGUAGE_NONE][0]['format'] = 'fw_headline_html';
+      }
+      else {
+        $node->title = $row->title;
+        $node->field_headline[LANGUAGE_NONE][0]['value'] = $row->title;
+        $node->field_headline[LANGUAGE_NONE][0]['format'] = 'fw_headline_html';
+      }
+      if (!empty($response_json_data->shortDescription)) {
+        $node->field_deck[LANGUAGE_NONE][0]['value'] = $response_json_data->shortDescription;
+        $node->field_deck[LANGUAGE_NONE][0]['format'] = 'wysiwyg';
+      }
+      $node->field_video_id[LANGUAGE_NONE][0]['value'] = $video_id;
+
+      // Create the term names and attach it.
+      if (isset($response_json_data->tags) &&
+        count($response_json_data->tags) > 0) {
+        // To get the vocabulary ID.
+        $vocb_machine_name = 'video_tags';
+        $query = db_select('taxonomy_vocabulary', 'tv');
+        $query->fields('tv', array('vid'));
+        $query->condition('tv.machine_name', $vocb_machine_name, '=');
+        $result = $query->execute();
+        $data = $result->fetchAssoc();
+        $vid = $data['vid'];
+        // Create the Terms and attach it with the node.
+        $term_count = 0;
+        $term_array = array();
+        foreach ($response_json_data->tags as $tag) {
+          // Check if the term is already available, If so attach it.
+          $taxo_term_name = $tag;
+          $query_term = db_select('taxonomy_term_data', 'ttd');
+          $query_term->fields('ttd', array('tid', 'name'));
+          $query_term->condition('ttd.name', $taxo_term_name, '=');
+          $query_term->condition('ttd.vid', $vid, '=');
+          $result_term = $query_term->execute();
+          $existing_term_data = $result_term->fetchAssoc();
+          if (!empty($existing_term_data)) {
+            $term_tid = $existing_term_data['tid'];
+            $term_array[] = $term_tid;
+          }
+          else {
+            // Create the term if it is not available.
+            $term_name = $tag;
+            $term = new stdClass();
+            $term->name = $term_name;
+            $term->vid = $vid;
+            taxonomy_term_save($term);
+            $term_array[] = $term->tid;
+          }
+          $term_count++;
+        }
+        if (!empty($term_array)) {
+          foreach ($term_array as $key => $tid) {
+            $node->field_video_tags[LANGUAGE_NONE][$key]['tid'] = $tid;
+          }
+        }
+      }
+      // Assigning Category Field 'Video' to the node.
+      $vocb_machine_name = 'fw_category';
+      $query = db_select('taxonomy_vocabulary', 'tv');
+      $query->fields('tv', array('vid'));
+      $query->condition('tv.machine_name', $vocb_machine_name, '=');
+      $result = $query->execute();
+      $data = $result->fetchAssoc();
+      $vid = $data['vid'];
+
+      $query_term = db_select('taxonomy_term_data', 'ttd');
+      $query_term->fields('ttd', array('tid', 'name'));
+      $query_term->condition('ttd.name', 'Video', '=');
+      $query_term->condition('ttd.vid', $vid, '=');
+      $result_term = $query_term->execute();
+      $term_data = $result_term->fetchAssoc();
+      $node->field_fw_category['tid'] = $term_data['tid'];
+      node_save($node);
+      return $node->nid;
+    }
+  }
+}
+
+/**
+ * Fetching the vocabulary id from vocabulary machine name.
+ *
+ * @param string $vocabulary_machine_name
+ *   Machine name of a vocabulary.
+ *
+ * @return string
+ *   ID of vocabulary.
+ */
+function ti_amg_fw_migrate_fwxcontent_get_vocabulary_id($vocabulary_machine_name) {
+  $vid = '';
+  $query = db_select('taxonomy_vocabulary', 'tv');
+  $query->fields('tv', array('vid'));
+  $query->condition('tv.machine_name', $vocabulary_machine_name, '=');
+  $result = $query->execute();
+  $data = $result->fetchAssoc();
+  if (!empty($data)) {
+    $vid = $data['vid'];
+  }
+
+  return $vid;
+}
+
+/**
+ * Getting term name from tid.
+ *
+ * @param string $vid
+ *   Vocabulary ID.
+ * @param string $term_name
+ *   Term Name.
+ *
+ * @return string
+ *   TID of a term.
+ */
+function ti_amg_fw_migrate_fwxcontent_get_tid_from_name($vid, $term_name) {
+  $tid = '';
+  $query_term = db_select('taxonomy_term_data', 'ttd');
+  $query_term->fields('ttd', array('tid'));
+  $query_term->condition('ttd.name', $term_name, '=');
+  $query_term->condition('ttd.vid', $vid, '=');
+  $result_term = $query_term->execute();
+  $term_data = $result_term->fetchAssoc();
+  if (!empty($term_data)) {
+    $tid = $term_data['tid'];
+  }
+
+  return $tid;
+}
+
+/**
+ * Mapping FWx Category term to Food&Wine Category term.
+ *
+ * @param string $fwx_category_name
+ *   FWx Category term name.
+ *
+ * @return string
+ *   Food&Wine Category term name.
+ */
+function ti_amg_fw_migrate_fwxcontent_fwx_to_fw_category_mapping($fwx_category_name) {
+  $fw_category_name = '';
+  switch ($fwx_category_name) {
+    case 'Drink':
+      $fw_category_name = 'Drinks';
+      break;
+
+    case 'Food':
+      $fw_category_name = 'News';
+      break;
+
+    case 'Style':
+      $fw_category_name = 'Lifestyle';
+      break;
+
+    case 'Secrets':
+      $fw_category_name = 'Lifestyle';
+      break;
+
+    case 'Travel':
+      $fw_category_name = 'Travel';
+      break;
+
+    case 'Tech':
+      $fw_category_name = 'News';
+      break;
+
+    case 'Outdoors':
+      $fw_category_name = 'Travel';
+      break;
+  }
+  return $fw_category_name;
+}
+
+/**
+ * Fetching legacy term name from legacy tid.
+ *
+ * @param string $tid
+ *   TID of a legacy term.
+ *
+ * @return string
+ *   Term name of particular legacy tid.
+ */
+function ti_amg_fw_migrate_fwxcontent_legacy_termname_from_tid($tid) {
+  $term_name = '';
+  $result = Database::getConnection('default', TI_AMG_FW_MIGRATE_FWXCONTENT_SOURCE_CONNECTION)
+    ->select('taxonomy_term_data', 'ttd')
+    ->fields('ttd', array('name'))
+    ->condition('ttd.tid', $tid, '=')
+    ->execute();
+  $term_data = $result->fetchAssoc();
+  if (!empty($term_data)) {
+    $term_name = $term_data['name'];
+  }
+
+  return $term_name;
+}

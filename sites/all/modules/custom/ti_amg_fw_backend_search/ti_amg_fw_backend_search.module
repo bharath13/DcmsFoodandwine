@@ -1,0 +1,178 @@
+<?php
+
+/**
+ * @file
+ * Module used for FoodAndWine Backend Advanced Search.
+ */
+
+/**
+ * Implements hook_init().
+ * 
+ */
+function ti_amg_fw_backend_search_init() {
+  if(arg(0) == 'admin' && arg(1) == 'recipe-search') {
+    $theme_path = drupal_get_path('theme', 'ti_editorial');
+    drupal_add_css(drupal_get_path('module', 'ti_amg_fw_backend_search') . '/css/backend_search.css', array('weight' => CSS_THEME));
+  }
+  drupal_add_css(drupal_get_path('module', 'ti_amg_fw_backend_search') . '/css/backend_search_global.css', array('weight' => CSS_THEME));
+}
+
+/**
+ * Implement hook_form_alter().
+ */
+function ti_amg_fw_backend_search_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#id'] == 'views-exposed-form-advanced-recipe-backend-search-page') {
+    
+    $fields = array(
+      'field_wf_producer_qa',
+      'field_wf_photo_added',
+      'field_wf_photo_qa',
+      'field_wf_parsing',
+      'field_wf_parsing_qa',
+      'field_wf_edit_check_1',
+      'field_wf_edit_check_2',
+      'field_wf_rights_check',
+      'field_wf_final_check',
+      //'field_sponsor_flag'
+    );
+
+    foreach ($fields as $field_name) {
+      $default_value = 'All';
+      if (isset($form_state['input'][$field_name])) {
+        if ($form_state['input'][$field_name] == 1) {
+          $default_value = 1;
+        }
+      }
+      $form[$field_name] = array(
+        '#type' => 'checkbox',
+        '#title' => $form['#info']['filter-' . $field_name]['label'],
+        '#value' => $default_value
+      );
+    }
+
+    $form['field_chefs_author']['#autocomplete_path'] = 'fw-autocomplete/person/chef';
+    $form['field_sponsor_list']['#autocomplete_path'] = 'fw-autocomplete/person/sponsor';
+    
+    $form['field_sponsor_flag']['#options'][0] = t('Not Sponsored');
+    $form['field_sponsor_flag']['#options'][1] = t('Sponsored');
+    arsort($form['field_sponsor_flag']['#options']);
+    
+    
+    $form['field_wf_producer_qa']['#prefix'] = t('<span class="workflow-label">'
+        . 'Current Workflow Status</span> '
+        . '<div id="workflow-form-wrapper">');
+    $form['field_wf_final_check']['#suffix'] = '</div>';
+
+    array_unshift($form['#submit'], 'fw_backend_serach_submit');
+    
+    //Changing the order of issues with Year wise
+    $issue_list = $form['field_issue']['#options'];
+    if(isset($issue_list) && count($issue_list) > 1){
+        $form['field_issue']['#options'] = node_form_issue_sorting($issue_list);
+    }
+    //Giving the date range from 1993 to +5 years to current year
+    $form['published_at']['#date_year_range'] = '1993:+5';
+    $form['published_at_1']['#date_year_range'] = '1993:+5';
+  }
+}
+
+
+/**
+ * Implementation of submit function for backend search form
+ * Replace string with NID for autocomplete fields
+ */
+function fw_backend_serach_submit($form, &$form_state) {
+  $autocomplete_fields = array('field_chefs_author', 'field_sponsor_list');
+
+  foreach ($autocomplete_fields as $field) {
+    $nid = '';
+    $string = $form_state['values'][$field];
+    $exploded_string = explode('(', $string);
+    if (isset($exploded_string[1])) {
+      $nid = rtrim($exploded_string[1], ')');
+    }
+    if (is_numeric($nid)) {
+      $form_state['values'][$field] = $nid;
+    }
+    else {
+      $form_state['values'][$field] = '';
+    }
+  }
+}
+
+/**
+ * Implement hook_menu().
+ */
+function ti_amg_fw_backend_search_menu() {
+  $items['fw-autocomplete/person/%'] = array(
+    'page callback' => 'fw_autocomplete_person',
+    'access arguments' => array('access content'),
+    'page arguments' => array(2),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+
+/**
+ * Returns autocomplete for for Chef(Person) and Sponsor(Source)
+ * 
+ * @param $type
+ *   String with values "person" or "source"
+ * 
+ * @param $text
+ *   Pattern matching string
+ * 
+ * @return
+ *   JSON formatted Chef Names
+ */
+function fw_autocomplete_person($type, $text) {
+  $results = array();
+  $query = fw_get_person_autocomplete_query($type, $text);
+  if ($query) {
+    $person = $query->execute();
+    foreach ($person as $row) {
+      $key = $row->title . ' (' . $row->nid . ')';
+      $results[$key] = $row->title;
+    }
+  }
+  drupal_json_output($results);
+}
+
+
+/**
+ * Returns autocomplete db query for Chef(Person) and Sponsor(Source)
+ *
+ * @param $type
+ *   String with values "person" or "source"
+ * 
+ * @param $text
+ *   Pattern matching string
+ * 
+ * @return
+ *   DB Query
+ */
+function fw_get_person_autocomplete_query($type, $text) {
+
+  $field_person_type_value = '';
+  if ($type == 'chef') {
+    $field_person_type_value = 'p';
+  }
+  else if ($type == 'sponsor') {
+    $field_person_type_value = 's';
+  }
+
+  $query = '';
+
+  if ($field_person_type_value) {
+    $query = db_select('node', 'node');
+    $query->join('field_data_field_person_type', 'person_type', 'node.nid = person_type.entity_id');
+    $query
+        ->fields('node', array('nid', 'title'))
+        ->condition('node.title', '%' . db_like($text) . '%', 'LIKE')
+        ->condition('person_type.field_person_type_value', $field_person_type_value, '=')
+        ->orderBy('person_type.field_person_type_value', 'ASC')
+        ->range(0, 10);
+  }
+  return $query;
+}

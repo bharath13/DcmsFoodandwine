@@ -1,0 +1,25 @@
+/**
+* This css file for person content type node forms.
+*/
+.view-display-id-block_2 .item-list,
+.view-display-id-block_4 .item-list,
+.view-display-id-block_6 .item-list{
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+    max-height: 300px;
+    margin-bottom: 25px;
+    overflow-y: auto;
+}
+div.view-empty{
+    margin-bottom:20px;
+}
+div.view-empty .no-results{
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+    height: 50px; 
+}
+#block-views-ti-amg-fw-person-blocks-block-2,
+#block-views-ti-amg-fw-person-blocks-block-4,
+#block-views-ti-amg-fw-person-blocks-block-6
+{display:none;}
+.no-results > p {padding-left: 50px;}

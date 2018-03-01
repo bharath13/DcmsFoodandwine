@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ *  Update text format for field_headline.
+ */
+
+
+/**
+ * Update text format from NULL to fw_headline_html.
+ */
+function ti_amg_fw_text_formats_update_7000() {
+ db_update('field_data_field_headline')
+   ->fields(array('field_headline_format' => 'fw_headline_html'))
+   ->isNull('field_headline_format')
+   ->condition('bundle', 'image')
+   ->execute();
+}

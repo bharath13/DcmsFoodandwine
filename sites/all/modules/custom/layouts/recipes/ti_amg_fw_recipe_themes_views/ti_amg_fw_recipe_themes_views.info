@@ -1,0 +1,15 @@
+name = TI AMG FW RECIPE THEMES VIEWS
+description = Recipe theme parent and child landing page views
+core = 7.x
+package = FoodandWine DCMS
+version = 7.x-1.8
+project = ti_amg_fw_recipe_themes_views
+dependencies[] = better_exposed_filters
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = ti_amg_fw_recipe_finder_child
+features[views_view][] = ti_amg_fw_recipe_finder_recipe_theme_filter
+features[views_view][] = ti_amg_fw_recipes_related_videos
+features[views_view][] = ti_amg_fw_recipes_themes_parent_terms
+features_exclude[dependencies][ctools] = ctools

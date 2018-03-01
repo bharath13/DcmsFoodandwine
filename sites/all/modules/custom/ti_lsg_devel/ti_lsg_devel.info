@@ -1,0 +1,6 @@
+name = TI LSG: Devel
+description = Helper module for use during development of TI LSG sites
+version = 7.x-1.x
+core = 7.x
+package = LSG
+project = ti_lsg_devel

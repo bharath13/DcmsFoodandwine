@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Video Ads feature.
+ */
+
+include_once 'ti_amg_fw_video_ads.features.inc';

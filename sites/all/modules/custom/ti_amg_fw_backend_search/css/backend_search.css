@@ -1,0 +1,111 @@
+/**
+ * @file
+ * Stylesheet for FoodAndWine Backend Advanced Search.
+ */
+
+#edit-search-api-views-fulltext-wrapper {
+    width: 700px;
+}
+#edit-search-api-views-fulltext {
+    height: 30px;
+}
+.form-select, input {
+    height: 25px;
+    padding-bottom: 0 !important;
+    padding-top: 0 !important;
+}
+html.js input.form-autocomplete {
+    background-position: 100% 2px !important;
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
+.views-exposed-form .views-exposed-widget{
+  float: left;
+}
+#edit-field-issue-wrapper, 
+#edit-published-at-wrapper, 
+#edit-published-at-1-wrapper, 
+#edit-field-chefs-author-wrapper {
+    float: left;
+}
+#edit-field-complex-theme-parents-all-wrapper {
+    float: left;
+    width: 390px;
+}
+#edit-published-at-1-wrapper{
+    margin-top: 25px;
+}
+#edit-field-chefs-author-wrapper {
+    margin-top: 24px;
+}
+#edit-field-issue-wrapper {
+    clear: both;
+    margin-top: 24px;
+}
+#edit-field-chefs-author-wrapper {
+    width: 390px;
+}
+#edit-field-ingredients-field-ingredient-primary-wrapper {
+    float: left;
+    width: 390px;
+}
+#checkboxes-wrapper {
+    border-bottom: 1px solid #ccc;
+    border-top: 1px solid #ccc;
+    clear: both;
+    float: none;
+    min-height: 100px;
+}
+#workflow-form-wrapper .form-item {
+    float: left;
+    width: 19%;
+}
+.views-exposed-widget.views-submit-button {
+    clear: both;
+}
+#edit-field-image-rights-wrapper {
+    margin-bottom: 20px;
+}
+#workflow-form-wrapper {
+    margin-top: 10px;
+}
+#views-exposed-form-advanced-recipe-backend-search-page {
+    background: none repeat scroll 0 0 oldlace;
+    margin: 0;
+    padding: 20px;
+}
+.view-advanced-recipe-backend-search{
+    border: 1px solid #ccc;
+}
+#checkboxes-wrapper .option {
+    font-size: 12px;
+}
+.views-exposed-form label {
+    font-size: 13px;
+}
+.workflow-label {
+    font-weight: bold;
+}
+.views-field.views-field-delete-node > a {
+    padding-left: 10px;
+}
+#edit-field-sponsor-list-wrapper {
+    width: 400px;
+}
+.form-select {
+    font-size: 12px;
+}
+#edit-field-sponsor-flag-wrapper {
+    clear: both;
+}
+.published {
+    color: green;
+}
+.views-field.views-field-title {
+    font-size: 13px;
+    font-weight: bold;
+}
+.unpublished {
+    color: orange;
+}

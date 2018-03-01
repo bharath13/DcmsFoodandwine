@@ -1,0 +1,225 @@
+<?php
+/**
+ * @file
+ * Search Redisign Module.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fwrd_search_menu() {
+  $items = array();
+
+  $items['search_auto_suggestions'] = array(
+    'page callback' => 'ti_amg_fwrd_search_auto_suggestions',
+    'access callback' => 'user_access',
+    'access arguments' => array('access content'),
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/config/fw_settings/fwsearch_solr_settings'] = array(
+    'title' => 'Food&Wine Search SOLR settings',
+    'description' => 'SOLR Settings for FW Search.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ti_amg_fwrd_search_solr_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+    'file' => 'includes/ti_amg_fwrd_search.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/fw_settings/fwsearch_solr_settings/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Food&Wine Search SOLR settings',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -12,
+  );
+  return $items;
+}
+
+/**
+ * Callback function for search auto suggestions.
+ *
+ * @param string $string
+ *   Keyword for auto suggestions.
+ */
+function ti_amg_fwrd_search_auto_suggestions($string) {
+  $matches = ti_amg_fwrd_search_auto_suggestions_query($string);
+  print drupal_json_encode($matches);
+  exit();
+}
+
+/**
+ * 
+ * @param string $string
+ *   Keyword for auto suggestions.
+ * @return array
+ *   Array of matched items with the keyword.
+ */
+function ti_amg_fwrd_search_auto_suggestions_query($string) {
+  global $base_url;
+  $string = strtolower($string);
+  // Picking fw_category taxonomy terms.
+  $category_list = ti_amg_fwrd_custom_get_taxonomy('fw_category');
+  $category_names = array();
+  $matched_list = array();
+  $matches = array();
+  foreach ($category_list as $category) {
+    $category_names[] = strtolower($category->name);
+  }  
+  // Matching with the typed keyword.
+  $keyword_reg_exp = '/^' . $string . '.*/';
+  $matched_keywords = preg_grep($keyword_reg_exp, $category_names);
+  if (!empty($matched_keywords)) {
+    $matched_keywords = array_slice($matched_keywords, 0, 3);
+    foreach ($matched_keywords as $keyword) {
+      $highlight_keyword = preg_replace('/' . $string . '/i', '<strong>' . $string . '</strong>', $keyword);
+      if (_ti_amg_fwrd_custom_getuseragent() == 'mobile') {
+        $matches[$keyword] = "<a class='suggested_keyword' href='" . $base_url . "/search.mobi?keyword=". $keyword . "'>" . $highlight_keyword . "</a>";
+      }else{
+        $matches[$keyword] = "<a class='suggested_keyword' href='#'>" . $highlight_keyword . "</a>";
+      }
+
+    }
+  }
+  // For suggested items checking solr has connected.
+  // checking the admin setting is enabled or not.
+  if (variable_get('enable_fwsearch_auto_suggested', FALSE) && ti_amg_fwrd_search_test_solr()) {
+    // Loading Search API server.
+    $server = search_api_server_load('editorial_search');
+    $solr = new SearchApiSolrService($server);
+    // Loading Foodandwine Search Index.
+    $index = search_api_index_load("foodandwine_search");
+    $query = new SearchApiQuery($index);
+    $query->fields(array('title'));
+    $query->condition('status', '1', '=');
+    $query->condition('title', '%' . $string . '%', 'like');
+    $query->range(0, 3);
+    $query->keys($string);
+    $query->sort('published_at', 'DESC');
+    $content_type_filter = $query->createFilter('OR');
+    $content_type_filter->condition('type', 'blog', '=');
+    $content_type_filter->condition('type', 'recipe', '=');
+    $content_type_filter->condition('type', 'gallery', '=');
+    $content_type_filter->condition('type', 'article', '=');
+    $content_type_filter->condition('type', 'video', '=');
+    $content_type_filter->condition('type', 'category', '=');
+    $query->filter($content_type_filter);
+    $result = $solr->search($query);
+    // If any results found.
+    if (!empty($result['results'])) {
+      $search_api_solr_response = $result['search_api_solr_response'];
+      $hilighted_titles = $search_api_solr_response->highlighting;
+      $result_docs = $search_api_solr_response->response->docs;
+      $loop = 0;
+      $matches["<a class='unlink' href='#'>Suggested Items:</a>"] = "<a href='#' class='unlink' onclick='return false;'>Suggested Items:</a>";
+      foreach ($hilighted_titles as $item) {
+        $title = $item->tm_title[0];
+        $alias = drupal_get_path_alias('node/' . $result_docs[$loop]->item_id);
+        $path = $base_url . '/' . $alias;
+        $image_path = file_create_url($result_docs[$loop]->ts_item_image);
+        $image_markup = theme('html_tag', array(
+          'element' => array(
+            '#tag' => 'img',
+            '#attributes' => array(
+              'src' => $image_path,
+              //'width' => 50,
+              //'height' => 50,
+            ),
+            '#value' => '',
+          ),
+        ));
+        $suggested_image = theme('html_tag', array(
+          'element' => array(
+            '#tag' => 'span',
+            '#attributes' => array(
+              'class' => 'suggested_image',
+            ),
+            '#value' => $image_markup,
+          ),
+        ));
+
+        $suggested_title = theme('html_tag', array(
+         'element' => array(
+           '#tag' => 'span',
+           '#attributes' => array(
+             'class' => 'suggested_title',
+            ),
+            '#value' => $title,
+          ),
+        ));
+        $autosuggested_item = theme('html_tag', array(
+          'element' => array(
+            '#tag' => 'a',
+            '#attributes' => array(
+             'class' => 'suggested_item',
+             'href' => $path,
+            ),
+           '#value' => $suggested_image . $suggested_title,
+          ),
+        ));
+        ++$loop;
+        $matches[$autosuggested_item] = $autosuggested_item;
+      }
+    }
+  }
+
+  return $matches;
+}
+
+/**
+ * To test solr connection.
+ */
+function ti_amg_fwrd_search_test_solr() {
+  $server = search_api_server_load('editorial_search');
+  $solr = new SearchApiSolrService($server);
+  $ping_result = $solr->ping();
+  if ($ping_result) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Implements hook_search_api_solr_documents_alter().
+ */
+function ti_amg_fwrd_search_search_api_solr_documents_alter(array &$documents, SearchApiIndex $index, array $items) {
+  global $conf;
+  $style_name = '50x50';
+  foreach ($documents as $document) {
+
+    $type = $document->getField('ss_type');
+    if ($type['value'] != 'image') {
+      $image_path = 'public://recipe-placeholder.gif';
+    }
+    if ($type['value'] == 'blog' || $type['value'] == 'recipe' || $type['value'] == 'article') {
+      if ($document->__isset('is_field_images')) {
+        $item_id = $document->getField('is_field_images');
+        $image_nid = $item_id['value'];
+        $fid = db_select('field_data_field_image', 'i')->fields('i', array('field_image_fid'))->condition('entity_type', 'node', '=')->condition('entity_id', $image_nid, '=')->execute()->fetchField();
+        if (!empty($fid)) {
+          $image_path = file_load($fid)->uri;
+        }
+      }
+    }
+    if ($type['value'] != 'image') {
+      if (!empty($image_path)) {
+        $image_style_uri = image_style_path($style_name, $image_path);
+        $image_url = preg_replace('/(public:\/\/)/', $conf['securepages_basepath'] . '/sites/default/files/', $image_style_uri);
+        $document->setField('ts_item_image', $image_url);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_search_api_solr_query_alter().
+ */
+function ti_amg_fwrd_search_search_api_solr_query_alter(array &$call_args, SearchApiQueryInterface $query) {
+  $call_args['params']['fl'] = $call_args['params']['fl'] . ',ts_item_image, tm_title';
+  $call_args['params']['hl'] = 'true';
+}

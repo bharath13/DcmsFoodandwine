@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the FoodandWine DCMS Video Taxonomy feature.
+ */
+
+include_once 'ti_video_taxonomy.features.inc';

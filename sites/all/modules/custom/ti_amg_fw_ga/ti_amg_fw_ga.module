@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * ti_amg_fw_ga.module
+ */
+
+/**
+ * Implements template_preprocess_html().
+ */
+function ti_amg_fw_ga_preprocess_html(&$variables) {
+  global $base_url;
+  $variables['ga_script'] = "";
+  if (!path_is_admin(current_path())) {
+    if ($base_url === 'http://www.foodandwine.com' || $base_url === 'http://new-www.foodandwine.com') {
+      $ga_tracking_id = variable_get('fw_prd_ga_tracking_id', 'UA-16887117-1');
+    }
+    else {
+      $ga_tracking_id = variable_get('fw_qa_ga_tracking_id', 'UA-16887117-1');
+    }
+    $variables['ga_script'] = "<script type='text/javascript'>
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', '" . $ga_tracking_id . "']);
+_gaq.push(['_trackPageview']);
+(function() {
+var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script>";
+  }
+}

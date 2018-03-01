@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the FoodandWine DCMS Channel Landing Responsive Content Type feature.
+ */
+
+include_once 'ti_channel_landing_responsive_content_type.features.inc';

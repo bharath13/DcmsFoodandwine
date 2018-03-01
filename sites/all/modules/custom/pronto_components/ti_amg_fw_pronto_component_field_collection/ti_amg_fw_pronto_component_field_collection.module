@@ -1,0 +1,160 @@
+<?php
+
+/*
+ * @file
+ * Gallery Slides field collection field formatter for pronto component.
+ */
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function ti_amg_fw_pronto_component_field_collection_field_formatter_info() {
+  return array(
+    'pronto_component_field_collection_slide_fields' => array(
+      'label' => t('Pronto Component : Slides field collection'),
+      'field types' => array('field_collection'),
+    ),
+    'pronto_component_field_collection_recipe_directions' => array(
+      'label' => t('Pronto Component : Recipe Directions Field Collection'),
+      'field types' => array('field_collection'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function ti_amg_fw_pronto_component_field_collection_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $pronto_component = $pronto_component_figure = $pronto_component_video = array();
+  $pronto_component['weight'] = (double) $display['weight'];
+  switch ($display['type']) {
+    case 'pronto_component_field_collection_slide_fields':
+      // Check if entity reference field is not empty to fetch the slide data.
+      $entity_items = field_get_items('node', $entity, 'field_multiple_images');
+      if (!empty($entity_items)) {
+        return;
+      }
+      else {
+        foreach ($items as $delta => $item) {
+          if ($field_collection = field_collection_field_get_entity($item)) {
+            if ($items = field_get_items('field_collection_item', $field_collection, 'field_slide_image')) {
+              $item = reset($items);
+              $image_node = node_load($item['target_id']);
+              $slides_data = $figure_data = array();
+
+              //Pronto Component Slide Title.
+              $title = _get_entity_field_data('field_collection_item', $field_collection, 'field_slide_title', 'pronto_inline_html');
+              if (empty($title)) {
+                $title = _get_entity_field_data('node', $image_node, 'field_headline', 'pronto_inline_html');
+              }
+              !empty($title) ? $slides_data['title'] = $title : "";
+              //Pronto Component Slide Deck.
+              $deck = _get_entity_field_data('field_collection_item', $field_collection, 'field_slide_deck', 'pronto_block_html');
+              if (empty($deck)) {
+                $deck = _get_entity_field_data('node', $image_node, 'field_deck', 'pronto_block_html');
+              }
+              !empty($deck) ? $slides_data['subTitle'] = $deck : "";
+
+              if ('Vertical' == $entity->field_gallery_template[LANGUAGE_NONE][0]['value']) {
+                $slides_data['itemHash'] = pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+                  $slides_data['title']));
+              }
+              else {
+                 $slides_data['itemHash'] = strval($delta + 1);
+              }
+              //Pronto Component Slide Link URL.
+              $slide_link = _get_entity_field_url('field_collection_item', $field_collection, 'field_slide_link_url', 'pronto_inline_html');
+              !empty($slide_link) ? $slides_data['link'] = $slide_link : "";
+              if ($slides_data['link'] != '') {
+                $slides_data['subTitle'] = $slides_data['subTitle'] . '<p><a href="' . $slides_data['link'] . '">GO TO RECIPE</a></p>';
+              }
+              //Pronto Component Figure.
+              //Field Collection Image reference alt, credit & caption overwrite option.
+              $image_alt_text = _get_entity_field_data('field_collection_item', $field_collection, 'field_overwrite_image_alt_text', 'pronto_inline_html');
+              if (empty($image_alt_text)) {
+                $image_alt_text = _get_entity_field_data('node', $image_node, 'field_alt_text', 'pronto_inline_html');
+              }
+              !empty($image_alt_text) ? $figure_data['alt'] = $image_alt_text : "";
+
+              $image_credit = _get_entity_field_data('field_collection_item', $field_collection, 'field_overwrite_image_credit', 'pronto_inline_html');
+              if (empty($image_credit)) {
+                $image_credit = _get_entity_field_data('node', $image_node, 'field_credit', 'pronto_inline_html');
+              }
+              !empty($image_credit) ? $figure_data['credit'] = $image_credit : "";
+
+              //Image fallback logic
+              $imagedata = _get_entity_field_data('node', $image_node, 'field_large_image');
+              if (empty($imagedata)) {
+                $imagedata = _get_entity_field_data('node', $image_node, 'field_image');
+              }
+              if (!empty($imagedata)) {
+                $figure_data['width'] = $imagedata['width'];
+                $figure_data['height'] = $imagedata['height'];
+                $figure_data['src'] = file_create_url($imagedata['uri']);
+              }
+              if (!empty($figure_data['src'])) {
+                $pronto_component_figure['type'] = "components/article/figure";
+                $pronto_component_figure['version'] = 1;
+                $pronto_component_figure['data'] = $figure_data;
+                $slides_data['data'][] = $pronto_component_figure;
+                $slides[] = $slides_data;
+              }
+            }
+          }
+        }
+      }
+      if (!empty($slides)) {
+        $pronto_component['type'] = "components/gallery/slides";
+        $pronto_component['version'] = 1;
+        $pronto_component['data']['slides'] = $slides;
+      }
+      break;
+    case 'pronto_component_field_collection_recipe_directions':
+          $instructions = _ti_amg_fwrd_custom_instructions($entity);
+          $steps = array();
+          if (!empty($instructions)) {
+            foreach($instructions as $instruction) {
+              $step = !empty($instruction['title']) ? $instruction['title'] : '';
+              $step .= !empty($instruction['content']['#markup']) ? $instruction['content']['#markup'] : '';
+              $steps[] = check_markup($step, 'pronto_block_html');
+            }
+            $pronto_component['type'] = "components/recipe/steps";
+            $pronto_component['version'] = 1;
+            $pronto_component['data']['steps'] = $steps;
+          }
+      break;
+  }
+  if ($pronto_component) {
+    $entity->json_elements[] = $pronto_component;
+  }
+}
+
+/*
+* Helper function to get fields data via field_get_items().
+*
+*/
+
+function _get_entity_field_data($entity_type, $entity_object, $field_name, $markup = NULL) {
+  $items = $output = array();
+  $fielddata = field_get_items($entity_type, $entity_object, $field_name);
+  $items = reset($fielddata);
+  if ($field_name == 'field_large_image' || $field_name == 'field_image') {
+    return $items;
+  }
+  if (!empty($markup)) {
+    $output = check_markup($items['value'], $markup);
+  }
+
+  return $output;
+}
+
+function _get_entity_field_url($entity_type, $entity_object, $field_name, $markup = NULL) {
+  $items = $output = array();
+  $fielddata = field_get_items($entity_type, $entity_object, $field_name);
+  $items = reset($fielddata);
+  if (!empty($markup)) {
+    $output = check_markup($items['url'], $markup);
+  }
+
+  return $output;
+}

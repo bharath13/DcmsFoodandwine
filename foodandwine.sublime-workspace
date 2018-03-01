@@ -1,0 +1,2399 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"upda",
+				"updateHeight"
+			],
+			[
+				"is",
+				"isOpen"
+			],
+			[
+				"offs",
+				"offset_top"
+			],
+			[
+				"pon",
+				"phoneNumber"
+			],
+			[
+				"ass",
+				"asset_path"
+			],
+			[
+				"sy",
+				"symbol"
+			],
+			[
+				"s",
+				"symbol"
+			],
+			[
+				"module",
+				"module_name"
+			],
+			[
+				"modu",
+				"module_name"
+			],
+			[
+				"js-co",
+				"js-component-initialized"
+			],
+			[
+				"ba",
+				"background-size"
+			],
+			[
+				"or",
+				"originalRecipeArr"
+			],
+			[
+				"bin",
+				"bindingContext"
+			],
+			[
+				"bind",
+				"bindingHandlers"
+			],
+			[
+				"sev",
+				"serviceCountTarget"
+			],
+			[
+				"res",
+				"resultObj"
+			],
+			[
+				"serv",
+				"serviceCountTarget"
+			],
+			[
+				"servic",
+				"services"
+			],
+			[
+				"servi",
+				"services"
+			],
+			[
+				"ser",
+				"serviceCountTargets"
+			],
+			[
+				"ob_fl",
+				"ob_get_flush"
+			],
+			[
+				"ob_getC",
+				"ob_get_contents"
+			],
+			[
+				"json_",
+				"json_encode"
+			],
+			[
+				"recipes",
+				"recipesConfig"
+			],
+			[
+				"act",
+				"activeRecipe"
+			],
+			[
+				"acti",
+				"activeRecipeIndex"
+			],
+			[
+				"rec",
+				"recipes"
+			],
+			[
+				"recp",
+				"recipes"
+			],
+			[
+				"re",
+				"recipes"
+			],
+			[
+				"init",
+				"initialRecipeIndex"
+			],
+			[
+				"aft",
+				"afterChangeHandler"
+			],
+			[
+				"recip",
+				"recipesConfig"
+			],
+			[
+				"hov",
+				"recipeHovered"
+			],
+			[
+				"ne",
+				"nextBtn"
+			],
+			[
+				"cur",
+				"currentHoveredBtn"
+			],
+			[
+				"cent",
+				"centerMode"
+			],
+			[
+				"margin",
+				"margin-left"
+			],
+			[
+				"margin-",
+				"margin-right"
+			],
+			[
+				"texta",
+				"text-align"
+			],
+			[
+				"function",
+				"function_exists"
+			],
+			[
+				"ingrediet",
+				"ingredient_item"
+			],
+			[
+				"WP_Qu",
+				"WP_Query"
+			],
+			[
+				"wp_enque_s",
+				"wp_enqueue_style"
+			],
+			[
+				"wp_send_jso",
+				"wp_send_json_success"
+			],
+			[
+				"get_template_",
+				"get_template_directory_uri"
+			],
+			[
+				"wp_en",
+				"wp_enqueue_script"
+			],
+			[
+				"functi",
+				"function_exists"
+			],
+			[
+				"url",
+				"urlencode"
+			],
+			[
+				"mod",
+				"modules_dir"
+			],
+			[
+				"file",
+				"filename"
+			],
+			[
+				"opt",
+				"optgroup	<optgroup>"
+			],
+			[
+				"acsec",
+				"activeSection"
+			],
+			[
+				"array_key",
+				"array_key_exists"
+			],
+			[
+				"backgr",
+				"background-position"
+			],
+			[
+				"padding",
+				"padding-bottom"
+			],
+			[
+				"brow",
+				"browserSync"
+			],
+			[
+				"promp",
+				"prompts"
+			],
+			[
+				"prom",
+				"prompts"
+			],
+			[
+				"rege",
+				"registerTask"
+			],
+			[
+				"sitem",
+				"site-menu-open"
+			],
+			[
+				"arch",
+				"archiveToggle"
+			],
+			[
+				"toggle",
+				"toggleMenu"
+			],
+			[
+				"var",
+				"var_dump"
+			],
+			[
+				"loop",
+				"loop_start"
+			],
+			[
+				"compan",
+				"company_lists"
+			],
+			[
+				"don",
+				"donor_list_chunked"
+			],
+			[
+				"donated_",
+				"donated_100k"
+			],
+			[
+				"ten",
+				"tenThousandFeet"
+			],
+			[
+				"projest",
+				"projectState"
+			],
+			[
+				"code",
+				"codebaseRequest"
+			],
+			[
+				"ti",
+				"ticketId"
+			],
+			[
+				"est",
+				"estimateName"
+			],
+			[
+				"get_he",
+				"get_header"
+			],
+			[
+				"ob",
+				"observable"
+			],
+			[
+				"tick",
+				"tickets"
+			],
+			[
+				"e",
+				"estimateType"
+			],
+			[
+				"proj",
+				"projectName"
+			],
+			[
+				"base_",
+				"base64_encode"
+			],
+			[
+				"reque",
+				"request_headers"
+			],
+			[
+				"Tok",
+				"API_TOKEN"
+			],
+			[
+				"Th",
+				"TenThousandFeetProjectService"
+			],
+			[
+				"swapL",
+				"swapLevel"
+			],
+			[
+				"obs",
+				"observableArray"
+			],
+			[
+				"level",
+				"levels"
+			],
+			[
+				"get",
+				"getConfigDisplay"
+			],
+			[
+				"adR",
+				"adRefreshTimer"
+			],
+			[
+				"Url",
+				"URLHashUpdater"
+			],
+			[
+				"curr",
+				"currentPainPoint"
+			],
+			[
+				"sel",
+				"selectedPainPoint"
+			],
+			[
+				"vidcom",
+				"videoCompleteResponse"
+			],
+			[
+				"joi",
+				"joint_id"
+			],
+			[
+				"qu",
+				"question"
+			],
+			[
+				"sur",
+				"survey_id"
+			],
+			[
+				"did",
+				"didAllVideosHurt"
+			],
+			[
+				"pale",
+				"grey-pale-med"
+			],
+			[
+				"di",
+				"difficulty"
+			],
+			[
+				"diff",
+				"difficulty"
+			],
+			[
+				"val",
+				"valueSelected"
+			],
+			[
+				"cu",
+				"currentQuestion"
+			],
+			[
+				"que",
+				"questions"
+			],
+			[
+				"ins",
+				"instructor_id"
+			],
+			[
+				"ko",
+				"kocb	Knockout Custom Binding"
+			],
+			[
+				"value",
+				"valueAccessor"
+			],
+			[
+				"has_post",
+				"has_post_thumbnail"
+			],
+			[
+				"sizzle",
+				"sizzle-reel"
+			],
+			[
+				"get_qu",
+				"get_queried_object_id"
+			],
+			[
+				"moreTe",
+				"moreTextHeight"
+			],
+			[
+				"out",
+				"outerHeight"
+			],
+			[
+				"font-kno",
+				"font-knowledge-regular"
+			],
+			[
+				"case",
+				"case_studies"
+			],
+			[
+				"events",
+				"events_query"
+			],
+			[
+				"addthem",
+				"add_theme_support"
+			],
+			[
+				"register_post",
+				"register_post_type	Register Post Type All Options"
+			],
+			[
+				"add_theme",
+				"add_theme_support"
+			],
+			[
+				"template",
+				"template_directory"
+			],
+			[
+				"exp",
+				"expandedHeight"
+			],
+			[
+				"expand",
+				"expandedWidth"
+			],
+			[
+				"_h",
+				"_handleMenuToggleClick"
+			],
+			[
+				"rev",
+				"reversedMenuItems"
+			],
+			[
+				"metog",
+				"menuToggleBtn"
+			],
+			[
+				"contswr",
+				"contentSolutionWrapper"
+			],
+			[
+				"Con",
+				"ContentSoltionMediator"
+			],
+			[
+				"rel",
+				"related"
+			],
+			[
+				"ow",
+				"owlCarousel"
+			],
+			[
+				"component",
+				"component-gutter"
+			],
+			[
+				"brand-",
+				"brand-primary"
+			],
+			[
+				"Slid",
+				"SlideInfoContainer"
+			],
+			[
+				"text",
+				"text-transform"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/header.php",
+			"settings":
+			{
+				"buffer_size": 738,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/modules/header.tpl.php",
+			"settings":
+			{
+				"buffer_size": 4163,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/assets/js/src/modules/mainMenu.js",
+			"settings":
+			{
+				"buffer_size": 2762,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/assets/js/src/lib/matchMedia.js",
+			"settings":
+			{
+				"buffer_size": 186,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/assets/js/src/main.js",
+			"settings":
+			{
+				"buffer_size": 691,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/assets/js/src/vendor/fastclick.min.js",
+			"settings":
+			{
+				"buffer_size": 9102,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/webpack.config.js",
+			"settings":
+			{
+				"buffer_size": 1315,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/modules/pagination-arrow.tpl.php",
+			"settings":
+			{
+				"buffer_size": 289,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_main-menu.scss",
+			"settings":
+			{
+				"buffer_size": 4556,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_site-header.scss",
+			"settings":
+			{
+				"buffer_size": 3252,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_base.scss",
+			"settings":
+			{
+				"buffer_size": 1632,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_helpers.scss",
+			"settings":
+			{
+				"buffer_size": 1420,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_footer.scss",
+			"settings":
+			{
+				"buffer_size": 1749,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 266.0,
+		"last_filter": "wrap",
+		"selected_items":
+		[
+			[
+				"wrap",
+				"HTML: Wrap Selection With Tag"
+			],
+			[
+				"php",
+				"Set Syntax: PHP"
+			],
+			[
+				"rein",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"rei",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"rin",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"re",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"redin",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"reind",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"ren",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"word",
+				"Word Wrap: Toggle"
+			],
+			[
+				"listp",
+				"Package Control: List Packages"
+			],
+			[
+				"renin",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"prett",
+				"Pretty JSON: Format (Pretty Print) JSON"
+			],
+			[
+				"json",
+				"Set Syntax: JSON"
+			],
+			[
+				"list",
+				"Package Control: List Packages"
+			],
+			[
+				"js",
+				"Set Syntax: JavaScript"
+			],
+			[
+				"indent",
+				"Auto indent"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"xml",
+				"Pretty JSON: JSON 2 XML"
+			],
+			[
+				"format",
+				"Pretty JSON: Format (Pretty Print) JSON"
+			],
+			[
+				"diable",
+				"Package Control: Disable Package"
+			],
+			[
+				"disable",
+				"Package Control: Disable Package"
+			],
+			[
+				"convert",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"brow",
+				"Preferences: Browse Packages"
+			],
+			[
+				"renam",
+				"ANF: Rename File"
+			],
+			[
+				"rename",
+				"ANF: Rename File"
+			],
+			[
+				"upper",
+				"Convert Case: Upper Case"
+			],
+			[
+				"css",
+				"Set Syntax: CSS"
+			],
+			[
+				"html",
+				"Set Syntax: HTML"
+			],
+			[
+				"less",
+				"Set Syntax: LESS"
+			],
+			[
+				"enabl",
+				"Package Control: Enable Package"
+			],
+			[
+				"phpbl",
+				"Set Syntax: PHP - Laravel Blade"
+			],
+			[
+				"blad",
+				"Set Syntax: PHP - Laravel Blade"
+			],
+			[
+				"setbl",
+				"Set Syntax: PHP - Laravel Blade"
+			],
+			[
+				"disal",
+				"Package Control: Disable Package"
+			],
+			[
+				"packa",
+				"Package Control: Install Package"
+			],
+			[
+				"con",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"up",
+				"Convert Case: Upper Case"
+			],
+			[
+				"upp",
+				"Convert Case: Upper Case"
+			],
+			[
+				"ejs",
+				"Set Syntax: EJS (<% and %>)"
+			],
+			[
+				"title",
+				"Convert Case: Title Case"
+			],
+			[
+				"uppe",
+				"Convert Case: Upper Case"
+			],
+			[
+				"disa",
+				"Package Control: Disable Package"
+			],
+			[
+				"tit",
+				"Convert Case: Title Case"
+			],
+			[
+				"case",
+				"Convert Case: Title Case"
+			],
+			[
+				"spac",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"ena",
+				"Package Control: Enable Package"
+			],
+			[
+				"di",
+				"Package Control: Disable Package"
+			],
+			[
+				"lower",
+				"Convert Case: Lower Case"
+			],
+			[
+				"java",
+				"Set Syntax: JavaScript"
+			],
+			[
+				"enable",
+				"Package Control: Enable Package"
+			],
+			[
+				"twig",
+				"Set Syntax: HTML (Twig)"
+			],
+			[
+				"enab",
+				"Package Control: Enable Package"
+			],
+			[
+				"pretty",
+				"Pretty JSON: Reformat (Pretty Print) JSON"
+			],
+			[
+				"emmet",
+				"Emmet: Rename Tag"
+			],
+			[
+				"tabs",
+				"Indentation: Convert to Tabs"
+			],
+			[
+				"tab",
+				"Indentation: Convert to Tabs"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"enal",
+				"Package Control: Enable Package"
+			],
+			[
+				"pack",
+				"Package Control: Remove Package"
+			],
+			[
+				"newfi",
+				"File: New View into File"
+			],
+			[
+				"jasc",
+				"Set Syntax: JavaScript"
+			],
+			[
+				"markdown",
+				"Set Syntax: Markdown"
+			],
+			[
+				"javs",
+				"Set Syntax: JavaScript"
+			],
+			[
+				"csscom",
+				"Sort via CSScomb"
+			],
+			[
+				"isntal",
+				"Package Control: Install Package"
+			],
+			[
+				"insal",
+				"Package Control: Install Package"
+			],
+			[
+				"javas",
+				"Set Syntax: JavaScript"
+			]
+		],
+		"width": 583.0
+	},
+	"console":
+	{
+		"height": 661.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = 'eb2297e1a458f27d836c04bb0cbaf282' + 'd0e7a3098092775ccb37ca9d6b2e4b7d'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)",
+			"view.methods",
+			"view",
+			"print (view.syntax_name(view.sel()[0].b))",
+			"scope",
+			"window.scope",
+			"window",
+			"import urllib.request,os; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); open(os.path.join(ipp, pf), 'wb').write(urllib.request.urlopen( 'http://sublime.wbond.net/' + pf.replace(' ','%20')).read())"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Users/ryan.ogden/dcms/fooandwine",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/_static_site",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/vendor",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass"
+	],
+	"file_history":
+	[
+		"/Users/ryan.ogden/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/recipe.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/footer.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/modules/sideDrawerMenu.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_side-drawer-menu.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/recipe/recipe-carousel.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_recipe.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_mixins.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_helpers.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_base.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_colors.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_font-face.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_forms.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_functions.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/img/spritemap.svg",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_breakpoints.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/css/main.css",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/foodandwine/less/footer.less",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/main.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/main.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/node_modules/jquery-mask-plugin/dist/jquery.mask.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/modules/recipeSendToPhone.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/recipe/recipe-send-to-phone.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/recipeHtmlBinding.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/_static_site/mocks/recipe-ajax-response.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/modules/custom/ti_amg_fwrd_recipe/templates/modules/rating-stars.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/modules/custom/ti_amg_fwrd_recipe/templates/modules/social-share.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/templates/page--recipe.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/templates/node.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/modules/custom/ti_amg_fwrd_recipe/templates/modules/svg/pagination-arrow.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/templates/node--recipe.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/lib/allowBindingsBinding.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/webpack.config.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_social-share.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_rating-stars.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_recipe-carousel.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/footer.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/rating-stars.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/header.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/_static_site/lib/static-helpers.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/foodandwine/templates/node--recipe.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/modules/custom/ti_amg_fw_page_sharing_social/ti_amg_fw_social_media_sharing.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/built/vendor.bundle.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/pagination-arrow.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/social-share.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/index.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/recipeCarouselBinding.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/recipeViewModel.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/built/main.bundle.js",
+		"/Users/ryan.ogden/.profile",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/lib/componentRegistry.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/modules/socialShare.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/legacyImageBinding.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/node_modules/grunt/node_modules/iconv-lite/encodings/gbk.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/recipeFetcher.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/story-card.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/modules/custom/content_types/DCMS/ti_recipe_content_type/js/recipe_page.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/js/src/modules/recipe/recipeCarousel.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/recipe/recipe-notes.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_recipe-notes.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/Gruntfile.js",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/recipe/ingredients-list.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/modules/custom/ti_amg_fw_custom/ti_amg_fw_custom.module",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/__modules.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/modules/custom/ti_amg_fwrd_custom/ti_amg_fwrd_custom.module",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/modules/custom/ti_amg_fwrd_custom/ti_amg_fwrd_custom_smart_share.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/layouts/__layouts.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/svg/pagination-arrow.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_story-card.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/layouts/_grid.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/layouts/_page.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_headings.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_breadcrumbs.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/node_modules/slick-carousel/slick/slick.js",
+		"/Users/ryan.ogden/dcms/fooandwine/README.md",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/README.md",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_tag-set.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_steps-list.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/breadcrumbs.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/recipe/steps-list.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/recipe/suggested-pairing.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/layouts/_two-col.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_ingredients-list.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/template.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_suggested-pairing.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/foodandwine.sublime-project",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_ryans-module.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_variables.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_settings.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/tag-set.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_reid-hitt.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_ingredient-list.scss",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/recipe/recipe-details.tpl.php",
+		"/Users/ryan.ogden/dcms/fooandwine/sites/all/themes/fwresponsive/rdtemplate/modules/recipe/instruction-steps.tpl.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/themes/troegs/functions/post-types/sampler-pack.php",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/assets/js/src/modules/selectElementNav.js",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/themes/troegs/templates/beer-menu-page-tmpl.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp/wp-includes/post-template.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp/wp-includes/post.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/.env",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/themes/troegs/functions/init.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/themes/troegs/single-beer.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/plugins/advanced-custom-fields-pro/forms/post.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp/wp-includes/functions.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/themes/troegs/functions/lib/benchpress/utils.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/plugins/theme-file-select/theme-file-select.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/themes/troegs/functions/admin/beer/beer-list-on-tap-column.css",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp/wp-admin/js/media-gallery.js",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/themes/troegs/functions/admin/beer/beer-list-on-tap-column.php",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/wp-content/themes/troegs/functions/lib/admin/class-custom-list-table-column.php",
+		"/Users/ryan.ogden/Desktop/Honda.txt",
+		"/Users/ryan.ogden/.grunt-init/etr-wordpress/template.js",
+		"/Users/ryan.ogden/ETR/Projects/Sites/Troegs - Website/.git/config",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/assets/sass/modules/_ranking-list.scss",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/static_site/worlds-best/worlds-best-list-page-generator.php",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/assets/sass/_mixins.scss",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/assets/sass/modules/_headings.scss",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/assets/sass/modules/_social-share.scss",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/assets/sass/layouts/_top-list.scss",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/static_site/worlds-best/worlds-best-data-transformer.php",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/static_site/worlds-best-list.php",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/static_site/worlds-best-landing.php",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/static_site/node--top-list.tpl.php",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/assets/js/src/modules/topListPage.js",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/assets/sass/modules/_ranking-table.scss",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/static_site/worlds-best/html/3.html",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/node--genericpage.tpl.php",
+		"/Users/ryan.ogden/dcms/travelandleisure/src/sites/all/themes/tnl_redesign/templates/etr/modules/accordion-nav.tpl.php"
+	],
+	"find":
+	{
+		"height": 37.0
+	},
+	"find_in_files":
+	{
+		"height": 105.0,
+		"where_history":
+		[
+			"*.php",
+			"*",
+			"*.php",
+			"*.js",
+			"*.php",
+			"*.scss",
+			"*.less",
+			"*.scss",
+			"*.php",
+			"*.js",
+			"*.scss",
+			"*.less",
+			"*.ejs",
+			"*.less",
+			"*.ejs",
+			"*.less",
+			"*.ejs",
+			"*.less",
+			"*.js",
+			"*.less",
+			"*.js",
+			"*.php",
+			"",
+			"*.php",
+			"*.less",
+			"*.php",
+			"*.less",
+			"*.js",
+			"*.less",
+			"*.php",
+			"*.less",
+			"*.twig",
+			"*.js",
+			"*.php",
+			"*.less",
+			"*.php",
+			"",
+			"*.php",
+			"*.html.twig",
+			"*less",
+			"",
+			"web/assets/js/src/**/*.js",
+			"*.html.twig",
+			"*.js",
+			"*.html.twig",
+			"web/assets/**/*.js",
+			"*.html.twig",
+			"web/assets/**/*.js",
+			"*/assets/**/*.js",
+			"*.js",
+			"*.html.twig",
+			"*.html.less",
+			"*.php",
+			"*.html.twig",
+			"*.less",
+			"*.html.twig",
+			"*.less",
+			"*.js",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"*.less",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"*.less",
+			"*.html.twig",
+			"*.less",
+			"*.php",
+			"*.html.twig",
+			"*.js",
+			"*.php",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"*.html.twig, *.less",
+			"*.html.twig",
+			"*.less",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"*.php",
+			"*.html.twig",
+			"web/assets/**/*.js",
+			"*.js",
+			"*.php",
+			"*.html.twig",
+			"*.less",
+			"*.tpl",
+			"*.js",
+			"",
+			"*.js",
+			"*.html.twig",
+			"*.less",
+			"*.html.twig",
+			"",
+			"*.less",
+			"*.php",
+			"",
+			"node_modules/**, .git/**",
+			"node_modules, .git",
+			"*.less",
+			"*.html.twig",
+			"*.less",
+			"-node_modules/**",
+			"",
+			"*.twig",
+			"",
+			"*.less",
+			"",
+			"*.html.twig",
+			"*.less",
+			"*.html.twig",
+			"*.less",
+			".less",
+			"",
+			"*.js",
+			"*.twig"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"class=\"links\"",
+			"column-title",
+			"link-column",
+			"span",
+			"30",
+			"site-nav",
+			"dropdown",
+			"path_to_theme('",
+			"require",
+			"knockout",
+			"share-bar",
+			"print",
+			"recipe/",
+			"http://www.foodandwine.com/",
+			"icons-sprite.svg",
+			"function path_to_theme",
+			"width=\"30\" height=\"30\" ",
+			"18px",
+			"40",
+			"100",
+			"\"",
+			"rating",
+			"activeSlideIndex",
+			"getRecipeByIndex",
+			"\"url\"",
+			"\"title\"",
+			"title",
+			"id",
+			"ing_content",
+			"suggested-pairing",
+			"share_text",
+			"ti_amg_fwrd_custom_smart_share",
+			"'.slick-active'",
+			"1760px",
+			"story-card--secondary",
+			"144",
+			"div",
+			"20px",
+			"div",
+			"ingredient",
+			"2px",
+			"ing_content",
+			"function get_post(",
+			"function the_content(",
+			"function get_the_content(",
+			"get_the_content(",
+			"get_the_content",
+			"view_model",
+			"Backbone",
+			"image_caption",
+			"Finger",
+			"title-card",
+			"pagination.php",
+			"knockout-tag-set",
+			"slideshow-fullscreen",
+			"ext-content-sm",
+			"ext-content-lg",
+			"ext-content-item.php",
+			"basic-pagination",
+			"search-trigger",
+			"data-js-component",
+			"is-stuck",
+			"width-constrain",
+			"width-constraint",
+			"width-contstraint",
+			"headRoom",
+			"ui-page-pagination",
+			"ui-page",
+			"byline",
+			"link",
+			"links",
+			"static-helpers",
+			"src",
+			"=\"",
+			"visibleItemCount",
+			"onScrollHan",
+			"scroll",
+			"onScroll",
+			"posts",
+			"base-font-color",
+			"and up",
+			"down",
+			"min-width",
+			"$base-font-color",
+			"$heading-color-primary",
+			"blue",
+			"pink",
+			"ping",
+			"@",
+			"@z",
+			"select",
+			"School",
+			"width",
+			"app-store-link",
+			"tout-slider",
+			".tout-slider",
+			"section-logo",
+			"cont",
+			"viewArch",
+			"target_id",
+			"services-nav",
+			"target_id",
+			"content-tabs",
+			"href",
+			".media-meta",
+			"media-meta",
+			".media-meta",
+			".header",
+			".section-sub-hd",
+			"../canvas-assets",
+			"top",
+			"style",
+			"dynamic",
+			"flexSlider",
+			"min-height",
+			"calc",
+			"nav",
+			"flexAnimate",
+			"Searching",
+			"flexAnimate",
+			"archive-tout",
+			"math",
+			"modal",
+			"fine-print",
+			"\\.col \\{",
+			"\\.col {",
+			".col",
+			".slider"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"footer__column__title",
+			"main-menu",
+			"spritemap.svg",
+			"story-card--related",
+			"$",
+			"$z",
+			"canvas-assets",
+			"\"",
+			"Hobbies, Play, Recreation",
+			"\\n",
+			"2nd Edition",
+			"Hobbies, Play, Recreation",
+			"'$1',",
+			"'$0',",
+			"",
+			"\\n",
+			"CheckIT",
+			"d3dd00",
+			"mediapartners.jeffersonawards.org",
+			"/views/",
+			"@base-font-size",
+			"@comment",
+			"href=\"/\"",
+			"href=\"/home\"",
+			"_two-col",
+			"* [ ] ",
+			"* [] ",
+			"*"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 2,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/header.php",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 738,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								738,
+								738
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/PHP/PHP.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 12,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/modules/header.tpl.php",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4163,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4056,
+								4056
+							]
+						],
+						"settings":
+						{
+							"open_with_edit": true,
+							"syntax": "Packages/PHP/PHP.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/assets/js/src/modules/mainMenu.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2762,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1811,
+								1811
+							]
+						],
+						"settings":
+						{
+							"open_with_edit": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1435.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/assets/js/src/lib/matchMedia.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 186,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								132,
+								132
+							]
+						],
+						"settings":
+						{
+							"open_with_edit": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/assets/js/src/main.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 691,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								675,
+								675
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/assets/js/src/vendor/fastclick.min.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9102,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								104,
+								104
+							]
+						],
+						"settings":
+						{
+							"open_with_edit": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/webpack.config.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1315,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1109,
+								1109
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 11.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/modules/pagination-arrow.tpl.php",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 289,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								289,
+								140
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/PHP/PHP.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 8,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_main-menu.scss",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4556,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1047,
+								1047
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Syntax Highlighting for Sass/Syntaxes/SCSS.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 3228.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_site-header.scss",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3252,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								717,
+								717
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Syntax Highlighting for Sass/Syntaxes/SCSS.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 364.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_base.scss",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1632,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1553,
+								1553
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Syntax Highlighting for Sass/Syntaxes/SCSS.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1529.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_helpers.scss",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1420,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1082,
+								1082
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Syntax Highlighting for Sass/Syntaxes/SCSS.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 689.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_footer.scss",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1749,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								311,
+								311
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Syntax Highlighting for Sass/Syntaxes/SCSS.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 49.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 36.0
+	},
+	"input":
+	{
+		"height": 39.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.547206125074,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 164.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "foodandwine.sublime-project",
+	"replace":
+	{
+		"height": 70.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"basscss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_base.scss"
+			],
+			[
+				"webp",
+				"sites/all/themes/fwresponsive/rdtemplate/webpack.config.js"
+			],
+			[
+				"utilscss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_helpers.scss"
+			],
+			[
+				"sprmapsv",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/img/spritemap.svg"
+			],
+			[
+				"fontfa",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_font-face.scss"
+			],
+			[
+				"maincss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/css/main.css"
+			],
+			[
+				"footerscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_footer.scss"
+			],
+			[
+				"foo",
+				"sites/all/themes/foodandwine/less/footer.less"
+			],
+			[
+				"sprimap",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/img/spritemap.svg"
+			],
+			[
+				"formsscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_forms.scss"
+			],
+			[
+				"breakpo",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_breakpoints.scss"
+			],
+			[
+				"recipcarou",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/recipe/recipe-carousel.tpl.php"
+			],
+			[
+				"recipphp",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/recipe.php"
+			],
+			[
+				"maincs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/css/main.css"
+			],
+			[
+				"mainsc",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/main.scss"
+			],
+			[
+				"mainjs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/main.js"
+			],
+			[
+				"helperscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_helpers.scss"
+			],
+			[
+				"helprs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_helpers.scss"
+			],
+			[
+				"forms",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_forms.scss"
+			],
+			[
+				"pagarro",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/pagination-arrow.tpl.php"
+			],
+			[
+				"fontfac",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_font-face.scss"
+			],
+			[
+				"mainmenscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_main-menu.scss"
+			],
+			[
+				"heaphp",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/header.php"
+			],
+			[
+				"paginatarrow",
+				"sites/all/modules/custom/ti_amg_fwrd_recipe/templates/modules/svg/pagination-arrow.tpl.php"
+			],
+			[
+				"socishare",
+				"sites/all/modules/custom/ti_amg_fwrd_recipe/templates/modules/social-share.tpl.php"
+			],
+			[
+				"ratingstar",
+				"sites/all/modules/custom/ti_amg_fwrd_recipe/templates/modules/rating-stars.tpl.php"
+			],
+			[
+				"rechtmlb",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/recipeHtmlBinding.js"
+			],
+			[
+				"webc",
+				"sites/all/themes/fwresponsive/rdtemplate/webpack.config.js"
+			],
+			[
+				"basescss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_base.scss"
+			],
+			[
+				"colorssc",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_colors.scss"
+			],
+			[
+				"helpscss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_helpers.scss"
+			],
+			[
+				"sprmapsvg",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/img/spritemap.svg"
+			],
+			[
+				"maibun",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/built/main.bundle.js"
+			],
+			[
+				"webconfi",
+				"sites/all/themes/fwresponsive/rdtemplate/webpack.config.js"
+			],
+			[
+				"reccarousbind",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/recipeCarouselBinding.js"
+			],
+			[
+				"mainbu",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/built/main.bundle.js"
+			],
+			[
+				"recviw",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/recipeViewModel.js"
+			],
+			[
+				"vend",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/built/vendor.bundle.js"
+			],
+			[
+				"noderecip",
+				"sites/all/themes/foodandwine/templates/node--recipe.tpl.php"
+			],
+			[
+				"vendb",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/built/vendor.bundle.js"
+			],
+			[
+				"reicpphp",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/recipe.php"
+			],
+			[
+				"reciviemo",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/recipeViewModel.js"
+			],
+			[
+				"recipindexjs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/index.js"
+			],
+			[
+				"footphp",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/footer.php"
+			],
+			[
+				"ratst",
+				"sites/all/modules/custom/ti_amg_fwrd_recipe/templates/modules/rating-stars.tpl.php"
+			],
+			[
+				"ratinst",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/rating-stars.tpl.php"
+			],
+			[
+				"socialsh",
+				"sites/all/modules/custom/ti_amg_fwrd_recipe/templates/modules/social-share.tpl.php"
+			],
+			[
+				"statiche",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/lib/static-helpers.php"
+			],
+			[
+				"socisharscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_social-share.scss"
+			],
+			[
+				"iconspri",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/img/icons-sprite.svg"
+			],
+			[
+				"socialsha",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/social-share.tpl.php"
+			],
+			[
+				"starscss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_rating-stars.scss"
+			],
+			[
+				"ratins",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/rating-stars.tpl.php"
+			],
+			[
+				"statihel",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/lib/static-helpers.php"
+			],
+			[
+				"paginarro",
+				"sites/all/modules/custom/ti_amg_fwrd_recipe/templates/modules/svg/pagination-arrow.tpl.php"
+			],
+			[
+				"recicarous",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/recipe/recipe-carousel.tpl.php"
+			],
+			[
+				"headphp",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/header.php"
+			],
+			[
+				"foot",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/footer.php"
+			],
+			[
+				"socishjs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/modules/socialShare.js"
+			],
+			[
+				"legacim",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/legacyImageBinding.js"
+			],
+			[
+				"leg",
+				"sites/all/themes/fwresponsive/rdtemplate/node_modules/grunt/node_modules/iconv-lite/encodings/gbk.js"
+			],
+			[
+				"carobindin",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/pages/recipe/recipeCarouselBinding.js"
+			],
+			[
+				"componrej",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/lib/componentRegistry.js"
+			],
+			[
+				"socishajs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/modules/socialShare.js"
+			],
+			[
+				"coponregi",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/lib/componentRegistry.js"
+			],
+			[
+				"storycard",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/story-card.tpl.php"
+			],
+			[
+				"recip",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/recipe/recipe-carousel.tpl.php"
+			],
+			[
+				"web",
+				"sites/all/themes/fwresponsive/rdtemplate/webpack.config.js"
+			],
+			[
+				"socialsharsc",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_social-share.scss"
+			],
+			[
+				"stathelp",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/lib/static-helpers.php"
+			],
+			[
+				"recipjs",
+				"sites/all/modules/custom/content_types/DCMS/ti_recipe_content_type/js/recipe_page.js"
+			],
+			[
+				"reccarou",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/recipe/recipe-carousel.tpl.php"
+			],
+			[
+				"webpack",
+				"sites/all/themes/fwresponsive/rdtemplate/webpack.config.js"
+			],
+			[
+				"reicpsc",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_recipe.scss"
+			],
+			[
+				"mainscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/main.scss"
+			],
+			[
+				"hea",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/header.php"
+			],
+			[
+				"ingrli",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/recipe/ingredients-list.tpl.php"
+			],
+			[
+				"ti_amg_fwrd_custom_smart_share.tpl.php",
+				"sites/all/modules/custom/ti_amg_fwrd_custom/ti_amg_fwrd_custom_smart_share.tpl.php"
+			],
+			[
+				"ti_amg_fwrd_custom",
+				"~/dcms/fooandwine/sites/all/modules/custom/ti_amg_fwrd_custom/ti_amg_fwrd_custom_smart_share.tpl.php"
+			],
+			[
+				"breakp",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_breakpoints.scss"
+			],
+			[
+				"paginar",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/svg/pagination-arrow.tpl.php"
+			],
+			[
+				"fonfac",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_font-face.scss"
+			],
+			[
+				"pagescs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/layouts/_page.scss"
+			],
+			[
+				"break",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_breakpoints.scss"
+			],
+			[
+				"recipecarous",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_recipe-carousel.scss"
+			],
+			[
+				"compregis",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/js/src/lib/componentRegistry.js"
+			],
+			[
+				"ehaderphp",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/header.php"
+			],
+			[
+				"suggep",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/recipe/suggested-pairing.tpl.php"
+			],
+			[
+				"breadcruscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_breadcrumbs.scss"
+			],
+			[
+				"fonf",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_font-face.scss"
+			],
+			[
+				"colorsscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_colors.scss"
+			],
+			[
+				"recipscss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_recipe.scss"
+			],
+			[
+				"heading",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_headings.scss"
+			],
+			[
+				"breakpoin",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_breakpoints.scss"
+			],
+			[
+				"recipephp",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/recipe.php"
+			],
+			[
+				"gruntfi",
+				"sites/all/themes/fwresponsive/rdtemplate/Gruntfile.js"
+			],
+			[
+				"customsmarsh",
+				"sites/all/modules/custom/ti_amg_fwrd_custom/ti_amg_fwrd_custom_smart_share.tpl.php"
+			],
+			[
+				"breacscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_breadcrumbs.scss"
+			],
+			[
+				"stepslist",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_steps-list.scss"
+			],
+			[
+				"inglisc",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_ingredients-list.scss"
+			],
+			[
+				"ing",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/recipe/ingredients-list.tpl.php"
+			],
+			[
+				"headerphp",
+				"sites/all/themes/fwresponsive/rdtemplate/_static_site/templates/layout/header.php"
+			],
+			[
+				"ratsarscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_rating-stars.scss"
+			],
+			[
+				"basscs",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_base.scss"
+			],
+			[
+				"stepsli",
+				"sites/all/themes/fwresponsive/rdtemplate/modules/recipe/steps-list.tpl.php"
+			],
+			[
+				"reidhi",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_reid-hitt.scss"
+			],
+			[
+				"twocol",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/layouts/_two-col.scss"
+			],
+			[
+				"mixinss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/utils/_mixins.scss"
+			],
+			[
+				"settinscss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_settings.scss"
+			],
+			[
+				"settingscss",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/base/_settings.scss"
+			],
+			[
+				"recipetpl",
+				"sites/all/themes/foodandwine/templates/node--recipe.tpl.php"
+			],
+			[
+				"ingrel",
+				"sites/all/themes/fwresponsive/rdtemplate/assets/sass/modules/_ingredient-list.scss"
+			],
+			[
+				"singbee",
+				"Troegs - Website/wp-content/themes/troegs/single-beer.php"
+			],
+			[
+				"functionsphp",
+				"Troegs - Website/wp/wp-includes/functions.php"
+			],
+			[
+				"bputils",
+				"Troegs - Website/wp-content/themes/troegs/functions/lib/benchpress/utils.php"
+			],
+			[
+				".env",
+				".env"
+			],
+			[
+				"wplisttable",
+				"wp/wp-admin/includes/class-wp-list-table.php"
+			],
+			[
+				"libras",
+				"templates/etr/assets/sass/_library.scss"
+			],
+			[
+				"tolisscs",
+				"templates/etr/assets/sass/layouts/_top-list.scss"
+			],
+			[
+				"ranktabl",
+				"templates/etr/modules/ranking-table.tpl.php"
+			],
+			[
+				"rankli",
+				"templates/etr/assets/sass/modules/_ranking-list.scss"
+			],
+			[
+				"datatra",
+				"templates/etr/static_site/worlds-best/worlds-best-data-transformer.php"
+			],
+			[
+				"wobladon",
+				"templates/etr/static_site/worlds-best-landing-content.php"
+			],
+			[
+				"nodtol",
+				"templates/etr/static_site/node--top-list.tpl.php"
+			],
+			[
+				"toplisjs",
+				"templates/etr/assets/js/src/modules/topListPage.js"
+			],
+			[
+				"ranklissc",
+				"templates/etr/assets/sass/modules/_ranking-list.scss"
+			],
+			[
+				"rankitab",
+				"templates/etr/assets/sass/modules/_ranking-table.scss"
+			],
+			[
+				"worbepd",
+				"templates/etr/static_site/worlds-best/worlds-best-data-transformer.php"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 1,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 510.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

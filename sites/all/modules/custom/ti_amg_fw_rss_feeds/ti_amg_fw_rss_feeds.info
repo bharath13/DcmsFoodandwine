@@ -1,0 +1,14 @@
+name = TI AMG FW RSS Feeds
+description = Feature for RSS Feeds
+core = 7.x
+package = Feeds
+version = 7.x-1.6
+project = ti_amg_fw_rss_feeds
+dependencies[] = strongarm
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = ti_amg_fw_blogs_flipboard
+features[views_view][] = ti_amg_fw_msn_blogs_feed
+features[views_view][] = ti_amg_fw_rss_feeds
+features_exclude[dependencies][ctools] = ctools

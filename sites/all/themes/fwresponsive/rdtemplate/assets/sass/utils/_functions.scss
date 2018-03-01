@@ -1,0 +1,18 @@
+/*-----------------------------------------------------------------------------
+ *-----------------------------------------------------------------------------
+ *
+ * FUNCTIONS
+ * 
+ * Define any custom site-wide functions below. These should only be 
+ * functions that are global in scope and that need to be referenced 
+ * by multiple SASS files.
+ *
+ *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------- */
+ 
+/**
+* Common Hover/Appear easing
+*/
+@function common-ease() {
+  @return cubic-bezier(0.22, 0.61, 0.36, 1);
+}

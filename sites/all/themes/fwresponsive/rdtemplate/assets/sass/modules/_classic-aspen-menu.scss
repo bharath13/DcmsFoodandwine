@@ -1,0 +1,350 @@
+.classic-aspen-page{
+    .site-header {
+        margin-bottom: 0;
+    }
+    .classic_aspen_header {
+        background: #ffffff none repeat scroll 0 0;
+        color: #282f2f;
+        padding: 10px 0;
+        text-transform: capitalize;
+        height: 27px;
+        margin-bottom: 20px;
+        @include respond-to('large and up') {
+            height: 110px;
+        }
+        .page-container {
+            position: relative;
+            background: none;
+            .classic_aspen_first_row {
+                margin: auto;
+                width: 100%;
+                @include respond-to('large and up') {
+                    width: 85%;
+                }
+                .classic_aspen_sub_title {
+                    font-size: 12px;
+                    width: 25%;
+                    text-align: right;
+                    margin-top: 5.5px;
+                    @include font-droid-serif;
+                    float: right;
+                    @include respond-to('large and up') {
+                        font-size: 16px;
+                        float: left;
+                        margin-top: 15px;
+                        width: 20%;
+                        text-align: right;
+                    }
+                    @media only screen 
+                    and (min-device-width: 320px) 
+                        and (max-device-width: 413px) 
+                        and (-webkit-min-device-pixel-ratio: 2)
+                        and (orientation: portrait) { 
+                        display: none;
+                    }
+                    @media only screen and (max-width: 360px){
+                        display: none;
+                    }
+                }
+                .classic_aspen_main_title {                    
+                    float: left;
+                    font-size: 16px;
+                    margin: auto;
+                    text-align: left;
+                    width: 75%;
+                    @include font-droid-serif;
+                    padding-top: 3px;                                                                  
+                    .normal_title {
+                        display: block;
+                        @include respond-to('large and up') {
+                            display: none;
+                        }                            
+                    }
+
+                    @include respond-to('large and up') {
+                        font-size: 30px;
+                        text-align: center;
+                        width: 60%;
+                        span {
+                            font-size: 24px;
+                        }                        
+                    }            
+                    @media only screen 
+                    and (min-device-width: 320px) 
+                        and (max-device-width: 413px) 
+                        and (-webkit-min-device-pixel-ratio: 2)
+                        and (orientation: portrait) { 
+                        width: 100%;
+                    }
+                    @media only screen and (max-width: 360px){
+                        width: 100%;
+                    }
+                    .mobile_subnav_hamburger {                        
+                        padding-right: 15px;
+                        cursor: pointer;
+                        float: left;
+                        top: -15px;
+                        font-size: 36px;
+                        position: relative;
+                        width: 15px;
+                        font-weight: bold;
+                        @include respond-to('large and up') {
+                            display: none !important;
+                        }
+                    }
+                    .mobile_subnav_expand_hamburger {                        
+                      font-weight: bold;
+                      width: 30px;
+                      font-size: 30px;
+                      top: -17px;
+                      position: relative;
+                      cursor: pointer;
+                      display: none;
+                      float: left;
+                      font-family: monospace;
+                      @include respond-to('large and up') {
+                          display: none !important;
+                      }
+                    }
+                    .anchor_title {
+                      color: #282f2f;
+                      cursor: pointer;
+                      @include font-droid-serif-bold;
+                      font-size: 38px;
+                      text-transform: capitalize;
+                      display:none;
+                      @include respond-to('large and up') {
+                          display: block;
+                      }
+                      .special_char {
+                          font-size: 18px;
+                      }
+                    }
+                    .cursor_text {
+                        cursor: text !important;
+                    }
+
+                }
+                .classic_aspen_cta {
+                    float: right;
+                    font-size: 16px;
+                    margin-top: 15px;
+                    width: 20%;
+                    text-align: left;
+                    @include font-droid-serif;
+                    display: none;
+                    a{
+                        color: #ffffff;
+                        &:hover {
+                            color: #e71f3d;
+                        }
+                    }
+
+                    &:after {
+                        background: url('#{$img-base-path}/arrow.png') no-repeat;
+                        content: "";
+                        width: 10px;
+                        height: 10px;
+                        display: inline-block;
+                    }
+                    @include respond-to('large and up') {
+                        display: block;
+                    }
+                }
+            }
+            .classic_aspen_second_row {
+                margin: auto;
+                width: 99%;
+                clear: both;
+                text-align: center;
+                @include respond-to('large and up') {
+                  border-bottom: 1px solid #d2d4d3;
+                }
+                .cassic-aspen-menu__nav {
+                    display: none;
+                    padding: 0px;
+                    text-align: left;
+                    margin-top: 0px;
+                    @include respond-to('large and up') {
+                        display: inline-block;
+                    }
+                    padding: 10px 0 0;
+                    -webkit-margin-after: 0;
+                    .cassic-aspen-menu__item {
+                        float: left;
+                        height: 30px;
+                        list-style: outside none none;
+                        padding: 0 25px;
+                        position:relative;
+                        a, span.non_clickable {
+                          font-size: 12px;
+                          color: #282f2f;
+                          @include font-droid-sans-bold;
+                          text-transform: uppercase;
+                          &:hover{
+                              color: #e71f3d;
+                          }
+                        }
+                        &:hover {
+                            ul {
+                                display: block;
+                                left: 50%;
+                                transform: translateX(-50%);
+                            }
+                        }
+                        .cassic-aspen-menu__sub-menu {
+                            background: #F8F8F8;
+                            border-color: #E71F3D #ddd #ddd;
+                            border-style: solid;
+                            border-width: 3px 1px 1px;
+                            display: none;
+                            list-style: outside none none;                            
+                            margin-top: 1px;
+                            padding: 5px 40px 0 20px;
+                            position: absolute;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                            transition: opacity 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+                                top 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+                                left 0s linear 0.25s;
+                            padding-bottom: 10px;
+                            z-index: 99;
+                            width: 120px;
+                            .cassic-aspen-menu__sub-menu__item {
+                                list-style: outside none none;
+                                padding-bottom: 5px;
+                                padding-top: 5px;
+                                a, span.non_clickable {
+                                  color: #282f2f;
+                                  font-size: 12px;
+                                  @include font-droid-sans-bold;
+                                  &:hover{
+                                      color: #e71f3d;
+                                  }
+                                }
+                            }
+                        }
+                    }
+                }
+                .cassic-aspen-mobile-bottom {                    
+                    background: #ffffff;
+                    float: left;
+                    left: 0;
+                    position: absolute;
+                    z-index: 99;
+                    margin-top: -18px;
+                    border: 1px solid #ccc;                    
+                    width: 320px;
+                    left: -320px;
+                    transition: opacity 0.15s cubic-bezier(0.22,0.61,0.36,1) 0.05s,left 0.3s cubic-bezier(0.22,0.61,0.36,1);
+                    box-shadow: 0 2px 5px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12);
+                    overflow-y: auto;
+                    @media only screen 
+                    and (min-device-width: 320px) 
+                        and (max-device-width: 413px) 
+                        and (-webkit-min-device-pixel-ratio: 2)
+                        and (orientation: portrait) { 
+                        margin-top: -18px;
+                    }
+                    &.expand-menu {
+                        left: 0;
+                        opacity: 1;
+                        transition-delay: 0s,0.05s;
+                    }
+                    .cassic-aspen-mobile-menu__nav {
+                      padding-left: 5px;
+                      text-align: left;
+                      .cassic-aspen-mobilie-menu__item {
+                        padding: 10px 0 10px 0;
+                        &.cta{
+                          a{
+                            color: #e71f3d !important;
+                          }
+                        }
+                        a, span.non_clickable {
+                          color: #666;
+                          @include font-droid-sans;
+                          font-size: 0.8888888889rem;
+                          text-transform: uppercase;
+                          padding: 15px 20px
+                        }
+                        .cassic-aspen-mobile-menu__sub-menu{
+                          padding-left: 30px;
+                          list-style-type: none;
+                          .cassic-aspen-mobile-menu__sub-menu__item{
+                            padding: 5px 0 5px 0px;
+                          }
+                        }
+                      }
+                    }
+                    .classic_aspen_mobile_sponsor {
+                        background: #000;
+                        font-size: 14px;
+                        height: 70px;
+                        margin: auto 0;
+                        .sponser_text {
+                            float: left;
+                            padding-left: 80px;
+                            padding-right: 25px;
+                            padding-top: 20px;                             
+                        }
+                        .sponser_img {
+                            padding: 10px 0;
+                            margin: auto 0;
+                        }
+                    }
+                    @include respond-to('large and up') {
+                        display: none !important;
+                    }
+                }
+            }
+            .classic_aspen_sponsor {
+              @include font-droid-sans;
+              font-size: 12px;
+              margin-top: -115px;
+              position: absolute;
+              right: 1%;
+              display: none;
+              .sponser_text {
+                width: 100%;
+                @include respond-to('large and up') {
+                  font-weight:500;
+                }
+              }
+              .sponser_img {
+                margin: 0 auto;
+                width: 88px;
+                text-align: center;
+              }
+              .sponser_img {
+                  img {
+                      height: 100%;
+                      margin: 0 auto;
+                      padding: 10px;
+                      width: 50px;
+                  }
+              }
+              @include respond-to('large and up') {
+                  display: block;
+              }
+            }
+        }
+    }    
+}
+.sub_nav_sticky {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 999999;
+}
+.sub_nav_sticky_gallery {
+    position: fixed;
+    top: 115px;
+    width: 100%;
+    z-index: 999999;
+}
+.cta__make__red{
+    color: red !important;
+}
+.non_clickable {
+    cursor: default;
+}

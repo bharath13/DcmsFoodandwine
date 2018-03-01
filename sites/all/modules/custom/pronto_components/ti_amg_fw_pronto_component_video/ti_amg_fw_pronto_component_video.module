@@ -1,0 +1,45 @@
+<?php
+
+/*
+ * @file
+ * To add iframe video pronto component.
+ */
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function ti_amg_fw_pronto_component_video_field_formatter_info() {
+  return array(
+    'pronto_component_iframe_video' => array(
+      'label' => t('Pronto Component: iFrame Video'),
+      'field types' => array('text_long'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function ti_amg_fw_pronto_component_video_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $pronto_component = array(
+    'type' => "components/article/embed-iframe",
+    'version' => 1,
+    'data' => array(
+      'src' => '',
+    ),
+  );
+  switch ($display['type']) {
+    case 'pronto_component_iframe_video':
+      $enable_iframe = 0;
+      if (!empty($items) && !empty($items[0]['value']) && empty($entity->field_related_videos)) {
+        $iframe_value = $items[0]['value'];
+        preg_match('/src="([^"]+)"/', $iframe_value, $iframe_src);
+        $enable_iframe = 1;
+        $pronto_component['data']['src'] = $iframe_src[1];
+      }
+      break;
+  }
+  if ($enable_iframe) {
+    $entity->json_elements[] = $pronto_component;
+  }
+}

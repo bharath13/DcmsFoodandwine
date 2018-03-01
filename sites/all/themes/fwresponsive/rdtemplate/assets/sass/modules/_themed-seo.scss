@@ -1,0 +1,125 @@
+$block: themed-seo;
+
+.#{$block} {
+
+    &__featured-content,
+    &__list-container {
+
+        @include respond-to('small and up') {
+            float: left;
+        }
+        
+    }
+
+    &__featured-content {
+        text-align: center;
+
+        @include respond-to('small and up') {
+            width: percentage(280px / 620px);
+            text-align: left;
+
+            .#{$block}__list-title {
+                display: none;
+            }
+        }
+
+        &-image {
+            line-height: 1;
+            margin-bottom: 10px;
+
+            img {
+                max-width: 100%;
+                width: 100%;
+                display: block;
+            }
+        }
+
+        &-title {
+            text-align: left;
+            margin-bottom: 20px;
+
+            a {
+                color: $color-black-2;
+                font-size: rem(24);
+                line-height: 1.25;
+                @include font-droid-sans;
+                text-transform: none;
+
+                @include respond-to('small and up') {
+                    font-size: rem(18);
+                }
+                &:hover {
+                  text-decoration: underline;
+                }
+            }
+        }
+
+    }
+
+    &__list-container {
+
+        @include respond-to('small and up') {
+            width: percentage(300px / 620px);
+            margin-left: percentage(40px / 620px);
+        }
+
+        ul {
+            margin: 0;
+            padding: 0;
+        }
+
+        .#{$block}__list-title {
+            display: none;
+        }
+        
+        @include respond-to('small and up') {
+            
+            .#{$block}__list-title {
+                display: block;   
+                margin-top: 0;
+            }
+        }
+    }
+
+    &__list-item {
+        list-style-type: none;
+        line-height: 1;
+
+        &:not(:last-child) {
+            margin-bottom: 15px;
+        }
+
+        a {
+            color: $color-black-2;
+            font-size: rem(16);
+            line-height: 1.25;
+            @include font-droid-sans;
+            font-weight: normal;
+            text-transform: none;
+
+            &:after {
+                width: 10px;
+                height: 10px;
+            }
+             
+            &:hover {
+              text-decoration: underline;
+            } 
+            @include respond-to('small and up') {
+                font-size: rem(14);
+            }
+        }
+    }
+
+    &__list-title {
+        font-size: rem(22);
+        line-height: 1;
+        text-transform: uppercase;
+        @include font-droid-sans-bold();
+        margin-bottom: 20px;
+
+        @include respond-to('small and up') {
+            font-size: rem(20);
+        }
+    }
+}

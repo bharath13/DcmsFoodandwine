@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @file
+ * ti_amg_fw_outbrain.module
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fw_outbrain_block_info() {
+  // Enable the info for the block.
+  $blocks['outbrain_block'] = array(
+    'info' => t('Outbrain Block'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fw_outbrain_block_view($delta = '') {
+  // Assign the theme and return it.
+  switch ($delta) {
+    case 'outbrain_block':
+      $block['subject'] = t('YOU MIGHT ALSO LIKE');
+      $block['content'] = array(
+        '#markup' => theme('ti_amg_fw_outbrain'),
+      );
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Implements hook_block_theme().
+ */
+function ti_amg_fw_outbrain_theme() {
+  // Return the theme template for rendering
+  // Build the current URL.
+  return array(
+    'ti_amg_fw_outbrain' => array(
+      'template' => 'ti_amg_fw_outbrain',
+    ),
+    'ti_amg_fw_outbrain_redesign' => array(
+      'template' => 'ti_amg_fw_outbrain_redesign',
+      'variables' => array(
+        'title' => array(),
+        'widget_id' => array(),
+        'carousel_slide_url' => NULL,
+      ),
+    ),
+  );
+}

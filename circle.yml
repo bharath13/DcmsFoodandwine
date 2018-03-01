@@ -1,0 +1,9 @@
+
+dependencies:
+  pre:
+    - composer install --prefer-source --no-interaction
+    - ./bin/phpcs --config-set installed_paths $(readlink -f vendor/drupal/coder/coder_sniffer/)
+
+test:
+  override:
+    - for directory in $(for file in $(git diff-tree --no-commit-id --name-only -r HEAD | grep sites/all/modules/custom[^sites/all/modules/custom/content_types]); do dirname $file; done | sort | uniq ); do ./bin/phpcs --standard=Drupal  --extensions='php,module,inc,install,test,profile,theme,css,info,txt' --ignore=*.panels_default.inc,*.pages_default.inc,*features.*inc,*.feeds_tamper_default.inc,*.feeds_importer_default.inc $directory; done

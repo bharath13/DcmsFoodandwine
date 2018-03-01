@@ -1,0 +1,1327 @@
+<?php
+
+/**
+ * @file
+ * To create custom functionalities to responsive FW site.
+ */
+
+/**
+ * Redirect the slideshow page if it is a first slide and page hit it directly.
+ *
+ * Without the /1 parameter.
+ */
+function ti_amg_fwrd_gallery_init() {
+  if (!path_is_admin(request_path())) {
+    $redirect_url = '';
+    $uri = explode("/", request_path());
+    $last_pos = count($uri) - 1;
+    if (is_numeric($uri[$last_pos]) && $uri[$last_pos] == 1) {
+      foreach ($uri as $key => $item) {
+        if ($key != $last_pos) {
+          $redirect_url .= '/' . $item;
+        }
+      }
+      drupal_goto($redirect_url, array(), 301);
+    }
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fwrd_gallery_menu() {
+
+  $items = array();
+
+  $items['admin/config/fw_settings/gallery-custom-settings'] = array(
+    'title' => 'Food&Wine Gallery Page Settings',
+    'description' => 'Settings for Gallery page.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ti_amg_fwrd_gallery_custom_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'includes/ti_amg_fwrd_gallery.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/fw_settings/gallery-custom-settings/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Food&Wine Gallery Page Settings',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -12,
+  );
+
+  return $items;
+}
+
+/**
+ * Add variables on the page level.
+ */
+function ti_amg_fwrd_gallery_preprocess_page(&$vars) {
+  if (isset($vars['node']->type)) {
+    if ($vars['node']->type == 'gallery') {
+      $gallery_uri = drupal_get_path_alias('node/' . $vars['node']->nid);
+      drupal_add_js(array('gallery_path' => $gallery_uri), 'setting');
+
+      if (isset($vars['node']->field_gallery_template[LANGUAGE_NONE][0]['value'])) {
+        $vars['template_type'] = $vars['node']->field_gallery_template[LANGUAGE_NONE][0]['value'];
+      }
+      else {
+        $vars['template_type'] = '';
+      }
+
+      $vars['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+      if (isset($vars['detect_device'])) {
+        $vars['device_leaderboard_ad'] = _ti_amg_fwrd_custom_device_leaderboard_ad($vars['detect_device']);
+        if ($vars['detect_device'] == "desktop") {
+          drupal_add_css(
+              drupal_get_path('module', 'ti_amg_fwrd_custom')
+              . '/css/newsletters-signup.css');
+          drupal_add_js(
+              drupal_get_path('module', 'ti_amg_fwrd_custom')
+              . '/js/newsletters-signup.js');
+        }
+      }
+      $vars['swoop_ads'] = ti_amg_fwrd_custom_swoopads();
+
+      $ads_manager = <<<EOD
+       <script type="text/javascript">
+            var detect_device = 'desktop';
+            isPhone = navigator.userAgent.match(/(up.browser|up.link|mmp|symbian|smartphone|midp|wap|iPhone|android|iemobile|mobile)/i) != null;
+            isTablet = navigator.userAgent.match(/(tablet|ipad|playbook)|(android(?!.*(mobi|opera mini)))/i) != null;
+            if (isTablet) isPhone = false;
+            if (isPhone) detect_device = 'phone';
+            if (isTablet) detect_device = 'tablet';
+           (function($) {
+          $(document).ready(function() {
+            if (detect_device == 'desktop') {
+              if (typeof(Drupal.settings.sponsor_campaign) != "undefined") {
+                if (!Drupal.settings.sponsor_campaign.in_campaign) {
+                     var outbrain_rr_markup = gallery_right_rail_outbrain;
+                     jQuery("#outbrain-wrapper").html(outbrain_rr_markup);
+                     var outbrain_bottom_markup = gallery_bottom_outbrain_update();
+                     jQuery("#outbrain-wrapper-bottom").html(outbrain_bottom_markup);
+                     reloadGlobalOutBrainModules();
+                }
+              }
+            }
+            else {
+              if (typeof(Drupal.settings.sponsor_campaign) != "undefined") {
+                if (!Drupal.settings.sponsor_campaign.in_campaign) {
+                  var outbrain_bottom_markup = gallery_bottom_outbrain_update();
+                  jQuery("#outbrain-wrapper-bottom").html(outbrain_bottom_markup);
+                  reloadGlobalOutBrainModules();
+                }
+              }
+              var newsletters_el = document.getElementById("newsletters-section");
+              if (typeof(newsletters_el) != 'undefined' && newsletters_el != null) {
+                newsletters_el.style.display = 'none';
+              }
+              var outbrain_el = document.getElementById("outbrain-wrapper");
+              if (typeof(outbrain_el) != 'undefined' && outbrain_el != null) {
+                outbrain_el.style.display = 'none';
+              }
+            }
+          });
+        }(jQuery));
+       </script>
+EOD;
+      $vars['ads_manager'] = $ads_manager;
+      // Getting Ad Refresh time when slide changes.
+      $refresh_time = variable_get('ad_refresh_time', '');
+      if (!is_numeric($refresh_time) || $refresh_time < 0) {
+        $refresh_time = 0;
+      }
+      drupal_add_js(array('ad_refresh_time' => $refresh_time), 'setting');
+
+      $interstitial_ad_time = variable_get('interstitial_ad_timeout_time', '');
+      if (!is_numeric($interstitial_ad_time) || $interstitial_ad_time < 0) {
+        $interstitial_ad_time = 0;
+      }
+      drupal_add_js(array('interstitial_ad_time' => $interstitial_ad_time), 'setting');
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fwrd_gallery_theme($existing, $type, $theme, $path) {
+  return array(
+    'gallery-place' => array(
+      'template' => 'gallery-place',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'place' => array(),
+      ),
+    ),
+    'gallery-slides' => array(
+      'template' => 'gallery-slides',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'items' => array(),
+        'is_list' => array(),
+        'pagination' => array(),
+      ),
+    ),
+    'gallery-slides-vertical' => array(
+      'template' => 'gallery-slides-vertical',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'items' => array(),
+        'is_list' => array(),
+        'pagination' => array(),
+      ),
+    ),
+    'gallery-end-slate-pagination' => array(
+      'template' => 'gallery-end-slate-pagination',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'prev' => array(),
+        'next' => array(),
+      ),
+    ),
+    'gallery-end-slate-wrapper' => array(
+      'template' => 'gallery-end-slate-wrapper',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'content' => array(),
+        'pagination' => array(),
+      ),
+    ),
+    'related-content' => array(
+      'template' => 'related-content',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'items' => array(),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function ti_amg_fwrd_gallery_node_view($node, $view_mode, $langcode) {
+  global $base_url, $conf, $og_img_path, $page_title, $slideshow_flag;
+
+  if (isset($node)) {
+    if ($node->type == 'gallery') {
+      $slideshow_flag = 1;
+      $gallery_content = array();
+      $gallery_content['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+      $gallery_content['title'] = $node->title;
+
+      $gallery_content['hero_image'] = field_get_items('node', $node, 'field_hero_image');
+      if (!empty($gallery_content['hero_image'])) {
+        $gallery_content['hero_image'] = image_style_url('rd_home_hero_tout', $gallery_content['hero_image'][0]['entity']->field_image[LANGUAGE_NONE][0]['uri']);
+      }
+
+      $page_title = $gallery_content['title'];
+      $gallery_content['path'] = $base_url . '/' .
+          drupal_get_path_alias('node/' . $node->nid);
+      $gallery_data = _ti_amg_fwrd_gallery_get_slides($node, $gallery_content['detect_device']);
+      $gallery_content['slideshow'] = $gallery_data['json'];
+      $gallery_content['slideshow']['pagination'] = $gallery_data['pagination'];
+      $prev = (isset($gallery_data['prev'])) ? $gallery_data['prev'] : '';
+      $next = (isset($gallery_data['next'])) ? $gallery_data['next'] : '';
+      $gallery_content['deck'] = ti_amg_fwrd_custom_get_field_value('node', $node, 'field_deck');
+      // body copy field value from the node to display in vertical gallery.
+      if (!empty($body_copy = ti_amg_fwrd_custom_get_field_value('node', $node, 'body'))) {
+        $gallery_content['body_copy'] = render($body_copy);
+      }
+      $gallery_content['end_slate_pagination'] = _ti_amg_fwrd_gallery_get_end_slate_pagination($prev, $next);
+      $end_slate_outbrain_id = ($gallery_content['detect_device'] != 'phone') ? 'AR_18' : 'MB_12';
+      $gallery_content['end_slate_outbrain'] = theme('ti_amg_fw_outbrain_redesign', array(
+        'widget_id' => $end_slate_outbrain_id,
+        'title' => '',
+        'carousel_slide_url' => '',
+          )
+      );
+      $social_share_img_path = url(drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/foodandwine-social.jpg', array('absolute' => TRUE));
+
+      if (!empty($gallery_content['slideshow']['slides'])) {
+        $total_slide_count = $gallery_content['slideshow']['total_slides'];
+
+        if (!empty($gallery_content['hero_image'])) {
+          $social_share_img_path = $gallery_content['hero_image'];
+        }
+        elseif ($gallery_content['slideshow']['slides'][0]['img_original_url'] != '') {
+          $social_share_img_path = $gallery_content['slideshow']['slides'][0]['img_original_url'];
+        }
+      }
+      $og_img_path = $social_share_img_path;
+      $gallery_content['related_content'] = _ti_amg_fwrd_gallery_related_contents($node);
+      $gallery_content['social_share_section'] = _ti_amg_fwrd_gallery_social_share_section($node->title, $social_share_img_path, $gallery_content['path']);
+      $gallery_content['social_share_section'] = $gallery_content['social_share_section'];
+      $gallery_content['end_slate_wrapper'] = theme('gallery-end-slate-wrapper', array(
+        'content' => $gallery_content['end_slate_outbrain'],
+        'pagination' => $gallery_content['end_slate_pagination'],
+        'classes' => '',
+      ));
+      $gallery_content['breadcrumbs'] = _ti_amg_fwrd_feature_preprocess_breadcrumb_content($node);
+      $gallery_content['newsletters'] = '';
+      // Showing Classic Aspen Menu if enabled.
+      if (!empty($node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value']) &&
+          $node->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value'] == 1) {
+        $gallery_content['sub_header'] = module_invoke('ti_amg_fwrd_generic_page', 'block_view', 'classic_aspen_header');
+      }
+
+      $gallery_content['published_date'] = '';
+      if (!empty($node->published_at) && (!empty($node->field_blog_turn_off_publish_date) && ($node->field_blog_turn_off_publish_date[LANGUAGE_NONE][0]['value'] == 1))) {
+        $published_date = date('Y-m-d H:i:s', $node->published_at);
+        $published_date_display = date("F d, Y", $node->published_at);
+        $gallery_content['published_date'] = $published_date;
+        $gallery_content['published_date_display'] = $published_date_display;
+      }
+      $gallery_content['modified_date'] = date('Y-m-d H:i:s', $node->changed);
+
+      if (module_exists('editorial_ecommerce_workflow')) {
+        if (!empty($gallery_content['deck']['#markup'])) {
+          $gallery_content['deck']['#markup'] = _ecommerce_product_afl_replacer($gallery_content['deck']['#markup'], $node);
+        }
+        if (!empty($gallery_content['body_copy'])) {
+          $gallery_content['body_copy'] = _ecommerce_product_afl_replacer($gallery_content['body_copy'], $node);
+        }
+
+        if (!empty($gallery_content['slideshow']['slides'])) {
+          foreach ($gallery_content['slideshow']['slides'] as &$slide) {
+            if (!empty($slide['description'])) {
+              $slide['description'] = _ecommerce_product_afl_replacer($slide['description'], $node);
+            }
+          }
+          $interstitial_ad_time = variable_get('interstitial_ad_timeout_time', '');
+     		  if (!is_numeric($interstitial_ad_time) || $interstitial_ad_time < 0) {
+             $interstitial_ad_time = 0;
+          }
+          $gallery_content['slideshow']['inline_ad_timeout'] = $interstitial_ad_time/1000;
+        }
+      }
+
+
+      $node->content['gallery_content'] = $gallery_content;
+
+
+      // To finding the listing gallery page.
+      $listing_gallery = FALSE;
+      $query_parameters = drupal_get_query_parameters();
+      if (!empty($query_parameters['list'])) {
+        $listing_gallery = TRUE;
+      }
+      // Implementing prev & next link tags for slideshows -- Starts.
+      $slideshow_path = request_path();
+      $slideshow_path_array = explode('/', $slideshow_path);
+      if (arg(2) && is_numeric(arg(2))) {
+        // When directly open the particular slide.
+        $next_slide = $slideshow_path_array[2] + 1;
+        $prev_slide = $slideshow_path_array[2] - 1;
+        if (arg(2) < $total_slide_count) {
+          if (arg(2) != 1) {
+            // Except the last slide.
+            $next_element = array(
+              '#tag' => 'link',
+              '#attributes' => array(
+                'rel' => 'next',
+                'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $next_slide,
+              ),
+            );
+            if (($gallery_content['detect_device'] != 'desktop') && (arg(2) % 4 == 0)) {
+
+            }
+            else {
+              drupal_add_html_head($next_element, 'next');
+            }
+            if ((arg(2) == 2)) {
+              $prev_element = array(
+                '#tag' => 'link',
+                '#attributes' => array(
+                  'rel' => 'prev',
+                  'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1],
+                ),
+              );
+            }
+            else {
+              $prev_element = array(
+                '#tag' => 'link',
+                '#attributes' => array(
+                  'rel' => 'prev',
+                  'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $prev_slide,
+                ),
+              );
+            }
+
+            if (($gallery_content['detect_device'] != 'desktop') && (arg(2) % 4 == 1)) {
+
+            }
+            else {
+              drupal_add_html_head($prev_element, 'prev');
+            }
+          }
+          else {
+            // For First Slide.
+            $next_element = array(
+              '#tag' => 'link',
+              '#attributes' => array(
+                'rel' => 'next',
+                'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/2',
+              ),
+            );
+            drupal_add_html_head($next_element, 'next');
+          }
+        }
+        else {
+          // For Last Slide.
+          $prev_element = array(
+            '#tag' => 'link',
+            '#attributes' => array(
+              'rel' => 'prev',
+              'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $prev_slide,
+            ),
+          );
+          if (($gallery_content['detect_device'] != 'desktop') && (arg(2) % 4 == 1)) {
+
+          }
+          else {
+            drupal_add_html_head($prev_element, 'prev');
+          }
+        }
+      }
+      else {
+        if (!arg(2) && !$listing_gallery) {
+          // Normally by clicking the slideshow page url.
+          $next_element = array(
+            '#tag' => 'link',
+            '#attributes' => array(
+              'rel' => 'next',
+              'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/2',
+            ),
+          );
+          drupal_add_html_head($next_element, 'next');
+        }
+      }
+      $current_page_num = 1;
+      // If the page is not a listing gallery only
+      // to add nofollow and noindex tags.
+      if (!$listing_gallery) {
+        // Adding robots tags to particular slide page.
+        if (is_numeric(arg(2)) == FALSE) {
+          $ad_slide_index = explode("-", arg(2, request_path()));
+          // Adding robots noindex, follow tags for each interstitial slides.
+          if (($ad_slide_index[0]) && ($ad_slide_index[0] == 'ad')) {
+            $meta_element = array(
+              '#tag' => 'meta',
+              '#attributes' => array(
+                'name' => 'robots',
+                'content' => 'noindex, follow',
+              ),
+            );
+            drupal_add_html_head($meta_element, 'robots');
+          }
+        }
+        elseif (is_numeric(arg(2))) {
+          $current_page_num = arg(2);
+        }
+        $slide_no_index = $gallery_content['slideshow']['slides'][$current_page_num - 1]['no_index'];
+        $slide_no_follow = $gallery_content['slideshow']['slides'][$current_page_num - 1]['no_follow'];
+        if ($slide_no_index == 1 && $slide_no_follow == 0) {
+          $robot_tag_data = 'noindex';
+        }
+        elseif ($slide_no_follow == 1 && $slide_no_index == 0) {
+          $robot_tag_data = 'nofollow';
+        }
+        elseif ($slide_no_follow == 1 && $slide_no_index == 1) {
+          $robot_tag_data = 'nofollow, noindex';
+        }
+        if (isset($robot_tag_data)) {
+          $meta_element = array(
+            '#tag' => 'meta',
+            '#attributes' => array(
+              'name' => 'robots',
+              'content' => $robot_tag_data,
+            ),
+          );
+          drupal_add_html_head($meta_element, 'robots');
+        }
+      }
+
+      // Adding OG:title, OG:image, OG:description tags.
+      $slideshow_og_content = array();
+      $slideshow_og_content['title'] = $gallery_content['title'];
+      if ($gallery_content['deck'] != '') {
+        $slideshow_og_content['description'] = ltrim(substr(strip_tags($gallery_content['deck']['#markup']), 0, 150)) . '...';
+      }
+      else {
+        $slideshow_og_content['description'] = ti_amg_fwrd_custom_get_first_slide_deck($node);
+      }
+
+      if (!empty($gallery_content['hero_image'])) {
+        $slideshow_og_content['image'] = $gallery_content['hero_image'];
+      }
+      else {
+        $slideshow_og_content['image'] = $gallery_content['slideshow']['slides'][$current_page_num - 1]['img_original_url'];
+      }
+
+      $html_head = array(
+        'og_image' => array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'og:image',
+            'content' => $slideshow_og_content['image'],
+          ),
+        ),
+        'og_title' => array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'og:title',
+            'content' => $slideshow_og_content['title'],
+          ),
+        ),
+
+        'og_description' => array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'og:description',
+            'content' => $slideshow_og_content['description'],
+          ),
+        ),
+      );
+      foreach ($html_head as $key => $data) {
+        drupal_add_html_head($data, $key);
+      }
+      // Gallery Interstitial Ad.
+      // Build panels conf and contexts object
+      // to integrate with timeinc_advertising.
+      $ad_conf = array(
+        'ad_static_id' => 'gallery_interstitial_ad',
+        'ad_slug' => '',
+        'ad_type' => 'regular',
+        'ad_cmtype' => '',
+        'ad_sizes' => array(
+          0 => '300x250',
+        ),
+        'ad_companion' => 0,
+        'getAd' => array(
+          'setZone' => '',
+          'setPosition' => 1,
+          'setParam' => array(
+            'cont' => 'gallery',
+          ),
+        ),
+        'advanced' => array(
+          'ad_refresh' => 1,
+        ),
+        'lazy_load_viewport_offset' => 0,
+        'lazy_load' => TRUE,
+      );
+      $context = array(
+        'argument_entity_id:node_1' => (object) array(
+          'type' => array(
+            'entity:node',
+            'entity',
+            'node',
+          ),
+          'data' => array(),
+          'keyword' => 'node',
+          'empty' => FALSE,
+          'plugin' => 'entity:node',
+          'id' => 'argument_entity_id:node_1',
+        ),
+      );
+
+      $render_array = timeinc_advertising_slot_render_array($ad_conf, $context);
+      // We render it here to attach ad_settings to Drupal.settings,
+      // But we do not add rendered-html ad to $vars unless
+      // user is viewing the 'ad' slide.
+      drupal_render($render_array);
+      // End Interstitial Ad.
+    }
+  }
+}
+
+/**
+ * Return list of slides .
+ */
+function _ti_amg_fwrd_gallery_get_slides($node, $detect_device) {
+  global $base_url, $heroSectionIsVideo;
+  $heroSectionIsVideo = FALSE;
+  $gallery_data = array();
+  $gallery = array();
+  $slideshow_url = '';
+  $carousel_nids = array();
+  $slide_ordered_list = array();
+  $current_slide_index = array();
+  $template_type = '';
+  $is_vertical = FALSE;
+  $is_list = FALSE;
+  $account_id = variable_get('brightcove_account_id', '');
+  $player_id = variable_get('brightcove_player_id', '');
+  $jumpstart_url = variable_get('brightcove_jumpstart_url', '');
+  // Creating js variable for slideshow published date.
+  $published_date = '';
+  $real_slides_counter = 0;
+  if (!empty($node->published_at)) {
+    $published_date = date('Y-m-d H:i:s', $node->published_at);
+  }
+  if (isset($node->field_gallery_template[LANGUAGE_NONE][0]['value'])) {
+    $template_type = $node->field_gallery_template[LANGUAGE_NONE][0]['value'];
+    $is_vertical = ($template_type == 'Vertical') ? TRUE : FALSE;
+  }
+  // Checking the gallery if it supports vertical gallery or not.
+  $support_vertical_images = ti_amg_fwrd_gallery_support_square_images($node);
+  // Creating js variable for slideshow native advertisement flag.
+  $slideshow_native_adv_flag = 0;
+  if (isset($node->field_native_advertising[LANGUAGE_NONE])) {
+    $slideshow_native_adv_flag = $node->field_native_advertising[LANGUAGE_NONE][0]['value'];
+  }
+  drupal_add_js(array('ti_amg_fwrd_gallery' => array('publish_date' => $published_date)), array('type' => 'setting'));
+  drupal_add_js(array('ti_amg_fwrd_gallery' => array('slideshow_native_adv' => $slideshow_native_adv_flag)), array('type' => 'setting'));
+  drupal_add_js(array('ti_amg_fwrd_gallery' => array('jumpstart_url' => $jumpstart_url, 'account_id' => $account_id, 'player_id' => $player_id)), array('type' => 'setting'));
+  $entity_slides = ti_amg_fwrd_custom_get_entity_reference_field_values('node', $node, 'field_multiple_images');
+  if (!empty($entity_slides)) {
+    foreach ($entity_slides as $slide) {
+      $carousel_nids[] = $slide['target_id'];
+    }
+    $slide_list = $entity_slides;
+  }
+  elseif (isset($node->field_slide_info[LANGUAGE_NONE])) {
+    foreach ($node->field_slide_info[LANGUAGE_NONE] as $slide) {
+      $carousel_nids[] = $slide['value'];
+    }
+    $slide_list = entity_load('field_collection_item', array($carousel_nids));
+  }
+  $gallery['page_title'] = $node->title;
+  $gallery['total_slides'] = sizeof($slide_list) + 1;
+  $gallery['initial_slide_index'] = 1;
+  $uri = explode("/", request_path());
+  $last_pos = count($uri) - 1;
+  if (($uri[$last_pos] == '') ||
+      ($uri[$last_pos] == 1)) {
+    // Title Card goes here, if it's required.
+  }
+  else {
+    if (is_numeric($uri[$last_pos])) {
+      $current_slide = intval($uri[$last_pos]);
+    }
+    else {
+      $ad_slide_index = explode("-", $uri[$last_pos]);
+      if ($ad_slide_index[1]) {
+        $current_slide = intval($ad_slide_index[1]);
+      }
+      else {
+        // End slide.
+        $current_slide = $uri[$last_pos];
+        if ($current_slide == 'end') {
+          $current_slide = 'end';
+          $gallery_data['outbrain_ad'] = TRUE;
+          $gallery_data['is_video'] = 0;
+        }
+      }
+    }
+    $gallery['initial_slide_index'] = $current_slide;
+  }
+  $slideshow_url = '/' . drupal_get_path_alias('node/' . $node->nid);
+  $count = 1;
+  $get_params = drupal_get_query_parameters();
+
+  if (((isset($get_params['list']) && $get_params['list'] == 'true')) || $is_vertical) {
+    $is_list = TRUE;
+    $gallery_data['outbrain_ad'] = FALSE;
+  }
+
+  // To add the next gallery URL to the last slide.
+  $next_slideshow_path = '';
+  $gallery['next_gallery_url'] = '';
+  $language = $node->language;
+  if (!$is_list) {
+    if (isset($node->field_related_gallery[$language]) && isset($node->field_related_gallery[$language][0]['entity']->field_multiple_images[$language])) {
+      $next_slideshow_path = '/' . drupal_get_path_alias('node/' . $node->field_related_gallery[$language][0]['target_id']);
+      $next_slideshow_nid = $node->field_related_gallery[$language][0]['target_id'];
+      $next_slideshow_node = node_load($next_slideshow_nid);
+      $next_slideshow_title = $next_slideshow_node->title;
+      $gallery['next_gallery_url'] = $next_slideshow_path;
+    }
+    else
+    if (isset($node->field_related_gallery[$language]) && isset($node->field_related_gallery[$language][0]['entity']->field_slide_info[$language])) {
+      $next_slideshow_path = '/' . drupal_get_path_alias('node/' . $node->field_related_gallery[$language][0]['target_id']);
+      $next_slideshow_nid = $node->field_related_gallery[$language][0]['target_id'];
+      $next_slideshow_node = node_load($next_slideshow_nid);
+      $next_slideshow_title = $next_slideshow_node->title;
+      $gallery['next_gallery_url'] = $next_slideshow_path;
+    }
+  }
+  if (!empty($entity_slides)) {
+    foreach ($entity_slides as $slide) {
+      $carousel_nid = $slide['target_id'];
+      $slide_object = node_load($carousel_nid);
+      $content = array();
+      if ($count == 1) {
+        $content['slide_url'] = $slideshow_url;
+      }
+      else {
+        $content['slide_url'] = $slideshow_url . '/' . strval($count);
+      }
+      if ($slide_object->type == 'image') {
+        if ($is_vertical) {
+          if ($support_vertical_images) {
+            $slide_image = ti_amg_fwrd_custom_get_image($carousel_nid, '500x500');
+          }
+          else {
+            $slide_image = ti_amg_fwrd_custom_get_image($carousel_nid, '920x575');
+          }
+        }
+        else {
+          $slide_image = ti_amg_fwrd_custom_get_image($carousel_nid, '550x550');
+        }
+
+        $slide_image['alt'] = (isset($slide_image['alt'])) ?
+            $slide_image['alt'] : '';
+        $content['alt'] = (isset($slide_image['alt'])) ?
+            strip_tags($slide_image['alt']) : '';
+        $content['credit'] = (isset($slide_image['credit'])) ?
+            strip_tags($slide_image['credit']) : '';
+        $content['caption'] = (isset($slide_image['caption'])) ?
+            strip_tags($slide_image['caption']) : '';
+        $content['imgUrl'] = $slide_image['uri'];
+        $content['img_original_url'] = '';
+        if ($slide_image['img_original_uri'] != '') {
+          $content['img_original_url'] = file_create_url($slide_image['img_original_uri']);
+        }
+        $content['content_url'] = (isset($slide_image['external_link'])) ?
+            $slide_image['external_link'] : '';
+        // Check if the Gallery Type is recipe.
+        // And apply the static URL Text based on that.
+        if (isset($node->field_gallery_type[LANGUAGE_NONE])) {
+          $gallery_type_tid = $node->field_gallery_type[LANGUAGE_NONE][0]['tid'];
+          $gallery_type_label = _ti_amg_fwrd_custom_get_label_from_tid(
+              $gallery_type_tid, 'field_taxo_gallery_type_label');
+          if ($gallery_type_label == 'recipes') {
+            $static_url_text = 'GO TO RECIPE';
+          }
+          else {
+            $static_url_text = 'SEE MORE';
+          }
+        }
+        $content['title'] = !empty($slide_image['title']) ? $slide_image['title'] : '';
+        $content['url_text'] = (!empty($slide_image['external_title'])) ?
+            $slide_image['external_title'] : $static_url_text;
+        $content['fb_share'] = _ti_amg_fwrd_custom_social_share_widget($content['title'], $content['imgUrl'], $content['slide_url'], 'fb');
+        $content['pinit_share'] = _ti_amg_fwrd_custom_social_share_widget($content['title'], $content['imgUrl'], $content['slide_url'], 'pinit');
+        $content['video_id'] = '';
+        $content['is_video'] = 0;
+      }
+      else if ($slide_object->type == 'video') {
+        $video_id = $slide_object->field_video_id[LANGUAGE_NONE][0]['value'];
+        $content['title'] = $slide_object->title;
+        $content['credit'] = '';
+        $content['caption'] = '';
+        $content['imgUrl'] = '';
+        $content['img_original_url'] = '';
+        $content['description'] = '';
+        $content['place'] = '';
+        $content['content_url'] = url('node/' . $carousel_nid, array('absolute' => TRUE));
+        $content['url_text'] = '';
+        $content['video_id'] = $slide_object->field_video_id[LANGUAGE_NONE][0]['value'];
+        $content['is_video'] = 1;
+        if ($is_vertical) {
+          $heroSectionIsVideo = TRUE;
+          $content['video_object'] = _ti_amg_fwrd_custom_get_html5_video($video_id, $detect_device, 'gallery');
+        }
+      }
+      // Constructing vertical gallery slide url.
+      $content['vertical_gallery_slide_url'] = pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $content['title']));
+      // For now just render only one place.
+      $place_section = _ti_amg_fwrd_gallery_get_slide_related_places($slide_object);
+      if (!empty($place_section)) {
+        $content['place'] = theme('gallery-place', array(
+          'place' => $place_section,
+          'classes' => '',
+        ));
+      }
+      else {
+        $content['place'] = '';
+      }
+
+      // Render image deck
+      $content['description'] = render(ti_amg_fwrd_custom_get_field_value('node', $slide_object, 'field_deck'));
+
+      $content['slide_number'] = $count;
+
+      $content['interstitial_ad'] = 'FALSE';
+      // Adding no-index and no-follow if it is enabled to slide.
+      if (!empty($slide['metatags'][LANGUAGE_NONE]['robots'])) {
+        $slide_meta_robots = $slide['metatags'][LANGUAGE_NONE]['robots']['value'];
+        $content['no_index'] = $slide_meta_robots['no_index'];
+        $content['no_follow'] = $slide_meta_robots['no_follow'];
+      }
+
+      $content['account_id'] = $account_id;
+      $content['player_id'] = $player_id;
+
+      $gallery['slides'][] = $content;
+
+      // For inserting the interstitial ADs
+      // Mobile ads are displayed after the 4th Slide.
+      // should be displayed only on the tablet and mobile.
+      $current_slide_count = sizeof($gallery['slides']) + 1;
+      if (($current_slide_count % 5 == 0) && !$is_list) {
+        $content = array();
+        $content['interstitial_ad'] = 'TRUE';
+        $content['credit'] = '';
+        $content['caption'] = '';
+        $content['imgUrl'] = '';
+        $content['img_original_url'] = '';
+        $content['description'] = '';
+        $content['place'] = '';
+        $content['title'] = '';
+        $content['content_url'] = '';
+        $content['url_text'] = '';
+        $content['slide_url'] = $slideshow_url . '/ad-' . strval($count);
+        $content['slide_number'] = $count;
+        $content['is_video'] = 0;
+        $content['video_id'] = '';
+        $gallery['slides'][] = $content;
+      }
+      $count++;
+    }
+  }
+  else {
+    // Order the slides as it rendered from field collection.
+    foreach ($carousel_nids as $each_nid) {
+      $slide_ordered_list[$each_nid] = $slide_list[$each_nid];
+    }
+
+    foreach ($slide_ordered_list as $slide) {
+      $content = array();
+      $content['video_id'] = '';
+      $content['is_video'] = 0;
+      if (isset($slide->field_slide_image[LANGUAGE_NONE][0]['target_id'])) {
+        $slide_image_nid = $slide->field_slide_image[LANGUAGE_NONE][0]['target_id'];
+        if ($is_vertical) {
+          if ($support_vertical_images) {
+            $slide_image = ti_amg_fwrd_custom_get_image($slide_image_nid, '500x500');
+          }
+          else {
+            $slide_image = ti_amg_fwrd_custom_get_image($slide_image_nid, '920x575');
+          }
+        }
+        else {
+          $slide_image = ti_amg_fwrd_custom_get_image($slide_image_nid, '550x550');
+        }
+        $slide_image['alt'] = (isset($$slide_image['alt'])) ?
+            $slide_image['alt'] : '';
+        $content['alt'] = (isset($slide_image['alt'])) ?
+            strip_tags($slide_image['alt']) : '';
+        $content['credit'] = (isset($slide_image['credit'])) ?
+            strip_tags($slide_image['credit']) : '';
+        $content['caption'] = (isset($slide_image['caption'])) ?
+            strip_tags($slide_image['caption']) : '';
+        $content['imgUrl'] = $slide_image['uri'];
+        $content['img_original_url'] = '';
+        if ($slide_image['img_original_uri'] != '') {
+          $content['img_original_url'] = file_create_url($slide_image['img_original_uri']);
+        }
+      }
+      // For now just render only one place.
+      $place_section = _ti_amg_fwrd_gallery_get_slide_related_places($slide);
+      $slide_description = ti_amg_fwrd_custom_get_field_value('field_collection_item', $slide, 'field_slide_deck');
+      if (!empty($slide_description)) {
+      $content['description'] = render($slide_description);
+      if (!empty($place_section)) {
+        $content['place'] = theme('gallery-place', array(
+          'place' => $place_section,
+          'classes' => '',
+        ));
+      }
+      }
+      else {
+        $content['place'] = '';
+      }
+      $content['title'] = (isset($slide->field_slide_title[LANGUAGE_NONE][0]['value'])) ? $slide->field_slide_title[LANGUAGE_NONE][0]['value'] : '';
+      // Constructing vertical gallery slide url.
+      $content['vertical_gallery_slide_url'] = pathauto_cleanstring(ti_amg_fw_custom_remove_accents($content['title']));
+      $content['content_url'] = (isset($slide->field_slide_link_url[LANGUAGE_NONE][0]['url'])) ? $slide->field_slide_link_url[LANGUAGE_NONE][0]['url'] : '';
+      // Check if the Gallery Type is recipe.
+      // And apply the static URL Text based on that.
+      if (isset($node->field_gallery_type[LANGUAGE_NONE])) {
+        $gallery_type_tid = $node->field_gallery_type[LANGUAGE_NONE][0]['tid'];
+        $gallery_type_label = _ti_amg_fwrd_custom_get_label_from_tid(
+            $gallery_type_tid, 'field_taxo_gallery_type_label');
+        if ($gallery_type_label == 'recipes') {
+          $static_url_text = 'GO TO RECIPE';
+        }
+        else {
+          $static_url_text = 'SEE MORE';
+        }
+      }
+      $content['url_text'] = (isset($slide->field_slide_link_title[LANGUAGE_NONE][0]['value'])) ? $slide->field_slide_link_title[LANGUAGE_NONE][0]['value'] : $static_url_text;
+      if ($count == 1) {
+        $content['slide_url'] = $slideshow_url;
+      }
+      else {
+        $content['slide_url'] = $slideshow_url . '/' . strval($count);
+      }
+
+      $content['slide_number'] = $count;
+      if (isset($slide->field_overwrite_image_credit[LANGUAGE_NONE][0]['value'])) {
+        $content['credit'] = strip_tags($slide->field_overwrite_image_credit[LANGUAGE_NONE][0]['value']);
+      }
+      if (isset($slide->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value'])) {
+        $content['alt'] = strip_tags($slide->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value']);
+      }
+      if (isset($slide->field_overwrite_image_alt_caption[LANGUAGE_NONE][0]['value'])) {
+        $content['caption'] = strip_tags($slide->field_overwrite_image_alt_caption[LANGUAGE_NONE][0]['value']);
+      }
+      $content['interstitial_ad'] = 'FALSE';
+      // Adding no-index and no-follow if it is enabled to slide.
+      $content['no_index'] = 0;
+      if (isset($slide->field_slide_no_index[LANGUAGE_NONE])) {
+        $content['no_index'] = $slide->field_slide_no_index[LANGUAGE_NONE][0]['value'];
+      }
+      $content['no_follow'] = 0;
+      if (isset($slide->field_slide_no_follow[LANGUAGE_NONE])) {
+        $content['no_follow'] = $slide->field_slide_no_follow[LANGUAGE_NONE][0]['value'];
+      }
+      $content['fb_share'] = _ti_amg_fwrd_custom_social_share_widget($content['title'], $content['imgUrl'], $content['slide_url'], 'fb');
+      $content['pinit_share'] = _ti_amg_fwrd_custom_social_share_widget($content['title'], $content['imgUrl'], $content['slide_url'], 'pinit');
+      $gallery['slides'][] = $content;
+
+      // For inserting the interstitial ADs
+      // Mobile ads are displayed after the 4th Slide.
+      // should be displayed only on the tablet and mobile.
+      $current_slide_count = sizeof($gallery['slides']) + 1;
+      if (($current_slide_count % 5 == 0) && !$is_list) {
+        $content = array();
+        $content['interstitial_ad'] = 'TRUE';
+        $content['credit'] = '';
+        $content['caption'] = '';
+        $content['imgUrl'] = '';
+        $content['img_original_url'] = '';
+        $content['description'] = '';
+        $content['place'] = '';
+        $content['title'] = '';
+        $content['content_url'] = '';
+        $content['url_text'] = '';
+        $content['slide_url'] = $slideshow_url . '/ad-' . strval($count);
+        $content['video_id'] = '';
+        $content['is_video'] = 0;
+        $content['slide_number'] = $count;
+        $gallery['slides'][] = $content;
+      }
+      $count++;
+    }
+  }
+  $slides_counter = 0;
+
+  $slides_cont = 0;
+
+  // Construct prev and next link tag for Horizontal gallery.
+  if (!$is_vertical) {
+
+    $slideshow_path = request_path();
+    $slideshow_path_array = explode('/', $slideshow_path);
+
+    foreach ($gallery['slides'] as $slide) {
+      if ((is_numeric($uri[$last_pos])) && ($slide['interstitial_ad'] == 'FALSE') && ($slide['slide_number'] == $gallery['initial_slide_index'])) {
+        $current_slide_index = $slides_counter;
+        $gallery['current_slide'] = $slide;
+
+        if ($detect_device != 'desktop') {
+          if ($gallery['initial_slide_index'] % 4 == 0) {
+            $nxt_slide = 'ad-' . $gallery['initial_slide_index'];
+            $nxt_element = array(
+              '#tag' => 'link',
+              '#attributes' => array(
+                'rel' => 'next',
+                'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $nxt_slide,
+              ),
+            );
+            drupal_add_html_head($nxt_element, 'next');
+          }
+          if ($gallery['initial_slide_index'] % 4 == 1) {
+            $prv_slide = "ad-" . ($gallery['initial_slide_index'] - 1);
+            $prv_element = array(
+              '#tag' => 'link',
+              '#attributes' => array(
+                'rel' => 'prev',
+                'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $prv_slide,
+              ),
+            );
+            drupal_add_html_head($prv_element, 'prev');
+          }
+        }
+      }
+      elseif ((is_numeric($uri[$last_pos]) == FALSE) && ($slide['interstitial_ad'] == 'TRUE') && ($slide['slide_number'] == $gallery['initial_slide_index'])) {
+        $slides_cont = $slides_counter;
+        $gallery['current_slide'] = $slide[$slides_cont];
+
+        if ($gallery['initial_slide_index'] < ($count - 1)) {
+          $nxt_slide = $gallery['initial_slide_index'] + 1;
+          $prv_slide = $gallery['initial_slide_index'];
+          $nxt_element = array(
+            '#tag' => 'link',
+            '#attributes' => array(
+              'rel' => 'next',
+              'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $nxt_slide,
+            ),
+          );
+          drupal_add_html_head($nxt_element, 'next');
+          $prv_element = array(
+            '#tag' => 'link',
+            '#attributes' => array(
+              'rel' => 'prev',
+              'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $prv_slide,
+            ),
+          );
+          drupal_add_html_head($prv_element, 'prev');
+        }
+        elseif ($gallery['initial_slide_index'] == ($count - 1)) {
+          $prv_slide = $gallery['initial_slide_index'];
+          $prv_element = array(
+            '#tag' => 'link',
+            '#attributes' => array(
+              'rel' => 'prev',
+              'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $prv_slide,
+            ),
+          );
+          drupal_add_html_head($prv_element, 'prev');
+        }
+      }
+
+      $slides_counter++;
+    }
+
+    $content = array();
+    $content['interstitial_ad'] = TRUE;
+    $content['outbrain_ad'] = TRUE;
+    $content['credit'] = '';
+    $content['caption'] = '';
+    $content['imgUrl'] = '';
+    $content['img_original_url'] = '';
+    $content['description'] = '';
+    $content['place'] = '';
+    $content['title'] = '';
+    $content['content_url'] = '';
+    $content['url_text'] = '';
+    $content['slide_url'] = $slideshow_url . '/end';
+    $content['slide_number'] = $count;
+    $content['is_video'] = 0;
+    $content['video_id'] = '';
+    $gallery['slides'][] = $content;
+
+    $real_slides_counter = $count;
+    $last_slide = $real_slides_counter - 1;
+    $gallery_data['pagination']['prev']['url'] = $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $last_slide;
+    $gallery_data['pagination']['prev']['title'] = $node->title;
+    $gallery_data['pagination']['next']['url'] = $base_url . $next_slideshow_path;
+    $gallery_data['pagination']['next']['title'] = (isset($next_slideshow_title)) ? $next_slideshow_title : '';
+    if (is_numeric($uri[$last_pos]) == FALSE) {
+      $gallery['initial_slide_index'] = $slides_cont;
+      $gallery['current_slide'] = $gallery['slides'][$slides_cont];
+    }
+    else {
+      $gallery['initial_slide_index'] = $current_slide_index;
+    }
+    if (isset($gallery_data['outbrain_ad']) && ($gallery_data['outbrain_ad'])) {
+      $last_el = sizeof($gallery['slides']);
+      $outbrain_slide_indx = $last_el - 1;
+      $gallery['initial_slide_index'] = $outbrain_slide_indx;
+      $gallery['current_slide'] = $gallery['slides'][$outbrain_slide_indx];
+    }
+    $gallery['real_slides_count'] = $real_slides_counter;
+  }
+  $gallery_data['json'] = $gallery;
+  return $gallery_data;
+}
+
+/**
+ * To get related palces content.
+ */
+function _ti_amg_fwrd_gallery_get_slide_related_places($slide) {
+  $place_section = array();
+  if (isset($slide->field_slide_related_places[LANGUAGE_NONE][0]['target_id'])) {
+    $place_id = $slide->field_slide_related_places[LANGUAGE_NONE][0]['target_id'];
+    $place = node_load($place_id);
+    if (isset($place->title)) {
+      $place_section['venue_title'] = $place->title;
+    }
+    if (isset($place->field_street_address[LANGUAGE_NONE][0]['value'])) {
+      $place_section['street'] = $place->field_street_address[LANGUAGE_NONE][0]['value'];
+    }
+    $place_section['city_section'] = array();
+    if (isset($place->field_locality[LANGUAGE_NONE][0]['value'])) {
+      $place_section['city_section']['locality'] = $place->field_locality[LANGUAGE_NONE][0]['value'];
+    }
+    if (isset($place->field_region[LANGUAGE_NONE][0]['value'])) {
+      $place_section['city_section']['region'] = $place->field_region[LANGUAGE_NONE][0]['value'];
+    }
+    if (isset($place->field_postal_code[LANGUAGE_NONE][0]['value'])) {
+      $place_section['city_section']['zipcode'] = $place->field_postal_code[LANGUAGE_NONE][0]['value'];
+    }
+    if (isset($place->field_country[LANGUAGE_NONE][0]['tid'])) {
+      $topic = taxonomy_term_load($place->field_country[LANGUAGE_NONE][0]['tid']);
+      $place_section['country'] = $topic->name;
+    }
+    if (isset($place->field_phone_number[LANGUAGE_NONE][0]['value'])) {
+      $place_section['phone'] = $place->field_phone_number[LANGUAGE_NONE][0]['value'];
+    }
+    if (isset($place->field_website_url[LANGUAGE_NONE][0]['url'])) {
+      $web_url = $place->field_website_url[LANGUAGE_NONE][0]['url'];
+      $web_title = (isset($place->field_website_url[LANGUAGE_NONE][0]['title'])) ? $place->field_website_url[LANGUAGE_NONE][0]['title'] : $web_url;
+      $web_url_link = l($web_title, $web_url, array(
+        'html' => TRUE,
+        'attributes' => array(
+          'target' => '_blank',
+          'class' => 'place website_url',
+        ),
+          )
+      );
+      $place_section['web_url'] = $web_url_link;
+    }
+  }
+  return $place_section;
+}
+
+/**
+ * To get end slate pagination.
+ */
+function _ti_amg_fwrd_gallery_get_end_slate_pagination($prev, $next) {
+  return theme('gallery-end-slate-pagination', array(
+    'prev' => $prev,
+    'next' => $next,
+    'classes' => '',
+  ));
+}
+
+/**
+ * To get related contents of a node.
+ */
+function _ti_amg_fwrd_gallery_related_contents($node) {
+  $entity_ids = $remaining_nids = $related_content = array();
+  $image_style = RELATED_CONTENT_IMAGE_STYLE;
+  $related_content['title'] = (!empty($node->field_related_content_title[LANGUAGE_NONE])) ?
+      $node->field_related_content_title[LANGUAGE_NONE][0]['value'] : 'MORE FOOD &amp; WINE';
+  if (isset($node->field_related_gallery[LANGUAGE_NONE])) {
+    foreach ($node->field_related_gallery[LANGUAGE_NONE] as $entity_id) {
+      $entity_ids[] = $entity_id['target_id'];
+    }
+  }
+  if (count($entity_ids) < MAX_RELATED_CONTENT_TOUTS) {
+    $remaining_nids = _ti_amg_fwrd_gallery_related_additional_contents($node, $entity_ids);
+    if (!empty($remaining_nids) && count($remaining_nids) > 0) {
+      $entity_ids = array_merge($entity_ids, $remaining_nids);
+    }
+  }
+  $content_nodes = array_values(entity_load('node', $entity_ids));
+  foreach ($content_nodes as $current_node) {
+    $related_content['content'][] = ti_amg_fwrd_custom_get_content($current_node, $image_style);
+  }
+  return theme('related-content', array(
+    'items' => $related_content,
+    'classes' => '',
+  ));
+}
+
+/**
+ * To get details of related contents to the node.
+ */
+function _ti_amg_fwrd_gallery_related_contents_detail($node) {
+  $entity_ids = array();
+  $remaining_nids = array();
+  $related_content = array();
+  $image_style = RELATED_CONTENT_IMAGE_STYLE;
+  $tid = ti_amg_fwrd_category_get_category_tid($node);
+  $term_name = ti_amg_fwrd_category_get_term_name($tid);
+  $related_content['title'] = (isset($node->field_related_content_title[LANGUAGE_NONE])) ?
+      $node->field_related_content_title[LANGUAGE_NONE][0]['value'] : 'More ' . $term_name . ' Ideas';
+  if (!empty($node->field_related_gallery[LANGUAGE_NONE])) {
+    foreach ($node->field_related_gallery[LANGUAGE_NONE] as $entity_id) {
+      $entity_ids[] = $entity_id['target_id'];
+    }
+    if (count($entity_ids) < 6) {
+      $remaining_nids = _ti_amg_fwrd_gallery_related_additional_contents($node, $entity_ids);
+      if (!empty($remaining_nids) && count($remaining_nids) > 0) {
+        $entity_ids = array_merge($entity_ids, $remaining_nids);
+      }
+    }
+  }
+  else {
+    $remaining_nids = _ti_amg_fwrd_gallery_related_additional_contents($node, $entity_ids);
+    if (!empty($remaining_nids) && count($remaining_nids) > 0) {
+      $entity_ids = $remaining_nids;
+    }
+  }
+  if (count($entity_ids) < 6) {
+    $extra_nids = _ti_amg_fwrd_gallery_related_extra_contents($node, $entity_ids);
+    $entity_ids = array_merge($entity_ids, $extra_nids);
+  }
+  $content_nodes = entity_load('node', $entity_ids);
+  foreach ($content_nodes as $current_node) {
+    $related_content['content'][] = ti_amg_fwrd_custom_get_content($current_node, $image_style);
+  }
+
+  return $related_content;
+}
+
+/**
+ * To get the remaining items when the related content having less than 6.
+ *
+ * @param object $node
+ *   Contains current page node information.
+ * @param array $nids_excempt
+ *   What node id's need to excempt.
+ *
+ * @return array
+ *   An array of the remaining nids.
+ */
+function _ti_amg_fwrd_gallery_related_extra_contents($node, $nids_excempt) {
+  $remaining_nodes_nids = array();
+  if (count($nids_excempt) > 0) {
+    $limit = ((MAX_RELATED_CONTENT_TOUTS) - (count($nids_excempt)));
+  }
+  else {
+    $limit = MAX_RELATED_CONTENT_TOUTS;
+  }
+  $nids_excempt[] = $node->nid;
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node');
+  $query->entityCondition('bundle', 'gallery');
+  $query->addTag('publication_date_desc');
+  $query->range(0, $limit);
+  $query->propertyCondition('status', 1);
+  if (count($nids_excempt) > 0) {
+    $query->propertyCondition('nid', $nids_excempt, 'NOT IN');
+  }
+  $result = $query->execute();
+  if (!empty($result['node'])) {
+    $remaining_nodes_nids = array_keys($result['node']);
+  }
+  return $remaining_nodes_nids;
+}
+
+/**
+ * To get the remaining items when the related content having less than 6.
+ *
+ * @param object $node
+ *   Contains current page node information.
+ * @param array $nids_excempt
+ *   What node id's need to excempt.
+ *
+ * @return array
+ *   An array of the remaining nids.
+ */
+function _ti_amg_fwrd_gallery_related_additional_contents($node, $nids_excempt) {
+  $remaining_nodes_nids = array();
+  if (count($nids_excempt) > 0) {
+    $limit = ((MAX_RELATED_CONTENT_TOUTS) - (count($nids_excempt)));
+  }
+  else {
+    $limit = MAX_RELATED_CONTENT_TOUTS;
+  }
+  $nids_excempt[] = $node->nid;
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node');
+  $query->entityCondition('bundle', 'gallery');
+  $query->addTag('publication_date_desc');
+  $query->range(0, $limit);
+  $query->propertyCondition('status', 1);
+  if (count($nids_excempt) > 0) {
+    $query->propertyCondition('nid', $nids_excempt, 'NOT IN');
+  }
+  $result = $query->execute();
+  if (!empty($result['node'])) {
+    $remaining_nodes_nids = array_keys($result['node']);
+  }
+  return $remaining_nodes_nids;
+}
+
+/**
+ * Social Share section of gallery page.
+ */
+function _ti_amg_fwrd_gallery_social_share_section($node_title = '', $social_share_img_path = '', $page_alias = '') {
+  global $base_url;
+  $site_name = variable_get('site_name');
+  $current_url = $page_alias;
+  $img_path = url(drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/spritemap.svg', array('absolute' => TRUE));
+  $social_share_content['title'] = urlencode($node_title);
+  $social_share_content['pinit_title'] = urlencode($node_title . ' | ' . $site_name);
+  $social_share_content['social_share_img_path'] = $social_share_img_path;
+  $social_share_content['mail_subject'] = urlencode($node_title . ' on ' . $site_name);
+  $social_share_content['mail_body'] = urlencode($node_title) . '%0A' . urlencode($current_url);
+  $social_share_content['twitter_text'] = 'original_referer=' . urlencode($current_url) . '&amp;text=' . rawurlencode($node_title) . ' on' . rawurlencode($site_name) . '&amp;url=' . urlencode($current_url) . '%3Fxid%3Dtwsharebar&amp;via=foodandwine';
+  $social_share_content['fb_data'] = '';
+  if (isset($_COOKIE['TI_PREFS']) && ($_COOKIE['TI_PREFS'] == 'phone')) {
+    $fb_params = array(
+      'u' => $current_url,
+      'images' => array($social_share_content['social_share_img_path']),
+      't' => $social_share_content['title'],
+    );
+    $social_share_content['fb_data'] = 'http://m.facebook.com/sharer.php?' .
+        http_build_query($fb_params);
+  }
+  else {
+    // Desktop.
+    $fb_params = array(
+      's' => 100,
+      'p' => array(
+        'url' => $current_url,
+        'images' => array($social_share_img_path),
+        'title' => $social_share_content['title'],
+      ),
+    );
+    $social_share_content['fb_data'] = 'http://www.facebook.com/sharer/sharer.php?' .
+        http_build_query($fb_params);
+  }
+  $social_share_content['twitter_data'] = '';
+  $twitter_params = array(
+    'url' => $current_url,
+    'text' => html_entity_decode($node_title),
+    'via' => 'foodandwine',
+    'related' => 'foodandwine',
+  );
+  $social_share_content['twitter_data'] = 'https://twitter.com/intent/tweet?' .
+      http_build_query($twitter_params);
+  $pinterest_params = array(
+    'description' => $social_share_content['title'],
+    'url' => $current_url,
+    'media' => $social_share_img_path,
+  );
+  $social_share_content['pinterest_data'] = 'http://pinterest.com/pin/create/linkshare/?' .
+      http_build_query($pinterest_params);
+  return theme('social-share-gallery-mobile', array(
+    'url' => $current_url,
+    'img_path' => $img_path,
+    'social_content' => $social_share_content,
+  ));
+}
+
+/**
+ * To Verify the gallery node supports square images.
+ *
+ * @param object $node
+ *   Node Object.
+ * @return boolean
+ *   Returs TRUE if node supports square images.
+ */
+function ti_amg_fwrd_gallery_support_square_images($node) {
+  $field = field_get_items('node', $node, 'field_support_square_images');
+  if ($field) {
+    $field_value = $field[0]['value'];
+    if ($field_value) {
+      return TRUE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+  else {
+    return FALSE;
+  }
+}

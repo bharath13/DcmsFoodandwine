@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI_AMG_FW_VIDEO_LANDING_PAGE_CONTEXTS feature.
+ */
+
+include_once 'ti_amg_fw_video_landing_page_contexts.features.inc';

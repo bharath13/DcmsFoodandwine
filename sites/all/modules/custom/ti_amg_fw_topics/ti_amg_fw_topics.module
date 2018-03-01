@@ -1,0 +1,217 @@
+<?php
+
+/**
+ * @file
+ * Code for the TI AMG FW Topics
+ *
+ * \defgroup ti_amg_fw_topics FoodandWine.com Topics
+ * \ingroup Features
+ * \brief Provides routing for FoodandWine topic pages
+ *
+ * @{
+ */
+
+include_once 'ti_amg_fw_topics.features.inc';
+
+/**
+ * Returns the node ID of the topic node associated with a taxonomy
+ * term, or FALSE if there is no such node.
+ *
+ * @param int $tid
+ *   The term ID for which to fetch the associated channel node id
+ */
+function ti_amg_fw_topics_get_associated_node($tid) {
+  $query = db_select('taxonomy_index', 't');
+  $query->join('node', 'n', 't.nid = n.nid');
+  $query->addTag('node_access');
+  $query->condition('tid', $tid);
+  $query->addField('t', 'nid');
+  $query->addField('t', 'tid');
+  $query->condition('t.tid', $tid);
+  $query->condition('n.type', array('topic_page_parent', 'topic_page_child'), 'IN');
+
+  return $query->execute()->fetchField();
+}
+
+/**
+ * Implements hook_amg_mobile_disallowed_paths from ti_amg_mobile.module.
+ *
+ * Returns an array of paths to disallow on mobile, in this case, topic
+ * grandchild and great-grandchild pages.
+ */
+function ti_amg_fw_topics_amg_mobile_disallowed_paths() {
+  return array(
+    'taxonomy/term/%',
+  );
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function ti_amg_fw_topics_menu_alter(&$items) {
+  // Luckily, CTools page manager is really polite.
+  // It will only alter menu entries that are still set to system defaults, so this
+  // doesn't get clobbered, even if it runs before page manager.
+  $items['taxonomy/term/%taxonomy_term']['page callback'] = 'ti_amg_fw_topics_term_page';
+}
+
+/**
+ * Page callback for FoodandWine topics.
+ * Passes control to the channel node if one exists, or else passes control to the default channel page defined in
+ * panels.
+ */
+function ti_amg_fw_topics_term_page($term) {
+  $topic_node = ti_amg_fw_topics_get_associated_node($term->tid);
+  if ($topic_node) {
+    // On FoodandWine, we're not routing higher level topic through taxonomy.
+    // While it's not expected anyone will get a link to one of these pages,
+    // for safety, We should redirect on the off chance someone runs into one.
+    drupal_goto('node/' . $topic_node);
+  }
+  else {
+    module_load_include('inc', 'page_manager', 'plugins/tasks/term_view');
+    return page_manager_term_view_page($term);
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * \details Provides view_modes for all of the tout formats specific to topic
+ * pages.
+ */
+function ti_amg_fw_topics_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes'] += array(
+    'foodandwine_75' => array(
+      'label' => t('Topic Page Foodandwine 75x75'),
+      'custom settings' => FALSE,
+    ),
+    'topic_150' => array(
+      'label' => t('Topic Page 150x150'),
+      'custom settings' => FALSE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fw_topics_block_info() {
+  $blocks = array();
+
+  $blocks['topics_tree_menu'] = array(
+    'info' => t('Topics tree menu'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fw_topics_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'topics_tree_menu':
+      $block['content'] = ti_amg_fw_topics_treemenu();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Outputs a taxonomy tree menu block, centered on $tid.
+ *
+ * Specifically built around the assumptions of topics (i.e. 4-level hierarchy)
+ */
+function ti_amg_fw_topics_treemenu($tid = NULL) {
+
+  if (!$tid) {
+    $term = menu_get_object('taxonomy_term', 2);
+    if (!$term) {
+      return array();
+    }
+    $tid = $term->tid;
+  }
+
+  return _ti_amg_fw_topics_treemenu($tid);
+}
+
+/**
+ * Helper function.
+ * Takes $inner list of taxonomy menu items, where $anchor is the parent and
+ * wraps this in a list of the siblings of $anchor.
+ *
+ * Finally, grabs the parent of $anchor, and wraps the whole list with that.
+ */
+function _ti_amg_fw_topics_treemenu_outer($anchor, $inner) {
+  $output = array(
+    'items' => array(),
+  );
+  $parent = array_pop(taxonomy_get_parents($anchor));
+  $siblings = taxonomy_get_children($parent->tid);
+
+  foreach ($siblings as $sibling) {
+    $link = l($sibling->name, 'taxonomy/term/' . $sibling->tid);
+    if ($sibling->tid == $anchor) {
+      $link .= $inner;
+    }
+    $output['items'][] = $link;
+  }
+
+  $link = l('Looking for More ' . trim($parent->name) . '?',
+    'taxonomy/term/' . $parent->tid
+  );
+  $parent_node = ti_amg_fw_topics_get_associated_node($parent->tid);
+
+  if ($parent_node) {
+    $parent_node = node_load($parent_node);
+    $headline = field_get_items('node', $parent_node, 'field_headline');
+
+    if (!empty($headline[0])) {
+      $link = l('Looking for More ' . trim(strip_tags($headline[0]['value']) . '?'),
+        'node/' . $parent_node->nid
+      );
+    }
+  }
+
+  $output = array(
+    'items' => array(
+      $link . theme('item_list', $output),
+    ),
+  );
+
+  return theme('item_list', $output);
+}
+
+/**
+ * Helper function
+ * Returns a renderable nested list of topic terms, centered on $tid.
+ *
+ * If $tid is not provided, then it defaults to the tid of the current taxonomy
+ * term page, if there is one.
+ */
+function _ti_amg_fw_topics_treemenu($tid) {
+  $output = array(
+    'items' => array(),
+  );
+  $anchor = $tid;
+  $depth = count(taxonomy_get_parents_all($tid));
+
+  $children = taxonomy_get_children($tid);
+  if ($depth == 4) {
+    $parent = array_pop(taxonomy_get_parents($tid));
+    $children = taxonomy_get_children($parent->tid);
+    $anchor = $parent->tid;
+  }
+
+  foreach ($children as $child) {
+    $output['items'][] = l($child->name, 'taxonomy/term/' . $child->tid);
+  }
+
+  return _ti_amg_fw_topics_treemenu_outer($anchor, theme('item_list', $output));
+}
+

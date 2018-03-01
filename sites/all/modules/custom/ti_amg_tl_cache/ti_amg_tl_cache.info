@@ -1,0 +1,4 @@
+name = TI AMG TL Cache
+description = Separate mobile and desktop page caches
+core = 7.x
+package = AMG

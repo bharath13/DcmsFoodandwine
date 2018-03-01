@@ -1,0 +1,51 @@
+/**
+ * Block: tile-slider
+ * Element: tile-slider__element
+ * Modifier: tile-slider--modifier
+ */
+
+$block: tile-nav;
+
+.#{$block} {
+  @include clearfix();
+  @include layout((columns: 6, gutters: 2/190));
+
+  &__item {
+    @include span(1 of 6);
+    position: relative;
+
+    &:last-child {
+      margin-right: 0;
+    }
+
+    img {
+      width: 100%;
+      display: block;
+    }
+  }
+}
+
+.#{$block}-carousel {
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+  margin-bottom: 20px;
+
+  .pagination-btn {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    margin-top: -29px;
+    z-index: $z-2;
+
+    &--next {
+      left: auto;
+      right: 20px;
+    }
+    
+    @include respond-to('medium and up') {
+      display: none;
+    }
+  }
+
+}

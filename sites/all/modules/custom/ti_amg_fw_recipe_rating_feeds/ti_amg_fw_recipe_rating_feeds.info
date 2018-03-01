@@ -1,0 +1,6 @@
+name = TI AMG FW Recipe Ratings Feeds
+description = Feature for Recipe Ratings Feeds
+core = 7.x
+package = Feeds
+version = 7.x-1.0
+

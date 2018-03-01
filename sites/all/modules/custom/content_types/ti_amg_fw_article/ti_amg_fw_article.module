@@ -1,0 +1,448 @@
+<?php
+/**
+ * @file
+ * Code for the TI LSG Article feature.
+ *
+ * \defgroup ti_lsg_mr_article MyRecipes.com Article Feature
+ * \ingroup Features
+ * \brief Provides the Article content type and fields for COOK.com
+ *
+ * @{
+ */
+
+include_once 'ti_amg_fw_article.features.inc';
+
+/**
+ * Implements hook_custom_subpaths().
+ *
+ * Provides a subpath validator and page callback for
+ * splitting an article up into separate pages with
+ * custom urls.
+ */
+function ti_lsg_mr_article_custom_subpaths() {
+  return array(
+    'article' => array(
+      'subpath validate' => 'ti_lsg_mr_article_subpaths',
+      'page callback' => 'ti_lsg_mr_article_paged_display',
+    ),
+  );
+}
+
+/**
+ * Page callback for setting the pager setting without a query parameter.
+ */
+function ti_lsg_mr_article_paged_display($article_node, $article_page) {
+  $_GET['p'] = $article_page;
+
+  // Pass off to Panels + Page Manager to display.
+  module_load_include('inc', 'page_manager', 'plugins/tasks/node_view');
+  return page_manager_node_view_page($article_node);
+}
+
+/**
+ * Subpath validator.
+ *
+ * This declares the custom subpaths that are available for article nodes.
+ *
+ * \details This handles the special path rules for articles. Paging has
+ *          custom urls like 'page2' and 'page3' to be more SEO-friendly.
+ */
+function ti_lsg_mr_article_subpaths($path) {
+  $regex = '/^page([\d]+)$/';
+  $matches = array();
+  preg_match($regex, $path, $matches);
+
+  if (!empty($matches) && !in_array($matches[1], array(0, 1))) {
+    return $matches[1];
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements template_preprocess_node().
+ *
+ * Replace the pager with an article-specific paging
+ * system that uses the custom subpaths for paging.
+ */
+function ti_lsg_mr_article_preprocess_node(&$variables) {
+  $node = $variables['node'];
+
+  if ($node->type === 'article' && $variables['view_mode'] === 'full') {
+    $variables['content']['pagination_pager'] = array('#weight' => 1, '#markup' => theme('article_pager'));
+  }
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Paging theme functions to provide custom pager
+ * that takes into account the Article subpaths.
+ */
+function ti_lsg_mr_article_theme($existing, $type, $theme, $path) {
+  $items = array(
+    'article_pager' => array(
+      'variables' => array(
+        'tags' => array(),
+        'element' => 0,
+        'parameters' => array(),
+        'quantity' => 9,
+      ),
+    ),
+    'article_pager_first' => array(
+      'variables' => array(
+        'text' => NULL,
+        'element' => 0,
+        'parameters' => array(),
+      ),
+    ),
+    'article_pager_previous' => array(
+      'variables' => array(
+        'text' => NULL,
+        'element' => 0,
+        'interval' => 1,
+        'parameters' => array(),
+      ),
+    ),
+    'article_pager_next' => array(
+      'variables' => array(
+        'text' => NULL,
+        'element' => 0,
+        'interval' => 1,
+        'parameters' => array(),
+      ),
+    ),
+    'article_pager_last' => array(
+      'variables' => array(
+        'text' => NULL,
+        'element' => 0,
+        'parameters' => array(),
+      ),
+    ),
+    'article_pager_link' => array(
+      'variables' => array(
+        'text' => NULL,
+        'page_new' => NULL,
+        'element' => NULL,
+        'parameters' => array(),
+        'attributes' => array(),
+      ),
+    ),
+  );
+
+  return $items;
+}
+
+/**
+ * Custom Article pager theme functions.
+ */
+
+/**
+ * Theme article pager.
+ */
+function theme_article_pager($variables) {
+  $tags = $variables['tags'];
+  $element = $variables['element'];
+  $parameters = $variables['parameters'];
+  $quantity = $variables['quantity'];
+  global $pagination_pager_page_array, $pagination_pager_total;
+
+  // Calculate various markers within this pager piece:
+  // $pager_middle is used to "center" pages around the current page.
+  $pager_middle = ceil($quantity / 2);
+  // $pager_current is the page we are currently paged to.
+  $pager_current = $pagination_pager_page_array[$element] + 1;
+  // $pager_first is the first page listed by this pager piece (re quantity).
+  $pager_first = $pager_current - $pager_middle + 1;
+  // $pager_last is the last page listed by this pager piece (re quantity).
+  $pager_last = $pager_current + $quantity - $pager_middle;
+  // $pager_max is the maximum page number.
+  $pager_max = $pagination_pager_total[$element];
+  // End of marker calculations.
+
+  // Prepare for generation loop.
+  $i = $pager_first;
+  if ($pager_last > $pager_max) {
+    // Adjust "center" if at end of query.
+    $i = $i + ($pager_max - $pager_last);
+    $pager_last = $pager_max;
+  }
+  if ($i <= 0) {
+    // Adjust "center" if at start of query.
+    $pager_last = $pager_last + (1 - $i);
+    $i = 1;
+  }
+  // End of generation loop preparation.
+
+  $li_first = theme('article_pager_first', array(
+    'text' => (isset($tags[0]) ? $tags[0] : t('« First')),
+    'element' => $element, 'parameters' => $parameters,
+  ));
+  $li_previous = theme('article_pager_previous', array(
+    'text' => (isset($tags[1]) ? $tags[1] : t('‹ Previous')),
+    'element' => $element, 'interval' => 1, 'parameters' => $parameters,
+  ));
+  $li_next = theme('article_pager_next', array(
+    'text' => (isset($tags[3]) ? $tags[3] : t('Next ›')),
+    'element' => $element, 'interval' => 1, 'parameters' => $parameters,
+  ));
+  $li_last = theme('article_pager_last', array(
+    'text' => (isset($tags[4]) ? $tags[4] : t('Last »')),
+    'element' => $element, 'parameters' => $parameters,
+  ));
+
+  if ($pagination_pager_total[$element] > 1) {
+    if ($li_first) {
+      $items[] = array(
+        'class' => array('article-pager__nav article-pager__nav--first'),
+        'data' => $li_first,
+      );
+    }
+    if ($li_previous) {
+      $items[] = array(
+        'class' => array('article-pager__nav article-pager__nav--previous'),
+        'data' => $li_previous,
+      );
+    }
+
+    // When there is more than one page, create the pager list.
+    if ($i != $pager_max) {
+      if ($i > 1) {
+        $items[] = array(
+          'class' => array('article-pager__ellipsis'),
+          'data' => '…',
+        );
+      }
+      // Now generate the actual pager piece.
+      for (; $i <= $pager_last && $i <= $pager_max; $i++) {
+        if ($i < $pager_current) {
+          $items[] = array(
+            'class' => array('article-pager__item'),
+            'data' => theme('article_pager_previous', array(
+              'text' => $i,
+              'element' => $element,
+              'interval' => ($pager_current - $i),
+              'parameters' => $parameters,
+            )),
+          );
+        }
+        if ($i == $pager_current) {
+          $items[] = array(
+            'class' => array('article-pager__item article-pager__item--current'),
+            'data' => $i,
+          );
+        }
+        if ($i > $pager_current) {
+          $items[] = array(
+            'class' => array('article-pager__item'),
+            'data' => theme('article_pager_next', array(
+              'text' => $i,
+              'element' => $element,
+              'interval' => ($i - $pager_current),
+              'parameters' => $parameters,
+            )),
+          );
+        }
+      }
+      if ($i < $pager_max) {
+        $items[] = array(
+          'class' => array('article-pager__ellipsis'),
+          'data' => '…',
+        );
+      }
+    }
+    // End generation.
+    if ($li_next) {
+      $items[] = array(
+        'class' => array('article-pager__nav article-pager__nav--next'),
+        'data' => $li_next,
+      );
+    }
+    if ($li_last) {
+      $items[] = array(
+        'class' => array('article-pager__nav article-pager__nav--last'),
+        'data' => $li_last,
+      );
+    }
+    return '<div class="article-pager__wrapper"><div class="article-pager__title">' . t('Page') . '</div>' . theme('item_list', array(
+      'items' => $items,
+      'attributes' => array('class' => array('article-pager')),
+    )) . '</div>';
+  }
+}
+
+/**
+ * Theme article pager first.
+ */
+function theme_article_pager_first($variables) {
+  $text = $variables['text'];
+  $element = $variables['element'];
+  $parameters = $variables['parameters'];
+  global $pagination_pager_page_array;
+  $output = '';
+
+  // If we are anywhere but the first page.
+  if ($pagination_pager_page_array[$element] > 0) {
+    $output = theme('article_pager_link', array(
+      'text' => $text,
+      'page_new' => pager_load_array(0, $element, $pagination_pager_page_array),
+      'element' => $element,
+      'parameters' => $parameters,
+    ));
+  }
+
+  return $output;
+}
+
+/**
+ * Theme article pager last.
+ */
+function theme_article_pager_last($variables) {
+  $text = $variables['text'];
+  $element = $variables['element'];
+  $parameters = $variables['parameters'];
+  global $pagination_pager_page_array, $pagination_pager_total;
+  $output = '';
+
+  // If we are anywhere but the last page.
+  if ($pagination_pager_page_array[$element] < ($pagination_pager_total[$element] - 1)) {
+    $output = theme('article_pager_link', array(
+      'text' => $text,
+      'page_new' => pager_load_array($pagination_pager_total[$element] - 1, $element, $pagination_pager_page_array),
+      'element' => $element,
+      'parameters' => $parameters,
+    ));
+  }
+
+  return $output;
+}
+
+/**
+ * Theme article pager link.
+ */
+function theme_article_pager_link($variables) {
+  $query_pager = array();
+  $text = $variables['text'];
+  $page_new = $variables['page_new'];
+  $element = $variables['element'];
+  $parameters = $variables['parameters'];
+  $attributes = $variables['attributes'];
+
+  $page = isset($_GET['p']) ? $_GET['p'] : '';
+  if ($new_page = implode(',', pager_load_array($page_new[$element], $element, explode(',', $page)))) {
+    // $parameters['p'] = $new_page;
+  }
+
+  $query = array();
+  if (count($parameters)) {
+    $query = drupal_get_query_parameters($parameters, array());
+  }
+  if ($query_pager = ti_lsg_pagination_pager_get_query_parameters()) {
+    $query = array_merge($query, $query_pager);
+  }
+
+  // Set each pager link title.
+  if (!isset($attributes['title'])) {
+    static $titles = NULL;
+    if (!isset($titles)) {
+      $titles = array(
+        t('« first') => t('Go to first page'),
+        t('‹ previous') => t('Go to previous page'),
+        t('next ›') => t('Go to next page'),
+        t('last »') => t('Go to last page'),
+      );
+    }
+    if (isset($titles[$text])) {
+      $attributes['title'] = $titles[$text];
+    }
+    elseif (is_numeric($text)) {
+      $attributes['title'] = t('Go to page @number', array('@number' => $text));
+    }
+  }
+
+  // @todo l() cannot be used here, since it adds an 'active' class based on the
+  //   path only (which is always the current path for pager links). Apparently,
+  //   none of the pager links is active at any time - but it should still be
+  //   possible to use l() here.
+  // @see http://drupal.org/node/1410574
+  // The important difference here is in how the URL is constructed to create
+  // the custom subpath for paging through Articles.
+  $node = menu_get_object();
+  $attributes['href'] = url('node/' . $node->nid . ($new_page > 0 ? '/page' . ($new_page + 1) : ''), array('query' => $query));
+  return '<a' . drupal_attributes($attributes) . '>' . check_plain($text) . '</a>';
+}
+
+/**
+ * Theme article pager next.
+ */
+function theme_article_pager_next($variables) {
+  $text = $variables['text'];
+  $element = $variables['element'];
+  $interval = $variables['interval'];
+  $parameters = $variables['parameters'];
+  global $pagination_pager_page_array, $pagination_pager_total;
+  $output = '';
+
+  // If we are anywhere but the last page.
+  if ($pagination_pager_page_array[$element] < ($pagination_pager_total[$element] - 1)) {
+    $page_new = pager_load_array($pagination_pager_page_array[$element] + $interval, $element, $pagination_pager_page_array);
+    // If the next page is the last page, mark the link as such.
+    if ($page_new[$element] == ($pagination_pager_total[$element] - 1)) {
+      $output = theme('article_pager_last', array(
+        'text' => $text,
+        'element' => $element,
+        'parameters' => $parameters,
+      ));
+    }
+    // The next page is not the last page.
+    else {
+      $output = theme('article_pager_link', array(
+        'text' => $text,
+        'page_new' => $page_new,
+        'element' => $element,
+        'parameters' => $parameters,
+      ));
+    }
+  }
+
+  return $output;
+}
+
+/**
+ * Theme article pager previous.
+ */
+function theme_article_pager_previous($variables) {
+  $text = $variables['text'];
+  $element = $variables['element'];
+  $interval = $variables['interval'];
+  $parameters = $variables['parameters'];
+  global $pagination_pager_page_array;
+  $output = '';
+
+  // If we are anywhere but the first page.
+  if ($pagination_pager_page_array[$element] > 0) {
+    $page_new = pager_load_array($pagination_pager_page_array[$element] - $interval, $element, $pagination_pager_page_array);
+
+    // If the previous page is the first page, mark the link as such.
+    if ($page_new[$element] == 0) {
+      $output = theme('article_pager_first', array(
+        'text' => $text,
+        'element' => $element,
+        'parameters' => $parameters,
+      ));
+    }
+    // The previous page is not the first page.
+    else {
+      $output = theme('article_pager_link', array(
+        'text' => $text,
+        'page_new' => $page_new,
+        'element' => $element,
+        'parameters' => $parameters,
+      ));
+    }
+  }
+
+  return $output;
+}
+
+/**@}*/

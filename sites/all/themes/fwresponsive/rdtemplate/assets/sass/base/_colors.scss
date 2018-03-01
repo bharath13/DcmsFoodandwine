@@ -1,0 +1,33 @@
+/*-----------------------------------------------------------------------------
+ *-----------------------------------------------------------------------------
+ *
+ * COLORS
+ * 
+ * Define any global color variables below. Ideally color variables should be
+ * referenced by the theme variables that follow. 
+ *
+ *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------- */
+ 
+
+/*-------------------------------------------- */
+/** Color Variables */
+/*-------------------------------------------- */
+
+$color-red: #e71f3d;
+$color-blue: #4797d9;
+$color-teal: #009fbf;
+$color-off-white: #f9f9f9;
+$color-light-grey: #dedede;
+$color-mid-grey: #c4c2c3;
+$color-dark-grey: #666666;
+$color-black: #333;
+$color-black-2: #222;
+$color-twitter: #4eb9e1;
+
+/*-------------------------------------------- */
+/** Theme Variables */
+/*-------------------------------------------- */
+
+$brand-primary: $color-red;
+$border-color: $color-mid-grey;

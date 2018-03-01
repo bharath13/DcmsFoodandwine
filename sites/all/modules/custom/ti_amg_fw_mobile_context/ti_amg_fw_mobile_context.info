@@ -1,0 +1,6 @@
+name = TI AMG FW Mobile Context Condition
+description = TI AMG FW Mobile Context Condition
+core = 7.x
+package = AMG
+
+dependencies[] = context

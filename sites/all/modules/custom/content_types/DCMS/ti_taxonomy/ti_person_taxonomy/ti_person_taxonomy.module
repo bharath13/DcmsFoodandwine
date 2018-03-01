@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the FoodandWine DCMS Person Taxonomy feature.
+ */
+
+include_once 'ti_person_taxonomy.features.inc';

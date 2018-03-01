@@ -1,0 +1,8 @@
+name = TI AMG FW: Devel
+description = Helper module for use during development of TI AMG FW Living
+version = 7.x-1.2
+core = 7.x
+package = FoodandWine
+project = ti_amg_fw_devel
+
+dependencies[] = ti_lsg_devel

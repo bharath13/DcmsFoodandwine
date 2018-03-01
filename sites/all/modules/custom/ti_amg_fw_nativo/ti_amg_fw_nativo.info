@@ -1,0 +1,4 @@
+name = TI AMG FW Nativo Advertisements
+description = TI AMG FW Nativo Advertisements
+package = AMG
+core = 7.x

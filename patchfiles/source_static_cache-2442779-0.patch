@@ -1,0 +1,14 @@
+diff --git a/path.inc b/path.inc
+index 6f5b5a8..0b753f8 100644
+--- a/path.inc
++++ b/path.inc
+@@ -227,7 +227,8 @@ function drupal_lookup_path($action, $path = '', $path_language = NULL) {
+
+         if ($cached = cache_get($path_cid, 'cache_path_source')) {
+           if (!empty($cached->data)) {
+-            $cache['map'][$path_language][$source] = $source =  $cached->data;
++            $source = $cached->data;
++            $cache['map'][$path_language][$source] = $path;
+           }
+           else {
+             $cache['no_source'][$path_language][$path] = TRUE;

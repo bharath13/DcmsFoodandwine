@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the FoodandWine DCMS Shared Taxonomy feature.
+ */
+
+include_once 'ti_shared_taxonomy.features.inc';

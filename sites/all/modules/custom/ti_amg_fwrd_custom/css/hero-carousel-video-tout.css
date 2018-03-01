@@ -1,0 +1,155 @@
+/* styles for lightbox */
+   
+.recipe__video-image-wrapper, .wrapper {
+   position: relative;
+   z-index: 100000000;
+   display: block;
+   cursor: pointer;
+   z-index: 99;
+   height: 100%;
+}   
+
+.recipe__video-image-wrapper {
+	margin-top: 0px;
+}
+
+.tabletPlayerHide {
+	display: none;
+}
+
+.tabletPlayerShow {
+  display: block;
+}
+
+.video_player_tablet .recipe__video-image-wrapper {
+  margin-top: 0px;
+}
+
+.player-block {
+  sition: relative;
+}
+.hero_slide_video_id {
+	display: none;
+} 
+
+.video-channels .highlight-list {
+	padding-bottom: 40px; 
+}
+
+.highlight-list .story-card--is-video .story-card__img-wrap {
+  margin-bottom: 0px !important;
+}
+
+.highlight-list .story-card--is-video .story-card__img-wrap:after {
+	bottom: 16px !important;
+}
+
+.playerLightbox {
+	position: fixed;
+	top: 0;
+	left: 0;
+	padding: 0;
+	margin-left:0;
+	color: white;
+	text-align: center;
+	background-color: #333;
+	border-radius: 5px;
+	z-index:10000;
+	overflow: hidden;
+}
+.playerShow {
+  width: 100%;
+  height: 100%;
+  top:0px;
+  left:0px;
+  position:absolute;
+  z-index:10000;
+  padding: 0px;
+  -webkit-box-shadow:  10px 10px 10px 10px rgba(151, 151, 151, .7);
+  box-shadow:  10px 10px 10px 10px rgba(151, 151, 151, .7);
+}
+      
+.hero-feature.mobile {
+	height: auto !important;
+  margin-bottom: 0px !important;
+  iframe {
+    margin-bottom: 0px !important;
+  }
+}  
+
+.mobile-slide .hero-feature__content {
+	  position: static;
+	  padding-bottom: 0px;
+	  margin-bottom: 0px;
+    z-index: 10000 !important;
+    background: #fff;
+}
+	
+.mobile-player {
+	height: auto !important;
+	width: auto;
+}      
+.mobile-player .hero-feature__content {
+    margin-bottom: 0px;
+    z-index: 10000 !important;
+}
+
+.mobile-player .brightcove-jumpstart {
+  z-index: 10000;
+  position: relative; 
+}
+     
+iframe.BrightcoveExperience {
+  max-width: 100%;
+}
+.mobile iframe.BrightcoveExperience, .mobile-player iframe.BrightcoveExperience {
+	 z-index: 10000;
+	 position: relative;
+	 margin-bottom: 0px !important;
+	 height: 250px;
+}
+
+.tablet-player {
+	padding: 0px 4% !important;
+	background: transparent !important;
+}
+.tablet-player iframe.BrightcoveExperience {
+	height: 400px !important;
+	width: 80% !important;
+	padding: 0 4%;
+}	
+	 
+.mobile-player .brightcove-jumpstart {
+  z-index: 10000;
+  position: relative; 
+}
+	 
+.mobile-player	 .hero-feature__content {
+	z-index: 10000;
+}
+           
+.playerHide {
+  width: 0;
+  height: 0;
+  padding: 0;
+}
+.playerClose {
+  text-align: right;
+  margin-top: -2px;
+  width: 95%;
+  cursor: pointer;
+}
+.recipe__related-video img {
+  cursor: pointer;
+}
+.play-btn-400x400 {
+  background: rgba(0, 0, 0, 0) url("/sites/all/modules/custom/ti_amg_fwrd_recipe/img/videoPlaySprite.png") no-repeat scroll -5px -5px;
+  bottom: 10px;
+  height: 100px;
+  left: 0;
+  position: absolute;
+  width: 70px;
+}
+.homepage_large_video {
+  cursor: pointer;
+}

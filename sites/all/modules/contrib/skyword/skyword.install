@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file
+ * Skyword Module Install.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function skyword_uninstall() {
+  variable_del('skyword_api_key');
+  variable_del('skyword_enable_og');
+  variable_del('skyword_enable_meta');
+  variable_del('skyword_enable_keywords');
+  variable_del('skyword_enable_title');
+}

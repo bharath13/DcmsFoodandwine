@@ -1,0 +1,78 @@
+<?php
+
+/*
+ * @file
+ * To add a Pronto Component for Main Image.
+ */
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function ti_amg_fw_pronto_component_image_field_formatter_info() {
+  return array(
+    'pronto_component_fw_main_image' => array(
+      'label' => t('Pronto Component: FW Main Image'),
+      'field types' => array('entityreference'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function ti_amg_fw_pronto_component_image_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $pronto_component = array(
+    'type' => "components/article/hero-image",
+    'version' => 1,
+    'data' => array(),
+  );
+  switch ($display['type']) {
+    case 'pronto_component_fw_main_image':
+      $enable_main_image = 1;
+      // If hero image available, 'components/article/hero-image' will come in pronto.
+      // So no need to take main image.
+      foreach ($entity->json_elements as $k => $element) {
+        if (in_array("components/article/hero-image", $element, TRUE)) {
+          $enable_main_image = 0;
+        }
+      }
+      // Applying the business logic to display main image.
+      // When no hero image and no brightcove and iframe video, then display main image.
+      if ($enable_main_image && empty($entity->field_related_videos) &&
+          empty($entity->field_blog_video) &&
+          empty($entity->field_blog_hero_image) &&
+          ($entity->field_enable_hero[LANGUAGE_NONE][0]['value'] == 0 || empty($entity->field_enable_hero)) &&
+          !empty($entity->field_images[LANGUAGE_NONE])) {
+        $img_nid = $entity->field_images[LANGUAGE_NONE][0]['target_id'];
+        $credit_override = '';
+        $caption_override = '';
+        $rendered_items = array();
+        // Updating the image credit and caption values with overwritten values.
+        if (!empty($entity->field_overwrite_image_credit)) {
+          $credit_override = strip_tags($entity->field_overwrite_image_credit[LANGUAGE_NONE][0]['value']);
+        }
+        if (!empty($entity->field_overwrite_image_caption)) {
+          $caption_override = strip_tags($entity->field_overwrite_image_caption[LANGUAGE_NONE][0]['value']);
+        }
+
+        $image_entity =  entity_load('node', array($img_nid));
+        if (!empty($credit_override)) {
+          $image_entity[$img_nid]->field_credit[LANGUAGE_NONE][0]['value'] = $credit_override;
+        }
+
+        if (!empty($caption_override)) {
+          $image_entity[$img_nid]->field_caption[LANGUAGE_NONE][0]['value'] = $caption_override;
+        }
+
+        $image_view = entity_view('node', $image_entity, 'pronto_json');
+        $settings['merge_elements'] = 1;
+        $image_node = $image_view['node'][$img_nid]['#node'];
+
+        if (isset($image_node->json_elements)) {
+          _pronto_component_entity_reference_merge_elements($image_node->json_elements, $settings, 0, $display, $rendered_items);
+          $entity->json_elements[] = reset($rendered_items);
+        }
+      }
+      break;
+  }
+}

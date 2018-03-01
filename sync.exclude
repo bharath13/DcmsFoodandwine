@@ -1,0 +1,6 @@
+sync.exclude
+.git
+*.make
+patchfiles
+sites/all/modules/custom/*
+sites/all/themes

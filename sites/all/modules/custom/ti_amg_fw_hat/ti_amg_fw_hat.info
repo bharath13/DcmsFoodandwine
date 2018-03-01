@@ -1,0 +1,4 @@
+name = Hat Block
+description = Time Inc global HAT Integration 
+package = AMG
+core = 7.x

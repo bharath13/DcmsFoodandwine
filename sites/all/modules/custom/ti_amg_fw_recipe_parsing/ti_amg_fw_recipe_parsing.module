@@ -1,0 +1,326 @@
+<?php
+/**
+ * @file
+ * This module will parse recipe ingredient into multiple fields
+ * It contains the algorithm for each field
+ */
+
+/**
+ * Implements hook_field_widget_WIDGET_TYPE_form_alter().
+ */
+function ti_amg_fw_recipe_parsing_field_widget_text_textarea_form_alter(&$element, &$form_state, $context) {
+    ctools_include('ajax');
+
+    if ($element['#bundle'] == 'field_ingredients' && $element['#field_name'] == 'field_ingredient_display_text') {
+      $id = $element['#field_parents'][2];
+        $element['metadata' . $id] = array(
+          '#type' => 'submit',
+          '#value' => t('Parse'),
+          '#attributes' => array('class' => array('ctools-use-ajax')),
+          '#id' => 'parse-ingredients-button-' . $id,
+          '#name' => 'parse-ingredients-button-' . $id,
+          '#ajax' => array(
+            'callback' => 'ti_amg_fw_recipe_parsing_insert_submit',
+          ),
+          '#limit_validation_errors' => array(),
+          '#executes_submit_callback' => FALSE,
+          '#weight' => 1000,
+        );
+  }
+}
+
+/**
+ * Function for executing parsing actions.
+ */
+function ti_amg_fw_recipe_parsing_insert_submit($form, &$form_state) {
+    $lang = $form['language']['#value'];
+    $command_arr = array();
+    $processed_arr = array();
+    if (preg_match("/\d+/", $form_state['triggering_element']['#id'], $output_arr))
+        $id = $output_arr[0];
+    else
+        $id = 0;
+
+    $display_text = strip_tags($form_state['values']['field_ingredients'][$lang][$id]['field_ingredient_display_text']['und'][0]['value']);
+    $replace_arr = array("&nbsp;" => " ", "&amp;" => "&");
+    $display_text = html_entity_decode(str_replace(array_keys($replace_arr), $replace_arr, $display_text));
+    //print htmlspecialchars($display_text);
+    $field_id = count($form_state['values']['field_ingredients'][$lang]) - ($id + 1);
+
+    if ($field_id > 1) {
+      $field_id_str = "--" . $field_id;
+    }
+    else{
+        $field_id_str = "";
+    }
+
+    $field_prefix = '#edit-field-ingredients-und-' . $id;
+
+    if (!empty($display_text)) {
+        $processed_arr = _ti_amg_fw_recipe_parsing_evaluate($display_text);
+
+        //whole value parsing
+        if (isset($processed_arr["whole_value"])) {
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-whole-und-0-value' . $field_id_str, 'val', array($processed_arr["whole_value"]));
+        }
+        else{
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-whole-und-0-value' . $field_id_str, 'val', array(""));
+        }
+
+        //measurement note parsing
+        if (isset($processed_arr["measurement_notes_value"])) {
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-mea-notes-und-0-value' . $field_id_str, 'val', array($processed_arr["measurement_notes_value"]));
+        }
+        else{
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-mea-notes-und-0-value' . $field_id_str, 'val', array(""));
+        }
+
+        //prep value parsing
+        if (isset($processed_arr["prep_notes_value"])) {
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-prep-notes-und-0-value' . $field_id_str, 'val', array($processed_arr["prep_notes_value"]));
+        }
+        else{
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-prep-notes-und-0-value' . $field_id_str, 'val', array(""));
+        }
+
+        //ingredient name parsing
+        if (isset($processed_arr["ingredient_name_value"])) {
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-name-und-0-value' . $field_id_str, 'val', array($processed_arr["ingredient_name_value"]));
+        }
+        else{
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-name-und-0-value' . $field_id_str, 'val', array(""));
+        }
+
+        //fraction value parsing - taxonomy
+        if (isset($processed_arr["fraction_value"])) {
+            $fraction_term = taxonomy_get_term_by_name($processed_arr["fraction_value"]);
+            $fraction_tid = key($fraction_term);
+        }
+        else{
+            $fraction_tid = "none";
+        }
+        $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-fraction-und' . $field_id_str, 'val', array($fraction_tid));
+
+        //unit value parsing - taxonomy
+        if (isset($processed_arr["unit_value"])) {
+            $unit_tid = $processed_arr["unit_value"];
+        }
+        else{
+            $unit_tid = "none";
+        }
+        $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-unit-und' . $field_id_str, 'val', array($unit_tid));
+
+        //taxonomy autocomplete primary ingredient parsing
+        if (isset($processed_arr["primary_ingredient_value"])) {
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-primary-und' . $field_id_str, 'val', array($processed_arr["primary_ingredient_value"]));
+        }
+        else{
+            $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-primary-und' . $field_id_str, 'val', array(""));
+        }
+
+        //$command_arr[] = ajax_command_alert("Parsed");
+    }
+    else{
+        $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-whole-und-0-value' . $field_id_str, 'val', array(""));
+        $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-mea-notes-und-0-value' . $field_id_str, 'val', array(""));
+        $command_arr[] = ajax_command_invoke($field_prefix . '-field-prep-notes-und-0-value' . $field_id_str, 'val', array(""));
+        $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-name-und-0-value' . $field_id_str, 'val', array(""));
+        $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-fraction-und' . $field_id_str, 'val', array("none"));
+        $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-unit-und' . $field_id_str, 'val', array("none"));
+        $command_arr[] = ajax_command_invoke($field_prefix . '-field-ingredient-primary-und' . $field_id_str, 'val', array(""));
+        $command_arr[] = ajax_command_alert("Display text is blank");
+    }
+
+    return array(
+      '#type' => 'ajax',
+      '#commands' => $command_arr,
+    );
+
+}
+
+/* This function contains algorithm for parsing */
+function _ti_amg_fw_recipe_parsing_evaluate($display_text) {
+    $processed_arr = array();
+    //qty conditions - no parsing
+
+    // whole conditions
+    //numeric value eg: 1 2 one two etc
+    //2 dozen clams  =  24 clams
+    //Pinch of salt = 1 pinch of salt
+
+    $word_to_number = _ti_amg_fw_recipe_parsing_number_convertor($display_text);
+
+    if (preg_match("/^([0-9]+) (\bdozen\b)/", $display_text, $whole_value)) {
+        $processed_arr["whole_value"] = intval($whole_value[1]) * 12;
+        $processed_arr["dozen"] = $whole_value[1] . " dozen";
+    }
+    elseif (preg_match("/^[0-9]+ /", $word_to_number, $whole_value)) {
+        $processed_arr["whole_value"] = $whole_value[0];
+    }
+    elseif (preg_match("/^[0-9]+ /", $display_text, $whole_value)) {
+        $processed_arr["whole_value"] = $whole_value[0];
+    }
+
+    //fraction conditions
+    // numeric value in fraction eg: 1.5 or 1/2
+    if (preg_match('/\d+[\.\/]\d+/', $display_text, $fraction_value)) {
+        $processed_arr["fraction_value"] = $fraction_value[0];
+    }
+
+    //unit condition - check terms in unit taxonomy
+    $unit_value = _ti_amg_fw_recipe_parsing_search_terms_by_vocab("ingredient_unit", $display_text);
+    if (isset($unit_value) && $unit_value != "none") {
+        $processed_arr["unit_value"] = $unit_value["tid"];
+    }
+
+    //meas notes
+    //When a recipe has back-to-back numbers to describe an ingredient, after plus word
+    //we ignore the quantity field and put the second number in the measurement notes field
+    //second number eg: one 7 to 8 pounds is the sentence then 7 to 8 pounds is the meas note
+    //eg: 3 1/2 ounches... .... , shredded (1 1/4 cups) then (1 1/4 cups)is the meas note
+    $meas_bracket_flag = FALSE;
+    if (preg_match("/\((.*?)\)/", $display_text, $measurement_notes_value)) {
+        $meas_bracket_flag = TRUE;
+        $processed_arr["measurement_notes_value"] = $measurement_notes_value[1];
+    }
+    elseif (preg_match("/(plus).*/", $display_text, $measurement_notes_value)) {
+        $meas_bracket_flag = TRUE;
+        $processed_arr["measurement_notes_value"] = $measurement_notes_value[0];
+    }
+    elseif (preg_match("/([0-9]+)([-]?) (to) ([0-9]+)([-]?)/", $display_text, $measurement_notes_value)) {
+        $meas_bracket_flag = TRUE;
+        $processed_arr["measurement_notes_value"] = str_replace("-", "", $measurement_notes_value[0]);
+        $processed_arr["measurement_notes_value"] .= isset($unit_value["term_name"])? " " . $unit_value["term_name"] : "";
+        $processed_arr["unit_value"] = "";
+    }
+
+    //prep notes follows the comma in an ingredient.
+    //All of the information after the m dash is a prep note
+    $prep_notes_value = "";
+    $prep_notes_value = _ti_amg_fw_recipe_parsing_strafter($display_text, "—");
+
+    if (!isset($prep_notes_value)) {
+        $prep_notes_value = _ti_amg_fw_recipe_parsing_strafter($display_text, ",");
+    }
+
+    $processed_arr["prep_notes_value"] = trim($prep_notes_value);
+
+    //remove measurement notes from prep
+    if ($meas_bracket_flag == TRUE && isset($prep_notes_value)) {
+        $processed_arr["prep_notes_value"] = trim(str_replace($measurement_notes_value[0], "" , $prep_notes_value));
+    }
+
+    //ingredient name parsing
+    $ingredient_name_value = _ti_amg_fw_recipe_parsing_fetch_ingredient_name($display_text, $processed_arr, $unit_value);
+    $processed_arr["ingredient_name_value"] = trim($ingredient_name_value);
+
+    //primary ingredient parsing from ingredient name
+    $primary_ingredient_value = _ti_amg_fw_recipe_parsing_search_ingredient_by_vocab("primary_ingredient", $display_text, $processed_arr["ingredient_name_value"]);
+    if (isset($primary_ingredient_value)) {
+        $processed_arr["primary_ingredient_value"] = trim($primary_ingredient_value["term_name"]);
+    }
+    else{
+        $processed_arr["primary_ingredient_value"] = "none";
+    }
+
+    //handle fringe cases
+    return $processed_arr;
+}
+
+/* This function handles char to be splitted */
+function _ti_amg_fw_recipe_parsing_strafter($string, $substring) {
+    $str_arr = array();
+    $strafter = "";
+    if ($substring == "," && preg_match("/[,\s]*(such|like)/i", $string, $str_arr2)) {
+        $str_arr = preg_split("/$substring/", $string);
+        if (count($str_arr) > 0) {
+            $strafter = $str_arr[count($str_arr)-1];
+        }
+    }
+    else{
+        $str_arr = preg_split("/$substring/", $string, 2); // mdash is only searched by regex
+        $strafter = $str_arr[1];
+    }
+    return $strafter;
+}
+
+/* Number convertor */
+function _ti_amg_fw_recipe_parsing_number_convertor($string) {
+    $pattern = array(
+        'pinch' => '1',
+        'one' => '1', 'two' => '2', 'three' => '3', 'four' => '4', 'five' => '5',
+        'six' => '6', 'seven' => '7', 'eight' => '8', 'nine' => '9',
+        'ten' => '10', 'eleven' => '11', 'twelve' => '12', 'thirteen' => '13', 'fourteen' => '14',
+        'fifteen' => '15', 'sixteen' => '16', 'seventeen' => '17', 'eighteen' => '18', 'nineteen' => '19',
+        'twenty' => '20', 'thirty' => '30', 'forty' => '40', 'fifty' => '50', 'sixty' => '60', 'seventy' => '70', 'eighty' => '80', 'ninety' => '90'
+    );
+
+    $word_to_number = str_ireplace(array_keys($pattern), $pattern, $string);
+
+    return $word_to_number;
+}
+
+/* Search and returns term name available in string */
+function _ti_amg_fw_recipe_parsing_search_terms_by_vocab($vocab_name, $display_text) {
+    $vocabulary = taxonomy_vocabulary_machine_name_load($vocab_name);
+    $terms = taxonomy_get_tree($vocabulary->vid);
+    $taxo = array();
+    $display_arr = explode(" ", strtolower($display_text));
+    $pattern = array('pinch' => 'pinch of');
+    $display_arr = str_replace(array_keys($pattern), $pattern, $display_arr);
+    foreach ($terms as $term) {
+        if (in_array(strtolower($term->name), $display_arr)) {
+            return array("term_name" => $term->name, "tid" => $term->tid);
+        }
+    }
+
+    return "none";
+}
+
+/* Matches and fetch ingredient name from string  */
+function _ti_amg_fw_recipe_parsing_fetch_ingredient_name($display_text, $processed_arr, $unit_value) {
+    //read ingredient name after unit value
+    $ingredient_name_value = "";
+    if (isset($unit_value) && $unit_value != "none") {
+        $str_arr = array();
+        $str_arr = preg_split("/(" . $unit_value['term_name'] . ")/i", $display_text);
+        $ingredient_name_value = $str_arr[1];
+    }
+    else{
+        $ingredient_name_value = $display_text;
+    }
+    //remove other parsed values to fetch ingredient name
+    $ingredient_name_value = str_ireplace($processed_arr, "", $ingredient_name_value);
+    if (preg_match("/[\w\s,&-]+/i", $ingredient_name_value, $ingredient_name)) {
+        $ingredient_name_value = trim($ingredient_name[0]);
+    }
+    $ingredient_name_value = preg_replace('/,$/', '', $ingredient_name_value);//remove comma from end of string
+
+    return $ingredient_name_value;
+}
+
+/* check and search ingredient name and place it in primary ingredient */
+function _ti_amg_fw_recipe_parsing_search_ingredient_by_vocab($vocab_name, $display_text, $ingredient_name) {
+    $vocabulary = taxonomy_vocabulary_machine_name_load($vocab_name);
+    $terms = taxonomy_get_tree($vocabulary->vid);
+    $taxo = array();
+    $searched_arr = array();
+    if (trim($ingredient_name) =="") {
+        $ingredient_name = $display_text;
+    }
+    foreach ($terms as $term) {
+        if (preg_match("/" . strtolower($term->name) . "/i", $ingredient_name, $ingredient_name_value)) {
+            if (isset($searched_arr["term_name"])) {
+                if (strlen($searched_arr["term_name"]) <= strlen($term->name)) {
+                    $searched_arr = array("term_name" => ucfirst($term->name), "tid" => $term->tid);
+                }
+            }
+            else{
+                $searched_arr = array("term_name" => ucfirst($term->name), "tid" => $term->tid);
+            }
+        }
+    }
+
+    return $searched_arr;
+}
+

@@ -1,0 +1,102 @@
+<?php
+
+/**
+ * @file
+ * Installation file for FW Custom module.
+ */
+
+require_once ('ti_amg_fw_custom.inc');
+
+/**
+ * Implements hook_install().
+ */
+function ti_amg_fw_custom_install() {
+  module_load_include('inc', 'ti_amg_fw_custom', 'ti_amg_fw_custom');
+  $footer_html = _ti_amg_fw_custom_footer_default_html();
+  $footer_copyright_html = _ti_amg_fw_custom_footer_copyright_default_html();
+  $social_sharing_html = _ti_amg_fw_custom_social_sharing_default_html();
+  variable_set('fw_footer_html', $footer_html);
+  variable_set('fw_footer_copyright_html', $footer_copyright_html);
+  variable_set('fw_social_sharing_html', $social_sharing_html);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ti_amg_fw_custom_uninstall() {
+  variable_del('fw_footer_html');
+  variable_del('fw_footer_copyright_html');
+  variable_del('fw_social_sharing_html');
+}
+
+/**
+ * Implements hook_update_N().
+ */
+function ti_amg_fw_custom_update_7101(&$sandbox) {
+
+  // Delete field group "group_options" from gallery content type
+  if ($group = field_group_load_field_group('group_options', 'node', 'gallery', 'form')) {
+    ctools_include('export');
+    field_group_group_export_delete($group, FALSE);
+  }
+
+  // Delete field group "group_touts" from gallery content type
+  if ($group = field_group_load_field_group('group_touts', 'node', 'gallery', 'form')) {
+    ctools_include('export');
+    field_group_group_export_delete($group, FALSE);
+  }
+  // Delete field group "group_options" from video content type
+  if ($group = field_group_load_field_group('group_options', 'node', 'video', 'form')) {
+    ctools_include('export');
+    field_group_group_export_delete($group, FALSE);
+  }
+
+  // Delete field group "group_touts" from video content type
+  if ($group = field_group_load_field_group('group_touts', 'node', 'video', 'form')) {
+    ctools_include('export');
+    field_group_group_export_delete($group, FALSE);
+  }
+}
+
+/**
+ * Updating event deck field format to full_html by hook_update_N().
+ */
+function ti_amg_fw_custom_update_7103(&$sandbox) {
+  db_update('field_data_field_event_deck')
+        ->fields(array('field_event_deck_format' => 'full_html'))
+        ->condition('bundle', 'home_page_responsive')->execute();
+  db_update('field_revision_field_event_deck')
+        ->fields(array('field_event_deck_format' => 'full_html'))
+        ->condition('bundle', 'home_page_responsive')->execute();
+}
+
+/**
+ * Remove module entry from system table
+ * for the modules disabled or uninstalled.
+ */
+function ti_amg_fw_custom_update_7119(&$sandbox) {
+  $modules = array(
+    'ti_genericpage_content_type',
+    'ti_ckeditor_paywall_plugin',
+    'ti_amg_fw_mobile_menu',
+    'ti_amg_fw_main_menu',
+    'ti_editorial_ckeditor_pagebreak_plugin',
+    'ti_amg_fw_mobile_menu',
+  );
+  db_delete('system')
+    ->condition('name', $modules, 'IN')
+    ->condition('type', 'module')
+    ->execute();
+}
+
+/**
+ * Updating supported file types for microsites.
+ */
+function ti_amg_fw_custom_update_7121(&$sandbox) {
+  // Fetch an instance info array.
+  $instance_info = field_info_instance('ti_microsite_entity', 'field_hosted_file_assets', 'hosted_microsite');
+  // Change a single property in the instance definition.
+  $instance_info['settings']['file_extensions'] = 'htm html css js pdf gif jpg jpeg png svg csv txt xml otf json jsp zip woff woff2 eot ttf';
+  // Write the changed definition back.
+  field_update_instance($instance_info);
+}

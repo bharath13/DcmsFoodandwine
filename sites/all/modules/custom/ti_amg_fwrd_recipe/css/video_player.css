@@ -1,0 +1,50 @@
+/* styles for lightbox */
+   
+.player-block {
+  sition: relative;
+}
+#playerLightbox {
+	position: fixed;
+	top: 0;
+	left: 0;
+	padding: 0;
+	margin-left:0;
+	color: white;
+	text-align: center;
+	background-color: #333;
+	border-radius: 5px;
+	z-index:10000;
+	overflow: hidden;
+}
+.playerShow {
+  width: 650px;
+  height: 450px;
+  padding: 10px;
+  -webkit-box-shadow:  10px 10px 10px 10px rgba(151, 151, 151, .7);
+  box-shadow:  10px 10px 10px 10px rgba(151, 151, 151, .7);
+}
+.playerHide {
+  width: 0;
+  height: 0;
+  padding: 0;
+}
+.playerClose {
+  text-align: right;
+  margin-top: -2px;
+  width: 95%;
+  cursor: pointer;
+}
+.recipe__related-video img {
+  cursor: pointer;
+}
+.play-btn-400x400 {
+  background: rgba(0, 0, 0, 0) url("/sites/all/modules/custom/ti_amg_fwrd_recipe/img/videoPlaySprite.png") no-repeat scroll -5px -5px;
+  bottom: 10px;
+  height: 100px;
+  left: 0;
+  position: absolute;
+  width: 70px;
+}
+.homepage_large_video {
+  cursor: pointer;
+}

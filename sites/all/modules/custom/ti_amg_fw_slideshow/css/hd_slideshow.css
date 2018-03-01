@@ -1,0 +1,243 @@
+#share-bar{top:240px;}
+iframe{margin:0;padding:0;}
+#main{width:985px}
+#ad_728x90_1{min-height:100px;}
+#ad_cm_textlink{height:32px;}
+.ad{min-height:268px}
+/*.feature-separator{margin-right:0}*/
+.slug {color: #000000;font: 10px/12px Arial,sans-serif;letter-spacing: 1px;text-transform: uppercase;}
+
+#slideshow-head {margin-left:20px;width:960px;float:left;}
+#slideshow-head .slug{width:950px;float:left}
+#slideshow-head h1 {float:left;width:950px;margin:15px 0px 0px 0px;padding:0;font-family:Georgia,serif;font-weight:normal;font-size:26px;line-height:30px;}
+
+#slideshow-dek{float:left;width:950px;margin-top:5px;}
+#slideshow-dek .dek{float:left;color:#000000;font-style:italic;font-family:Georgia,serif;font-size:16px;line-height:21px;margin:0 0 0px;padding:0;overflow:hidden}
+#slideshow-dek .show-hide{font-style:normal;text-transform:uppercase;color: #2B759F;cursor: pointer;font-family: Arial,sans-serif;font-size: 12px;margin-left: 5px;}
+/** changes to new slidedhow layout **/
+#newsy-bits, #enewsletter {display:none;}
+
+#enewsletter{line-height:16px;width:303px;border:1px solid #E1E1E1;padding:10px;float:left;}
+#enewsletter label{float:left;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;margin-right:5px;color:#000}
+#enewsletter input#e_mail {font-family:Arial,sans-serif;font-size:10px;font-weight:normal;width:215px;height:20px;color:#999999;padding-left:5px;border:1px solid #000;margin:0}
+#enewsletter input#submit{background:url(../images/hdslideshow-nav.png) 0 -135px;height:24px;width:70px;border:0;float:right;cursor:pointer;margin:0;padding:0}
+#flash-error{font-size:12px;float:right}
+input.dish_newsletter{display:none}
+#enewsletter .enewsletter-description{font-family:Georgia,serif;font-size:14px;font-style:italic;color:#000000;margin: -3px 0 5px 0}
+#enewsletter .privacy-info-popup{display:none;background:url(/sites/all/themes/foodandwine/images/privacy_popup_bg.png) 0 0 no-repeat;height:157px;width:284px;left:-8px;position:absolute;bottom:-16px;z-index:2}
+#enewsletter .privacy-info-link{font-family:Georgia,serif;font-size:10px;color:#7D7D7D;padding:0;text-decoration:underline;float:left;position:relative;top:3px}
+#enewsletter .privacy-info-popup-holder{text-align:left;position:relative}
+#enewsletter .privacy-info-popup-text{color:#fff;padding: 12px 20px;font-family:Arial,sans-serif;font-size:11px;line-height:16px;}
+#enewsletter .privacy-info-popup-text a{color:#98D7F0;}
+
+#slideshow-nav{font:10px Arial,sans-serif;font-weight:bold;letter-spacing:1px;text-transform:uppercase;border-top:1px solid #e1e1e1;border-bottom:1px solid #e1e1e1;padding:5px 0px;margin:13px 0px 20px 20px;overflow:hidden;}
+#slideshow-nav span{color:#000000;}
+#slideshow-nav .count{float:left;color:#7d7d7d}
+#slideshow-nav #current{color:#000;font-weight:normal}
+#slideshow-nav #total-count{color:#000;font-weight:normal}
+#slideshow-nav ul{list-style:none;margin:0;padding:0;position:relative;float:right;}
+#slideshow-nav li{padding:0 0 0 15px;float:left;font:10px Arial,sans-serif;color:#000;font-weight:bold}
+#slideshow-nav li:hover{text-decoration:none;color:#e71f3d;cursor:pointer}
+#slideshow-nav li:first-child {padding-right:8px;border-right:1px solid #e1e1e1;}
+#slideshow-nav li.next-slide{padding-left:10px}
+#slideshow-nav .disabled,#slideshow-nav .disabled:hover{color:#7d7d7d;text-decoration:none;cursor:auto;}
+#slideshow-nav li.back-slide{padding-right:10px}
+
+#slideshow-wrapper{padding-left:20px;width:620px}
+#slideshow-body{width:500px;height:500px;box-shadow:4px 4px 5px -1px #cecece;margin:0 0 10px;float:left;position:relative;overflow:hidden;}
+#slideshow-body .nav{background:url(../images/hdslideshow-nav.png) no-repeat 0 0;position:absolute;width:29px;height:58px;top:221px;z-index:10;}
+#slideshow-body .prev{left:0;}
+#slideshow-body .next{right:0;}
+#slideshow-body span.prev{background-position:0 -232px;}
+#slideshow-body span.next{background-position:0 -290px;}
+#slideshow-body a.next{background-position:0 -58px;}
+#slideshow-body a.prev:hover {background-position:0 -116px}
+#slideshow-body a.next:hover {background-position:0 -174px}
+#slide,#advertisement{float:left;}
+#slide,#advertisement{position:relative;width:383px;height:289px;border:1px solid #e1e1e1;border-top:none;text-align:center;background:url(/sites/all/themes/foodandwine/images/search_bg.gif);}
+#slide{line-height:289px;}
+#slide img{vertical-align:middle;}
+
+#slides-container {box-shadow:0 2px 5px rgba(0, 0, 0, 0.3); overflow:hidden; width:500px; height:500px; position:relative; float:left;}
+#slides{width:500px; position:absolute; left:0px; -webkit-transition:left 0.4s ease-in-out; -moz-transition:left 0.4s ease-in-out;-o-transition:left 0.4s ease-in-out;-ms-transition:left 0.4s ease-in-out;-transition:left 0.4s ease-in-out;}
+.slide-image{width:500px; height:500px; float:left; color:black; display:block; background-color:#eee;}
+.slide{background-color:#eee;width: 500px;float: left;}
+.ad-slide{}
+.ad-slide img{background-color: #F2F2F2;height: 470px;padding: 15px;width: 470px;}
+.ad-slide img:before{content:"Advertisement"}
+
+.slide-next {height: 70px; position: absolute; top: 45%; z-index: 2; width:35px; left:465px; background: url(../images/hdslideshow-nav.png) no-repeat -35px -208px transparent;}
+.slide-next:hover {height: 70px; position: absolute; top: 45%; z-index: 2; width:35px; left:465px; background: url(../images/hdslideshow-nav.png) no-repeat -35px -278px transparent;}
+.slide-back{height: 70px; position: absolute; top: 45%; z-index: 2; width:35px; left:0px; background: url(../images/hdslideshow-nav.png) no-repeat scroll 0 -208px transparent;}
+.slide-back:hover {height: 70px; position: absolute; top: 45%; z-index: 2; width:35px; left:0px; background: url(../images/hdslideshow-nav.png) no-repeat scroll 0 -278px transparent;}
+.slide-back.disabled{background-position:-70px -278px}
+
+#last-slide-detour {float: left;height: 500px;width: 500px;background: url("/sites/all/themes/foodandwine/images/search_bg.gif") repeat scroll 0 0 transparent;}
+#last-slide-detour .you-might-like{font:italic 24px/28px Georgia, serif; color:black;margin:77px 0px 20px 0px;width:500px;text-align:center;}
+#last-slide-detour .preview-image{width:196px;height:196px;border:3px solid black;margin-bottom:25px;margin-left:155px;}
+#last-slide-detour .preview-title{font: 24px/28px Georgia, serif;margin-bottom:25px;width:500px;text-align:center;color:black;padding:0px 50px 0px 50px}
+#last-slide-detour .leading-text{text-transform:uppercase;font: 10px/12px Arial,sans-serif;letter-spacing: 1px;width:500px;text-align:center;}
+
+#under-slide-container{float:left;width:500px;padding:0px 0 20px 2px;height:30px}
+#photo-credit{width:190px;min-height:10px;float:left;font-family:Arial, sans-serif; color:#999999;font-size:8px;letter-spacing:1px;line-height:10px;text-transform:uppercase}
+#slideshow-options{width:120px;float:left}
+#slideshow-options a#see-all {background:url(/sites/all/themes/foodandwine/images/hdslideshow-nav.png) -155px -350px no-repeat;height:50px;width:54px;display:block;margin:0 0 10px 45px;cursor:pointer}
+#slideshow-options a#see-all:hover {background-position:-155px -400px }
+#save-button.save{background:url(/sites/all/themes/foodandwine/images/hdslideshow-nav.png) -155px -100px no-repeat;font: 0/0 a; text-shadow: none; color: transparent; height:50px;width:54px;display:block;margin:0 0 10px 45px;cursor:pointer;}
+#save-button.save:hover {background-position:-155px -50px}
+#save-button.save.saved{background:url(/sites/all/themes/foodandwine/images/hdslideshow-nav.png) -155px 0 no-repeat; color: red; height:50px;width:54px;display:block;margin:0 0 10px 45px;cursor:pointer}
+#save-button.save.saved:hover {background:url(/sites/all/themes/foodandwine/images/hdslideshow-nav.png) -155px 0 no-repeat;}
+
+
+#comments-button{background:url(/sites/all/themes/foodandwine/images/hdslideshow-nav.png) -155px -250px no-repeat; height:50px;width:54px;display:block;margin:0 0 10px 45px;cursor:pointer}
+#comments-button:hover {background-position:-155px -300px}
+#rate-button{background:url(/sites/all/themes/foodandwine/images/hdslideshow-nav.png) -155px -200px no-repeat; height:50px;width:54px;display:block;margin:0 0 10px 45px;cursor:pointer}
+#rate-button:hover {background-position:-155px -150px}
+#close-see-all{cursor:pointer;background:url(/sites/all/themes/foodandwine/images/slideshow-nav.png) -112px -218px  no-repeat;height:30px;width:29px;position:absolute;top:-8px;right:-12px}
+/* carousel */
+#slideshow-carousel{margin-top:10px;padding:0 0 5px; float:left; width:500px;position:relative}
+
+#fw-carousel-container{width:500px;height:112px;overflow:hidden;position:relative;float:left;margin:0 0 20px 0}
+#fw-carousel ul {float:left;margin-top:0;padding:0;}
+#fw-carousel li{opacity:0.6;filter:alpha(opacity=60);box-shadow:none;margin:0 13px 0 0; height:90px;width:90px;cursor:pointer;background-color:#fff;float:left;display:block}
+#fw-carousel li.current-slide {opacity:1.0;filter:alpha(opacity=100);box-shadow:none}
+#fw-carousel li:hover {opacity:1.0;filter:alpha(opacity=100);box-shadow:0 1px 2px rgba(0, 0, 0, 0.6);}
+#fw-carousel{position:absolute; left:0px; -webkit-transition:left 0.4s ease-in-out; -moz-transition:left 0.4s ease-in-out; -o-transition:left 0.4s ease-in-out; -ms-transition:left 0.4s ease-in-out; -transition:left 0.4s ease-in-out;}
+#fw-carousel{position:absolute;left:0; -webkit-transition:left 0.4s ease-in-out; -moz-transition:left 0.4s ease-in-out; -o-transition:left 0.4s ease-in-out;-ms-transition:left 0.4s ease-in-out; -transition:left 0.4s ease-in-out;}
+
+#mycarousel-prev,#mycarousel-next{position:absolute;z-index:9999}
+#mycarousel-prev-disabled,#mycarousel-next{position:absolute;z-index:9999}
+span#mycarousel-prev{background:url(/sites/all/themes/foodandwine/images/slideshow-nav.png) -31px -250px no-repeat; height:38px;width:37px;display:block;cursor:pointer;top:25px;left:-16px}
+span#mycarousel-prev:hover {background:url(/sites/all/themes/foodandwine/images/slideshow-nav.png) -29px -287px no-repeat; height:38px;width:37px;display:block;cursor:pointer;top:25px;left:-16px}
+span#mycarousel-prev-disabled {background:url(/sites/all/themes/foodandwine/images/slideshow-nav.png) -33px -212px no-repeat; height:38px;width:37px;display:block;cursor:pointer;top:25px;left:-16px}
+span#mycarousel-next {background:url(/sites/all/themes/foodandwine/images/slideshow-nav.png) -69px -250px no-repeat; height:38px;width:37px;display:block;cursor:pointer;top:25px;right:-20px}
+span#mycarousel-next-disabled {background:url(/sites/all/themes/foodandwine/images/slideshow-nav.png) -69px -212px no-repeat; height:38px;width:37px;display:block;cursor:pointer;top:25px;right:-15px}
+span#mycarousel-next:hover {background:url(/sites/all/themes/foodandwine/images/slideshow-nav.png) -69px -287px no-repeat; height:38px;width:37px;display:block;cursor:pointer;top:25px;right:-20px}
+/* end carousel */
+
+#editors-slideshows-container{margin:0px 0 40px 0;height:165px;float:left;}
+#editors-slideshows h2{font-family:Georgia, serif; font-size:20px;line-height:24px;margin:20px 0;padding:0;font-weight:normal;width:415px;width:415px}
+
+#editors-slideshows ul{padding:0;list-style:none;float:left;}
+#editors-slideshows .related-slideshow-wrapper a::after {visibility: hidden;}
+#editors-slideshows .featuredimg {display:table-cell;vertical-align:middle}
+#editors-slideshows .related-slideshow-wrapper a > img {vertical-align:middle;}
+#editors-slideshows .related-slideshow-wrapper{background:url(/sites/all/themes/foodandwine/images/search_bg.gif) 0 0 repeat;display:table;height:112px;width:90px;margin:0 15px 10px 0}
+#editors-slideshows .slideshow{height:112px; width:90px;margin:0px 0px 0px 15px;padding-right: 15px;border-right:1px solid #e1e1e1;}
+#editors-slideshows li {float:left; display:block;}
+#editors-slideshows li:first-child{margin-left:0px;}
+#editors-slideshows li:last-child{border-right:0;}
+
+#editors-slideshows a.slideshow-title{display:block;width:90px;margin:0 auto;line-height:16px;font-family:Arial,sans-serif;font-size:12px;color:#000}
+
+#slide-rr {float:right; width:324px;margin:0;padding:0}
+#slide-rr .slug{margin-bottom:10px;}
+#slide-rr h2 {margin:-4px 0 9px;padding:0}
+#slide-rr h2 a{line-height:19px;margin:0;padding:0;font-family:Georgia,serif;font-weight:bold;font-size:16px}
+#slide-rr .cm-subscription{float: left;margin:10px 0 10px 0;font-style:italic;font-size:14px;font-family:Georgia,serif;color:#3A89AC;text-decoration:underline;line-height:16px;letter-spacing:1px;}
+#slide-rr .show-hide{color:#3A89AC;font-size:10px;height:13px;width:60px;position:relative;float:right;letter-spacing:1px;text-align:center;font-family:Arial,sans-serif;text-transform:uppercase;}
+.show-hide:hover {cursor:pointer}
+#slide-rr .ad{width:304px;background-color:#F2F2F2;float:left;padding:0 8px 11px 11px;margin:25px 0 0 0;}
+#slide-rr .ad-disclosure{text-transform:uppercase; font-family:Arial, sans-serif;font-size:10px;line-height:12px; text-align:center;color:#7D7D7D;width:300px}
+#slide-rr .double-divider{border-top:1px solid #A7A9AC;border-bottom:1px solid #A7A9AC;height:3px;width:323px;float:left;}
+#slide-rr #marketplace{border-left:1px solid #A7A9AC;border-right:1px solid #A7A9AC;clear: both;padding-right:0}
+/*#slide-rr #outbrain .you-might-also-like {font-family:Georgia, serif; font-size:20px;line-height:24px;font-style:italic;text-transform:none}*/
+
+
+#slide-rr #ob-module {float:left; width:100%;}
+#outbrain .ob_container .item-link-container .item-container { margin-right:0; }
+
+.recipe-link {float: right;background:url(/sites/all/themes/foodandwine/images/slideshow-nav.png) -33px 0 no-repeat; width:126px; height:22px;display:block;margin:4px 0;padding:0;right:0}
+.recipe-link:hover {background-position: -33px -22px}
+.recipe-link-disabled {background-position: -33px -44px}
+
+.see-more {background: url("/sites/all/themes/foodandwine/images/slideshow-nav.png") no-repeat scroll -33px -66px transparent;display: block;float: right;height: 22px;margin: 4px 0;padding: 0;right: 0;width: 100px;}
+.see-more:hover {background-position: -33px -89px}
+.see-more-disabled {background-position: -33px -44px}
+
+#slide-rr #recipe-link-container{border-top:1px solid #E1E1E1;border-bottom:1px solid #E1E1E1;position:relative;height:30px}
+#recipe-average-rating .num {
+  float:left;font:bold 9px/9px Arial,sans-serif;color:#7d7d7d;letter-spacing:1px;text-transform:uppercase;margin:13px 5px 0 0;
+}
+#recipe-average-rating .rating-widget{
+	float:left;}
+#recipe-average-rating .rating-widget ul{
+	height:15px;list-style:none;padding:0;margin:8px 0;}
+#recipe-average-rating .rating-widget ul li{
+	display:inline-block;width:15px;height:15px;background:url('/chrome/my_fw/recipe/star-small-grey.png') no-repeat;}
+#recipe-average-rating .rating-widget ul li.starred{
+	background:url('/chrome/my_fw/recipe/star-small-red.png') no-repeat;}
+
+.no-height{height:0;}
+#dek-container{position:relative}
+#dek-bottom{  
+    background: url("/sites/all/themes/foodandwine/images/whitetransparent-bkgd.png") repeat-x scroll 0 0 rgba(0, 0, 0, 0);
+    bottom: -7px;
+    height: 15px;
+    position: relative;
+    width: 100%;
+}
+#slide-dek .dek p {padding:0px 0px 10px 0px;margin-top:4px}
+#slide-dek {width:100%;float:right;color:#000;font-family:Georgia,serif;padding-top: 5px;}
+#slide-dek .dek p {font-size:14px;line-height:21px;overflow:hidden;font-style: initial;}
+#plus-link {margin:20px 0px 0px 0px;padding:0px;list-style:none; width:100%;}
+#plus-link li{padding-bottom:3px;}
+#plus-link .plus{font-weight:bold;font-style:normal;}
+
+#see-all-slideshows{cursor:move;box-shadow: 0px 0px 5px 0px #CECECE;display:none;height:590px;width:450px;position:relative;top:-1360px;padding:35px;z-index:9998;background-color:#fff;border:1px solid #e1e1e1}
+#slideshow-gallery{cursor:pointer;width:460px;overflow:auto;height:590px;position:relative}
+#slideshow-gallery-large{width:466px;overflow:auto;height:595px;position:relative;cursor:pointer;}
+#slideshow-gallery ul{list-style:none;margin:0;padding:0}
+#slideshow-gallery-large ul{list-style:none;margin:0;padding:0}
+
+img.slideshow-item {width:90px;height:90px;float:left;margin:0 10px 20px 10px;}
+img.slideshow-item.last {width:90px;height:90px;float:left;margin:0 0 20px 0;}
+img.slideshow-item:hover {box-shadow:0 1px 2px rgba(0, 0, 0, 0.6);}
+
+
+#ob-module{font-family:Georgia,serif;font-style:italic;font-size:14px;color:#000;margin:20px 0;clear:both;position:relative}
+#ob-like-header {margin:0;padding:0;}
+#outbrain_widget_0{margin:0;padding:0;}
+.OUTBRAIN ul {margin-top:6px;margin-left:0;padding:0;border-bottom:1px solid #e1e1e1;}
+.ob-text-content{color:#3A89AC;font-family:Arial,sans-serif;font-style:normal;line-height:16px;font-size:12px;}
+.odb_li{border-top:1px solid #e1e1e1;list-style:none;padding:4px 0;margin:0}
+.ob_sponsored_text{color:#7d7d7d;font-family:Arial,sans-serif;font-style:normal;line-height:16px;font-size:12px;margin-right:5px;float:left;}
+.ob_box_cont{margin-top:0;padding-top:0}
+.ob_empty{display:none}
+/*comments section styling*/
+#aexp-comments{width:600px}
+#add-comment .comment-box{width:548px}
+.submit input.button{margin-right:0}
+
+#other-related-links h2{font-family:Georgia, serif; font-size:20px;line-height:24px;margin:30px 0;padding:0;font-weight:normal;width:415px;width:415px}
+#other-related-links ul{font:12px/1.66 Arial,sans-serif;list-style:none;overflow:hidden;padding:0;position:relative;}
+#other-related-links li{float:left;width:50%;oveflow:hidden;}
+#other-related-links a{float:left;display:inline-block;max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-ms-text-overflow:ellipsis;-o-text-overflow: ellipsis;}
+#other-related-links span.dbl-arrow{float:left;background:url(/sites/all/themes/foodandwine/images/link-blue.png) no-repeat 100% 0;background-position:100% center;width:7px;height:6px;padding:8px 0 6px 5px;}
+
+/*** css to position fixed for slideshow pages 
+body.fixed-header {background:none;}
+body.fixed-header #time_inc_hat {display:none; }
+body.fixed-header #ad-top {position: fixed; background-color: #fff; z-index: 999999;}
+body.fixed-header #masthead, body.fixed-header #newsy-bits{display:none; }
+body.fixed-header #wrapper > header {top: 95px; position: fixed; background-color: #fff;z-index: 999999;}
+body.fixed-header #right-nav {position:static;}
+***/
+
+/**new header styles **/
+#wrapper .top-header, #masthead, #newsy-bits  {display:none;}
+#sticky-wrapper {width: 985px; clear: both;margin-bottom: 0; margin-top:3px;}
+#sticky-wrapper #fixed-header {float: left;width: 245px;}
+#sticky-wrapper #fixed-header .logo {margin-top:0;}
+#sticky-wrapper #fixed-header .logo a { float: left;margin:3px 0;}
+#sticky-wrapper #fixed-header .logo img {width:245px;}
+#sticky-wrapper #search {margin-top:0;}
+#sticky-wrapper #search .clear-input {width:190px;}
+#sticky-wrapper #ad-top {float: right; width: 726px;margin-bottom: 0;}
+#sticky-wrapper #navigation {clear:both;}
+
+body.fixed-header {background:none;}
+body.fixed-header #sticky-wrapper {position: fixed; background-color: #fff; z-index: 9999; margin-top:0; top:0;}
+body.fixed-header #hatmain {display:none;}
+
+#share-bar-horz {margin-top:10px;margin-bottom:0;width:100%;}

@@ -1,0 +1,92 @@
+<?php
+/**
+ * @file
+ * Install / Update functions for the TI AMG Video feature.
+ *
+ * \defgroup ti_amg_fw_video FoodandWine.com Video Feature
+ * \ingroup Features
+ * \brief Sets up all the configuration needed to display videos.
+ *
+ * @{
+ */
+
+/**
+ * Implements hook_install().
+ */
+function ti_amg_fw_video_install() {
+  _ti_amg_fw_video_add_video_player();
+}
+
+/**
+ * Ensures that there is a default video player.
+ */
+function ti_amg_fw_video_update_7001() {
+  _ti_amg_fw_video_add_video_player();
+}
+
+/**
+ * Updates the records on the brightcove_player table.
+ */
+function ti_amg_fw_video_update_7002() {
+  _ti_amg_fw_video_add_video_player();
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Update Brightcove Api Key and Player ID.
+ */
+function ti_amg_fw_video_update_7003() {
+  _ti_amg_fw_video_add_video_player();
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Update Brightcove Api Key and Player ID.
+ */
+function ti_amg_fw_video_update_7004() {
+  _ti_amg_fw_video_add_video_player();
+}
+
+/**
+ * Helper function adds the video player.
+ */
+function _ti_amg_fw_video_add_video_player() {
+  if (db_table_exists('brightcove_player')) {
+    // Delete old players.
+    db_delete('brightcove_player')->execute();
+
+    // Ensure correct player.
+    db_merge('brightcove_player')
+      ->key(array('player_id' => '2566625550001'))
+      ->fields(array(
+        'name' => 'default',
+        'display_name' => 'Simple Video Player Widescreen',
+        'player_id' => '2566625550001',
+        'player_key' => 'AQ~~,AAAAABmSxE8~,MYC1IACOuZDInXU3swCpXJgo6vwU67av',
+      ))
+      ->execute();
+
+    db_merge('brightcove_player')
+      ->key(array('player_id' => '1927049748001'))
+      ->fields(array(
+        'name' => 'mobile',
+        'display_name' => 'Simple Video Player Mobile',
+        'player_id' => '1927049748001',
+        'player_key' => 'AQ~~,AAAAABmSxE8~,MYC1IACOuZBYZP3Y07qWs52FmZIhFJ7V',
+      ))
+      ->execute();
+
+    // Query for the player to get the PID.
+    $result = db_select('brightcove_player', 'bp')
+      ->fields('bp', array('pid'))
+      ->condition('player_id', '2566625550001')
+      ->execute()
+      ->fetchAssoc();
+    if (!empty($result)) {
+      // Set this as the default player.
+      variable_set('brightcove_player_pid', $result['pid']);
+    }
+  }
+}

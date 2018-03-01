@@ -1,0 +1,6 @@
+name = "Brightcove Field Migrate"
+description = "Add Field Handler for brightcove video field"
+package = "Development"
+core = 7.x
+
+files[] = fields.inc

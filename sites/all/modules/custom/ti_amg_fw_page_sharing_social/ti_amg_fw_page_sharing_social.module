@@ -1,0 +1,207 @@
+<?php
+
+/**
+ * @file
+ * Module used for FoodAndWine Social Media Page Sharing.
+ */
+//include_once 'ti_amg_fw_page_sharing_social.inc';
+
+/**
+ * Implements hook_init().
+ */
+function ti_amg_fw_page_sharing_social_init() {
+  if (!path_is_admin(current_path())) {
+    drupal_add_js(drupal_get_path('module', 'ti_amg_fw_page_sharing_social') . '/js/facebook_init.js');
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fw_page_sharing_social_block_info() {
+  $block['fw_social_media_page_sharing'] = array(
+    'info' => t('FoodandWine Social Media Page Sharing Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $block;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fw_page_sharing_social_block_view($block_key) {
+  global $base_url;
+  $print_flag = FALSE;
+  $block = array();
+  if ($block_key == 'fw_social_media_page_sharing') {
+
+    $current_url = url(current_path(), array('absolute' => TRUE));
+    $site_name = variable_get('site_name');
+    $title = preg_replace('/(?:<|&lt;)\/?([a-zA-Z]+) *[^<\/]*?(?:>|&gt;)/', '', drupal_get_title());
+    $title = str_replace('&amp;', '&', $title);
+    $mail_body = urlencode($title) . '%0A' . urlencode($current_url);
+
+    $page_title = $title . ' | ' . $site_name;
+    $mail_subject = urlencode($title . ' on ' . $site_name);
+
+    if (arg(0) == 'blogs') {
+      $page_title = 'Hungry Crowd' . ' on ' . $site_name;
+      $mail_subject = urlencode('Hungry Crowd' . ' on ' . $site_name);
+      $mail_body = urlencode('Hungry Crowd') . '%0A' . urlencode($current_url);
+    }
+    elseif (arg(0) == 'monthly') {
+      $page_title = 'Issues' . ' on ' . $site_name;
+      $mail_subject = urlencode('Issues' . ' on ' . $site_name);
+      $mail_body = urlencode('Issues') . '%0A' . urlencode($current_url);
+    }
+    if (arg(0) == 'recipe-finder') {
+      $page_title = $title . ' on ' . $site_name;
+      $mail_body = urlencode($page_title) . '%0A' . urlencode($current_url);
+      if (arg(1)) {
+        $tid = get_tid_from_label(array(arg(1)), 'field_complex_theme_label');
+        if ($tid) {
+          $term_name = taxonomy_term_load($tid[0])->name;
+        }
+        $page_title = $term_name . ' on ' . $site_name;
+        $mail_body = urlencode($page_title) . '%0A+Recipe Finder+%0A' . urlencode($current_url);
+      }
+      $mail_subject = urlencode($page_title);
+    }
+
+    $twitter_text = 'original_referer=' . urlencode($current_url) . '&amp;text=' . rawurlencode($page_title) . '&amp;url=' . urlencode($current_url) . '%3Fxid%3Dtwsharebar&amp;via=foodandwine';
+
+    $pinterest_text = rawurlencode($page_title);
+
+    $img_url = $base_url . '/sites/default/files/foodandwine-social.jpg';
+    if (arg(0) == 'node' && is_numeric(arg(1))) {
+      $nid = arg(1);
+      $node = node_load($nid);
+      $language = $node->language;
+      if (isset($node->field_images['und'][0]['entity']
+          ->field_image['und'][0]['uri']
+        )) {
+        $img_url = file_create_url($node
+          ->field_images['und'][0]['entity']
+          ->field_image['und'][0]['uri']
+        );
+      }
+      if ($node->type == 'recipe') {
+          
+        //Enabling print button for recipe pages
+        $print_flag = TRUE;
+        //fetching the image of that recipe
+        if (isset($node->field_images[$language][0]['target_id'])) {
+          $image_id = $node->field_images[$language][0]['target_id'];
+          $image_obj = node_load($image_id);
+          $image_uri = $image_obj->field_image[$language][0]['uri'];
+          $img_url = file_create_url($image_uri);
+        }
+        //fetching the author names and giving in mail subject
+        $authors_array = array();
+        if ($node->field_chefs_author != NULL && !empty($node->field_chefs_author)) {
+          $authors_array = $node->field_chefs_author[$language];
+        }
+        elseif ($node->field_source_author != NULL && !empty($node->field_source_author)) {
+          $authors_array = $node->field_source_author[$language];
+        }
+
+        $author_names = '';
+        if (!empty($authors_array)) {
+          if (count($authors_array) == 1) {
+            $author_names = $authors_array[0]['entity']->title;
+          }
+          else {
+            foreach ($authors_array as $author) {
+              if ($author_names == '') {
+                $author_names = $author['entity']->title;
+              }
+              else {
+                $author_names .= ' and ' . $author['entity']->title;
+              }
+            }
+          }
+          $mail_subject = urlencode($title);
+          $mail_body = urlencode($title) . '%0A+Recipes+%0A' . urlencode($author_names) . '%0A' . urlencode($current_url);
+        }
+        else {
+          $mail_subject = urlencode($title);
+          $mail_body = urlencode($title) . '%0A+Recipes+%0A' . urlencode($current_url);
+        }
+        $twitter_text = 'original_referer=' . urlencode($current_url) . '&amp;text=' . rawurlencode($title) . ' Recipe -' . rawurlencode($author_names) . rawurlencode(' | ' . $site_name) . '&amp;url=' . urlencode($current_url) . '%3Fxid%3Dtwsharebar&amp;via=foodandwine';
+      }
+      if ($node->type == 'gallery') {
+        $slide_title = '';
+        $slide_page_title = $node->title;
+        if ($node->field_gallery_layout[$language][0]['value'] == 'HD') {
+          $slide_revision_value = $node->field_slide_info[$language][0]['value'];
+          $slide_details = entity_load('field_collection_item', array($slide_revision_value));
+          if (isset($slide_details[$slide_revision_value]->field_slide_image[$language])) {
+            if (isset($slide_details[$slide_revision_value]->field_slide_image[$language][0]['entity']->field_image[$language])) {
+              $slide_ogimg_uri = $slide_details[$slide_revision_value]->field_slide_image[$language][0]['entity']->field_image[$language][0]['uri'];
+              $img_url = file_create_url($slide_ogimg_uri);
+            }
+          }
+        }
+        else {
+          $current_slide = 1;
+          if (is_numeric(arg(2))) {
+            $current_slide = arg(2);
+          }
+          // Implementing og:image & og:title tags for slideshows --- start
+          $slide_revision_value = $node->field_slide_info[$language][$current_slide - 1]['value'];
+          $slide_details = entity_load('field_collection_item', array($slide_revision_value));
+          $slide_title = '';
+          if (isset($slide_details[$slide_revision_value]->field_slide_title[$language])) {
+            $slide_title = $slide_details[$slide_revision_value]->field_slide_title[$language][0]['value'];
+          }
+          if (isset($slide_details[$slide_revision_value]->field_slide_image[$language])) {
+            if (isset($slide_details[$slide_revision_value]->field_slide_image[$language][0]['entity']->field_image[$language])) {
+              $slide_ogimg_uri = $slide_details[$slide_revision_value]->field_slide_image[$language][0]['entity']->field_image[$language][0]['uri'];
+              $img_url = file_create_url($slide_ogimg_uri);
+            }
+          }
+          if ($slide_title != '') {
+            $slide_page_title = $slide_title . ' - ' . $slide_page_title;
+          }
+        }
+        $mail_subject = urlencode($slide_page_title . ' on ' . $site_name);
+        $mail_body = urlencode($slide_page_title) . '%0A' . urlencode($current_url);
+        $pinterest_text = rawurlencode($slide_page_title);
+        $twitter_text = 'original_referer=' . urlencode($current_url) . '&amp;text=' . rawurlencode($slide_page_title) . rawurlencode(' | ' . $site_name) . '&amp;url=' . urlencode($current_url) . '%3Fxid%3Dtwsharebar&amp;via=foodandwine';
+      }
+    }
+    
+    
+
+    $social_share_ele = array(
+      'img_url' => $img_url,
+      'current_url' => $current_url,
+      'site_name' => $site_name,
+      'page_title' => $page_title,
+      'mail_subject' => $mail_subject,
+      'mail_body' => $mail_body,
+      'twitter_text' => $twitter_text,
+      'pinterest_text' => $pinterest_text,
+      'print_flag' => $print_flag,
+    );
+    //Content of the block
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_social_media_sharing',
+        array('social_share_ele' => $social_share_ele)
+      ),
+    );
+  }  
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fw_page_sharing_social_theme() {
+  return array(
+    'ti_amg_fw_social_media_sharing' => array(
+      'template' => 'ti_amg_fw_social_media_sharing',
+    ),
+  );
+}
+

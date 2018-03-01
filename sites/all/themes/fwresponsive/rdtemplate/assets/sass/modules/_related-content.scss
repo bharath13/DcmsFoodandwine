@@ -1,0 +1,28 @@
+$block: related-content;
+
+.#{$block} {
+
+    &__heading {
+        @include font-droid-sans-bold;
+        font-size: rem(20);
+        line-height: 1.125;
+        text-transform: uppercase;
+        margin: 25px 0;
+    }
+
+    &__list {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+    }
+
+    &__list-item {
+        font-size: rem(18);
+        line-height: 1.125;
+        margin-bottom: 14px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}

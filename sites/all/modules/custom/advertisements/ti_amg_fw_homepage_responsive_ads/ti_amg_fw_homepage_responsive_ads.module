@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Homepage Responsive Ads feature.
+ */
+
+include_once 'ti_amg_fw_homepage_responsive_ads.features.inc';

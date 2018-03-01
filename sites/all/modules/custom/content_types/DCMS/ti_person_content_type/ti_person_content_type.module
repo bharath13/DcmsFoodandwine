@@ -1,0 +1,24 @@
+<?php
+/**
+ * @file
+ * Code for the ti_person_content_type feature.
+ */
+
+include_once 'ti_person_content_type.features.inc';
+
+/**
+ * Implementation of hook_form_alter().
+ */
+
+function ti_person_content_type_form_alter(&$form, $form_state){
+    if ($form['#id'] == 'person-node-form') {
+      // Attaching js file to person-node-form  
+      $form['#attached']['js'] = array(
+        drupal_get_path('module', 'ti_person_content_type') . '/js/person_page.js',
+      );
+      // Attaching css file to person-node-form
+      $form['#attached']['css'] = array(
+        drupal_get_path('module', 'ti_person_content_type') . '/css/person_page.css',
+      ); 
+  }
+}

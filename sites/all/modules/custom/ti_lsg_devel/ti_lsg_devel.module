@@ -1,0 +1,697 @@
+<?php
+
+/**
+ * @file
+ * TI LSG Devel helper module.
+ *
+ * This is primarily an aid during development, as we do not have access to
+ * site installs.
+ *
+ * \defgroup ti_lsg_devel TI LSG Devel
+ * \ingroup Modules
+ * \brief Provides helper functions during development of TI LSG Drupal sites.
+ *
+ * @{
+ */
+
+/**
+ * Define constants for TI LSG Devel module.
+ */
+define('TI_LSG_DEVEL_MODULE_NAME', 'ti_lsg_devel');
+define('TI_LSG_DEVEL_SCHEMA_VERSION', 7000);
+
+/**
+ * Implements hook_init().
+ */
+function ti_lsg_devel_init() {
+  _ti_lsg_devel_set_schema_version();
+}
+
+/**
+ * Update the schema version back to 7000.
+ */
+function ti_lsg_devel_update_schema_version() {
+  // Include the install.inc file so we have access to
+  // drupal_get_installed_schema_version.
+  include_once DRUPAL_ROOT . '/includes/install.inc';
+
+  $module = TI_LSG_DEVEL_MODULE_NAME;
+  $version = TI_LSG_DEVEL_SCHEMA_VERSION;
+
+  // If the schema version is higher than 7000.
+  if (drupal_get_installed_schema_version($module) > $version) {
+    // Reset to 7000.
+    drupal_set_installed_schema_version($module, $version);
+  }
+}
+
+/**
+ * Set the schema version back to 7000.
+ */
+function _ti_lsg_devel_set_schema_version() {
+  // Register a shutdown function to reset the schema version.
+  drupal_register_shutdown_function('ti_lsg_devel_update_schema_version');
+}
+
+/**
+ * Create users.
+ */
+function ti_lsg_devel_create_users() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('accounts_to_create')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_accounts_to_create.'), 'ok');
+    return;
+  }
+
+  // Get the list of users.
+  $accounts = module_invoke_all('accounts_to_create');
+
+  // Call the create_user function on each account.
+  foreach ($accounts as $name => $data) {
+    // If the account does not exist.
+    if (!$account = user_load_by_name($name)) {
+      // Create the user.
+      $roles = (isset($data['roles'])) ? $data['roles'] : array();
+      $password = (isset($data['password'])) ? $data['password'] : $name;
+      if ($account = ti_lsg_devel_create_user($name, $roles, $password)) {
+        drupal_set_message(t('The @name user was created at uid @uid', array('@name' => $name, '@uid' => $account->uid)), 'ok');
+      }
+      else {
+        drupal_set_message(t('The @name user was NOT created.', array('@name' => $name)), 'warning');
+      }
+    }
+    else {
+      drupal_set_message(t('The @name user already existed at uid @uid', array('@name' => $name, '@uid' => $account->uid)), 'status');
+    }
+  }
+}
+
+/**
+ * Create a user.
+ *
+ * @param string $name
+ *   The user name.
+ * @param array $role_names
+ *   An (optional) array of role names to give to the user.
+ * @param string $pass
+ *   The (optional) password to set.
+ *
+ * @TODO: This currently does not update existing users. It could be modified
+ * to update existing user roles, for example.
+ */
+function ti_lsg_devel_create_user($name, $role_names = array(), $pass = NULL) {
+  $roles = array();
+
+  // Check if the user already exists.
+  if ($account = user_load_by_name($name)) {
+    return $account;
+  }
+
+  // If no password, set to the same as the username.
+  if (!$pass) {
+    $pass = $name;
+  }
+
+  // Build the roles array.
+  $roles[DRUPAL_AUTHENTICATED_RID] = 'authenticated user';
+  foreach ($role_names as $role_name) {
+    if ($role = user_role_load_by_name($role_name)) {
+      $roles[$role->rid] = $role->name;
+    }
+  }
+
+  $email = $name . '@allyou.local';
+
+  // Set up the user fields.
+  $fields = array(
+    'name' => $name,
+    'mail' => $email,
+    'pass' => $pass,
+    'status' => 1,
+    'init' => $email,
+    'roles' => $roles,
+  );
+
+  // Create the user account.
+  $account = user_save('', $fields);
+
+  return $account;
+}
+
+/**
+ * Uninstall modules.
+ */
+function ti_lsg_devel_uninstall_modules() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('modules_to_uninstall')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_modules_to_uninstall.'), 'ok');
+    return;
+  }
+
+  // Get the list of modules to uninstall.
+  $modules = module_invoke_all('modules_to_uninstall');
+
+  if (!is_array($modules)) {
+    $modules = array($modules);
+  }
+  // Disable the modules.
+  module_disable($modules);
+
+  // Uninstall the modules.
+  if (drupal_uninstall_modules($modules)) {
+    drupal_set_message(t('Unused modules have been uninstalled if they were still enabled: @modules', array('@modules' => implode(', ', $modules))), 'success');
+  }
+  else {
+    drupal_set_message(t('There was a problem uninstalling modules: @modules', array('@modules' => implode(', ', $modules))), 'warning');
+  }
+}
+
+/**
+ * Get array of modules to enable.
+ *
+ * @return array
+ *   An array of module names.
+ */
+function ti_lsg_devel_get_modules_to_enable() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('modules_to_enable')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_modules_to_enable.'), 'ok');
+    return;
+  }
+
+  // Get the list of modules to uninstall.
+  $modules = module_invoke_all('modules_to_enable');
+
+  return $modules;
+}
+
+/**
+ * Enable modules.
+ */
+function ti_lsg_devel_enable_modules() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('modules_to_enable')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_modules_to_enable.'), 'ok');
+    return;
+  }
+
+  // Get the list of modules to uninstall.
+  $modules = module_invoke_all('modules_to_enable');
+
+  // Enable the modules.
+  $success = TRUE;
+  foreach ($modules as $module) {
+    // Check if the module is already enabled.
+    if (!module_exists($module)) {
+      // If not, then try to enable it.
+      if (module_enable(array($module), TRUE)) {
+        drupal_set_message(t('Enabling module !module.', array('!module' => $module)), 'success');
+      }
+      else {
+        $success = FALSE;
+        drupal_set_message(t('The @module module could not be enabled.', array('@module' => $module)), 'error');
+      }
+    }
+  }
+
+  if ($success) {
+    drupal_set_message(t('All modules were enabled in ti_lsg_devel_enable_modules.'), 'success');
+  }
+  else {
+    drupal_set_message(t('Some modules could not be enabled in ti_lsg_devel_enable_modules.'), 'error');
+  }
+}
+
+/**
+ * Enable themes.
+ */
+function ti_lsg_devel_enable_themes() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('themes_to_enable')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_themes_to_enable.'), 'ok');
+    return;
+  }
+
+  // Get the list of themes to enable.
+  $themes = module_invoke_all('themes_to_enable');
+
+  // Enable the themes.
+  theme_enable($themes);
+
+  drupal_set_message(t('These themes were enabled, if present: @themes', array('@themes' => implode(', ', $themes))), 'ok');
+}
+
+/**
+ * Delete variables.
+ */
+function ti_lsg_devel_delete_variables() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('variables_to_delete')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_variables_to_delete.'), 'ok');
+    return;
+  }
+
+  // Get the list of variables to delete.
+  $variables = module_invoke_all('variables_to_delete');
+
+  // Delete the variables.
+  $vars_deleted = array();
+  foreach ($variables as $variable) {
+    if (variable_get($variable) !== NULL) {
+      variable_del($variable);
+      $vars_deleted[] = $variable;
+    }
+  }
+
+  drupal_set_message(t('These variables were deleted: @vars', array('@vars' => implode(', ', $vars_deleted))), 'ok');
+}
+
+/**
+ * Set variables.
+ */
+function ti_lsg_devel_set_variables() {
+  $vars_set = array();
+  $vars_reset = array();
+
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('variables_to_set')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_variables_to_set.'), 'ok');
+    return;
+  }
+
+  // Get the list of variables to set.
+  $variables = module_invoke_all('variables_to_set');
+
+  // Set the variables.
+  foreach ($variables as $variable => $value) {
+    // Check if the variable exists.
+    if (variable_get($variable) === NULL) {
+      variable_set($variable, $value);
+      $vars_set[] = $variable;
+    }
+    // Check if the value is different.
+    elseif (variable_get($variable) !== $value) {
+      variable_set($variable, $value);
+      $vars_reset[] = $variable;
+    }
+  }
+
+  drupal_set_message(t('These variables were set: @vars', array('@vars' => implode(', ', $vars_set))), 'ok');
+  drupal_set_message(t('These variables were RESET: @vars', array('@vars' => implode(', ', $vars_reset))), 'ok');
+}
+
+/**
+ * Make sure schemas are created for modules.
+ *
+ * @param array $modules
+ *   The module names.
+ */
+function ti_lsg_devel_check_module_schemas($modules) {
+  $schemas_created = array();
+  foreach ($modules as $module => $table_name) {
+    // Check if table exists, if not install the schema.
+    if (db_table_exists($table_name) == FALSE) {
+      drupal_install_schema($module);
+      $schemas_created[] = $table_name;
+    }
+  }
+  return $schemas_created;
+}
+
+/**
+ * Delete fields if they have been removed from a feature.
+ */
+function ti_lsg_devel_delete_fields() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('fields_to_delete')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_fields_to_delete.'), 'ok');
+    return;
+  }
+
+  // Get the list of fields to delete.
+  $fields = module_invoke_all('fields_to_delete');
+
+  // Delete field bases and instances if removed from content types.
+  $fields_deleted = array();
+  $count = 2000;
+  foreach ($fields as $type => $field_names) {
+    foreach ($field_names as $field_name) {
+      // Check if field exists.
+      if ($instance = field_info_instance('node', $field_name, $type)) {
+        field_delete_instance($instance);
+        $fields_deleted[] = $type . '-' . $field_name;
+        $count++;
+      }
+    }
+  }
+  field_purge_batch($count);
+
+  if (count($fields_deleted)) {
+    $message = t('Fields deleted: @fields', array('@fields' => implode(', ', $fields_deleted)));
+    drupal_set_message($message, 'warning');
+    watchdog('ti_lsg_devel', $message, NULL, WATCHDOG_WARNING);
+  }
+  else {
+    drupal_set_message(t('No fields were deleted in ti_lsg_devel_delete_fields.'), 'ok');
+  }
+}
+
+/**
+ * Delete content types if they have been removed from the site.
+ */
+function ti_lsg_devel_delete_content_types() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('content_types_to_delete')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_content_types_to_delete.'), 'ok');
+    return;
+  }
+
+  // Get the list of content types to delete.
+  $content_types = module_invoke_all('content_types_to_delete');
+
+  // Delete content types.
+  $content_types_deleted = array();
+  foreach ($content_types as $type) {
+    // Check if content type exists.
+    if (node_type_load($type)) {
+      // Get all nodes of type $type.
+      $results = db_select('node', 'n')
+        ->fields('n', array('nid'))
+        ->condition('type', $type)
+        ->execute();
+      // Delete each node.
+      foreach ($results as $result) {
+        node_delete($result->nid);
+      }
+
+      // Delete the content type.
+      node_type_delete($type);
+      $content_types_deleted[] = $type;
+    }
+  }
+
+  if (count($content_types_deleted)) {
+    $message = t('Content types (and all their nodes) deleted: @types', array('@types' => implode(', ', $content_types_deleted)));
+    drupal_set_message($message, 'warning');
+    watchdog('ti_lsg_devel', $message, NULL, WATCHDOG_WARNING);
+  }
+  else {
+    drupal_set_message(t('No content types were deleted in ti_lsg_devel_delete_content_types.'), 'ok');
+  }
+}
+
+/**
+ * Create and delete roles.
+ */
+function ti_lsg_devel_create_roles() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('roles_to_create')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_roles_to_create.'), 'ok');
+    return;
+  }
+
+  // Get the list of roles to handle.
+  $roles = module_invoke_all('roles_to_create');
+
+  // Create or delete the roles.
+  $created = $deleted = array();
+  foreach ($roles as $name => $status) {
+    // If the role already exists.
+    if ($role = user_role_load_by_name($name)) {
+      if (!$status) {
+        // Delete the role.
+        user_role_delete($name);
+        $deleted[] = $name;
+      }
+    }
+    else {
+      if ($status) {
+        // Create the role.
+        $role = new stdClass();
+        $role->name = $name;
+        user_role_save($role);
+        $created[] = $name;
+      }
+    }
+  }
+
+  if (!empty($created)) {
+    drupal_set_message(t('These roles were created: @roles', array('@roles' => implode(', ', $created))), 'ok');
+  }
+  if (!empty($deleted)) {
+    drupal_set_message(t('These roles were deleted: @roles', array('@roles' => implode(', ', $deleted))), 'ok');
+  }
+}
+
+/**
+ * Grant permissions.
+ */
+function ti_lsg_devel_grant_permissions() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('permissions_to_grant')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_permissions_to_grant.'), 'ok');
+    return;
+  }
+
+  // Get the list of permissions to grant.
+  $roles_permissions = module_invoke_all('permissions_to_grant');
+
+  // Grant or revoke the permissions.
+  foreach ($roles_permissions as $role_name => $permissions) {
+    // Make sure the permission is available in a module.
+    $modules = user_permission_get_modules();
+    foreach ($permissions as $permission => $status) {
+      if (!isset($modules[$permission])) {
+        unset($permissions[$permission]);
+      }
+    }
+    if ($role = user_role_load_by_name($role_name)) {
+      user_role_change_permissions($role->rid, $permissions);
+    }
+  }
+
+  drupal_set_message(t('Permissions were granted and revoked for these roles: @roles', array('@roles' => implode(', ', array_keys($roles_permissions)))), 'ok');
+}
+
+/**
+ * Set the date formats.
+ */
+function ti_lsg_devel_set_date_formats() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('date_formats_to_set')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_date_formats_to_set.'), 'ok');
+    return;
+  }
+
+  // Get the list of date formats to set.
+  $formats = module_invoke_all('date_formats_to_set');
+
+  foreach ($formats as $type => $format) {
+    // Create/update the row in date_formats table.
+    db_merge('date_formats')
+      ->key(array(
+        'format' => $format['format'],
+      ))
+      ->fields(array(
+        'type' => 'custom',
+        'locked' => 0,
+      ))
+      ->execute();
+
+    // Create/update the row in date_format_type table.
+    db_merge('date_format_type')
+      ->key(array(
+        'type' => $type,
+        'title' => $format['title'],
+      ))
+      ->fields(array(
+        'locked' => 0,
+      ))
+      ->execute();
+
+    // Set the date_format_ variable to make them useful.
+    variable_set('date_format_' . $type, $format['format']);
+  }
+
+  drupal_set_message(t('The following date formats were set or updated: @formats', array('@formats' => implode(', ', array_keys($formats)))), 'ok');
+}
+
+/**
+ * Set content types for State Machine to ignore.
+ */
+function ti_lsg_devel_workflow_set_ignored() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('workflow_node_types_to_ignore')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_workflow_node_types_to_ignore.'), 'ok');
+    return;
+  }
+
+  // Get the list of content types to ignore.
+  $types = module_invoke_all('workflow_node_types_to_ignore');
+
+  // Check if they are already the same.
+  if (variable_get('ti_lsg_workflow_node_types_to_ignore') != $types) {
+    variable_set('ti_lsg_workflow_node_types_to_ignore', $types);
+    drupal_set_message(t('ti_lsg_workflow_node_types_to_ignore was set to: @types', array('@types' => implode(', ', $types))), 'ok');
+  }
+  else {
+    drupal_set_message(t('ti_lsg_workflow_node_types_to_ignore was already set correctly.'), 'ok');
+  }
+}
+
+/**
+ * Clean the State Flow Scheduled table - https://drupal.org/node/1863158.
+ */
+function ti_lsg_devel_workflow_clean_scheduled() {
+  // Select all from state_flow_scheduled.
+  $query = db_select('state_flow_schedule', 'sfs')
+    ->fields('sfs', array('sid', 'nid', 'vid'));
+  $results = $query->execute()->fetchAll();
+
+  // Check all entries.
+  foreach ($results as $result) {
+    // Check that the node revision exists.
+    if (!$node = node_load($result->nid, $result->vid)) {
+      // If not, remove that row from state_flow_scheduled.
+      db_delete('state_flow_schedule')
+        ->condition('sid', $result->sid)
+        ->execute();
+    }
+  }
+
+  drupal_set_message(t('The state_flow_schedule table was cleaned.'), 'ok');
+}
+
+/**
+ * Reset the feeds.
+ *
+ * In order to reset the feeds, we need to delete all the existing blog_tout
+ * nodes and recipe_tout nodes. Then run the initialize feeds function.
+ */
+function ti_lsg_devel_reset_feeds() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('reset_feeds_functions')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_reset_feeds_functions.'), 'ok');
+    return;
+  }
+
+  // Get the list of content types to ignore.
+  $functions = module_invoke_all('reset_feeds_functions');
+
+  // Run each function.
+  foreach ($functions as $function => $parameters) {
+    // Check that the function exists before running it.
+    if (function_exists($function)) {
+      call_user_func_array($function, $parameters);
+    }
+  }
+
+  drupal_set_message(t('The feeds nodes have beel deleted and the feeds have been reinitalized.'), 'ok');
+}
+
+/**
+ * Delete fields if they are updated in a feature but still show old settings.
+ *
+ * // Ripped from ti_ngs_devel
+ */
+function ti_lsg_devel_delete_fields_by_settings() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('fields_to_delete_by_settings')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_fields_to_delete_by_settings.'), 'ok');
+    return;
+  }
+
+  // Get the list of fields to delete.
+  $fields = module_invoke_all('fields_to_delete_by_settings');
+
+  // Delete field bases and instances if still set to old settings.
+  $fields_deleted = array();
+  $count = 2000;
+  foreach ($fields as $field_name => $settings) {
+    // Use a do loop so we can break out from the if.
+    do {
+      if ($field = field_info_field($field_name)) {
+        foreach ($settings as $key => $value) {
+          // Check if the setting matches the current field info.
+          if ($field[$key] != $value) {
+            // If it does not match, break out of the foreach and do loops.
+            break 2;
+          }
+        }
+      }
+      // If we get here, then it means all the settings are the same and the
+      // field is meant to be deleted.
+      field_delete_field($field_name);
+      $fields_deleted[] = $field_name;
+      $count++;
+    } while (0);
+  }
+  field_purge_batch($count);
+
+  if (count($fields_deleted)) {
+    $message = t('Fields deleted because of settings: @fields', array('@fields' => implode(', ', $fields_deleted)));
+    drupal_set_message($message, 'warning');
+    watchdog('ti_lsg_devel', $message, NULL, WATCHDOG_WARNING);
+  }
+  else {
+    drupal_set_message(t('No fields were deleted because of settings in ti_lsg_devel_delete_fields.'), 'ok');
+  }
+}
+
+/**
+ * Hides fields supplied by DCMS content types, fields that should should not be displayed on the Edit Node form.
+ *
+ */
+function ti_lsg_devel_hide_dcms_fields_devel() {
+  // Make sure at least one module implements our hook.
+  if (count(module_implements('hide_dcms_fields')) <= 0) {
+    drupal_set_message(t('No modules currently implement hook_hide_dcms_fields.'), 'ok');
+    return;
+  }
+
+  // Get the list of fields to hide.
+  $fields = module_invoke_all('hide_dcms_fields');
+
+  $fields_hidden = array();
+
+  // Load TI Content Type Manager's form
+  $form_state = drupal_get_form('ti_content_type_manager_form');
+  $form_state_values = array('values'=> array());
+
+  // Cycle through each module and set the fields
+  foreach ($fields as $module => $fields) {
+    // Reset or Set value to field
+    foreach ($form_state['hidden_checkbox'] as $k => $checkbox) {
+      $module_name = $module . " - ";
+      if (isset($checkbox["#value"]) && strpos($checkbox["#title"], $module_name) !== false) {
+        $field = substr($checkbox["#title"], strlen($module_name));
+        $form_state_values['values'][$k] = "0";
+        if (in_array($field, $fields)) {
+          $form_state_values['values'][$k] = "1";
+          $fields_hidden[] = $field;
+        }
+      }
+    }
+  }
+
+  // Fill in missing Checkboxes so the form handler does not complain
+  foreach ($form_state['hidden_checkbox'] as $k => $checkbox) {
+    if (!isset($form_state_values['values'][$k]) && is_array($checkbox) && isset($checkbox['#value'])) {
+      $form_state_values['values'][$k] = $checkbox['#value'];
+    }
+  }
+
+  // Manually invoke form submit
+  ti_content_type_manager_form_submit('ti_content_type_manager_form', $form_state_values);
+
+  if (count($fields_hidden)) {
+    $message = t('DCMS field hidden: @fields', array('@fields' => implode(', ', $fields_hidden)));
+    drupal_set_message($message, 'warning');
+    watchdog('ti_lsg_devel', $message, NULL, WATCHDOG_WARNING);
+  }
+  else {
+    drupal_set_message(t('No DCMS fields were hidden in ti_lsg_devel_hide_dcms_fields.'), 'ok');
+  }
+}
+
+/**@}*/

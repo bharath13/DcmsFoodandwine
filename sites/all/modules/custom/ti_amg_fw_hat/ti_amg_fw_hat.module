@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Provided a social sharing block for the site
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fw_hat_block_info() {
+  $blocks['ti_amg_fw_hat_block'] = array(
+    'info' => t('The Hat'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fw_hat_block_view($delta = '') {
+  switch ($delta) {
+    case 'ti_amg_fw_hat_block':
+      $block['content'] = array(
+        '#markup' => theme('ti_amg_fw_hat'),
+      );
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fw_hat_theme() {
+  return array(
+    'ti_amg_fw_hat' => array(
+      'template' => 'ti_amg_fw_hat',
+    ),
+  );
+}
+

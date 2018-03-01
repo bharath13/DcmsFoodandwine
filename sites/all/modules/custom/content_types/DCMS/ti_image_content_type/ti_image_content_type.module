@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the ti_image_content_type feature.
+ */
+
+include_once 'ti_image_content_type.features.inc';

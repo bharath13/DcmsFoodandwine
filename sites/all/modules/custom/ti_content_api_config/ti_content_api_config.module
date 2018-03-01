@@ -1,0 +1,192 @@
+<?php
+/**
+ * @file
+ * Code for the TI Content API Config feature.
+ */
+
+include_once 'ti_content_api_config.features.inc';
+
+function ti_content_api_image_alter($uri, $node, &$image, $parent_ct) {
+  if ($node->field_image[LANGUAGE_NONE][0]['width'] < 1200) {
+    $image_field = 'field_image';
+    $app_list_thumbnail_2x_uri = '';
+    $app_list_marquee_large_2x_uri = '';
+    $app_list_medium_2x_uri = '';
+    $style_name = '';
+
+    if (!empty($node->field_large_image) && $node->field_large_image[LANGUAGE_NONE][0]['width'] > $node->field_image[LANGUAGE_NONE][0]['width']) {
+      $image_field = 'field_large_image';
+      $uri = $node->field_large_image[LANGUAGE_NONE][0]['uri'];
+      $ct_image_style = variable_get('ti_content_api_marquee_large_2x_' . $parent_ct . '_style', 'marquee_large_2x');
+      $app_list_marquee_large_2x_uri = image_style_url($ct_image_style, $uri);
+      $ct_image_style = variable_get('ti_content_api_app_list_thumbnail_2x_' . $parent_ct . '_style', 'app_list_thumbnail_2x');
+      $app_list_thumbnail_2x_uri = image_style_url($ct_image_style, $uri);
+      $app_list_medium_2x_uri = image_style_url('medium_2x', $uri);
+    }
+    else {
+      $uri = file_create_url($node->{$image_field}[LANGUAGE_NONE][0]['uri']);
+    }
+
+
+    $image['uri'] = (!empty($app_list_marquee_large_2x_uri)) ? $app_list_marquee_large_2x_uri : $uri;
+    $image['image'] = (!empty($app_list_marquee_large_2x_uri)) ? $app_list_marquee_large_2x_uri : $uri;
+    $image['crops']['marquee_large_2x'] = (!empty($app_list_marquee_large_2x_uri)) ? $app_list_marquee_large_2x_uri : $uri;
+    $image['crops']['app_list_thumbnail_2x'] = (!empty($app_list_thumbnail_2x_uri)) ? $app_list_thumbnail_2x_uri : $uri;
+    $image['crops']['medium_2x'] = (!empty($app_list_medium_2x_uri)) ? $app_list_medium_2x_uri : $uri;
+  }
+  if (!empty($node->field_external_link)) {
+    $image['headline_link'] = $node->field_external_link[LANGUAGE_NONE][0]['url'];
+  }
+}
+/**
+ * Implementd hook_content_api_output_build_alter().
+ */
+function ti_content_api_config_content_api_output_build_alter(&$new_document, $node) {
+  // passing tags to content api.
+  if (in_array($node->type, array('article', 'gallery', 'recipe'))) {
+    $fw_tags = _ti_content_api_config_get_taxonomy_data('field_fw_tags', $node);
+    if (!empty($node->field_ad_value)) {
+      $ad_value = array($node->field_ad_value[LANGUAGE_NONE][0]['value']);
+      $fw_tags = array_merge($fw_tags, $ad_value);
+    }
+    $new_document['taxonomy']['tags'] = array_values(array_unique(array_merge($new_document['taxonomy']['tags'], $fw_tags)));
+  }
+  if (in_array($node->type, array('gallery', 'recipe'))) {
+    $terms_tree = taxonomy_get_parents_all($node->field_fw_category[LANGUAGE_NONE][0]['tid']);
+    $categories = array_reverse($terms_tree);
+
+    $main_category =  array_shift($categories);
+    $new_document['taxonomy']['category'] = $main_category->name;
+    $new_document['taxonomy']['ad_tags']['zone_one'] = _ti_content_api_config_get_taxonomy_path($main_category->name);
+    if (count($categories) >= 1) {
+      $sub_category = array_shift($categories);
+      $new_document['taxonomy']['subcategory'] = $sub_category->name;
+      $new_document['taxonomy']['ad_tags']['zone_two'] = _ti_content_api_config_get_taxonomy_path($sub_category->name);
+    }
+  }
+
+  if ('article' == $node->type && empty($new_document['primary_media']) && !empty($node->field_blog_video)) {
+    $hero_video = $node->field_blog_video[LANGUAGE_NONE][0]['value'];
+    preg_match('/src="(https?\:)?(\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/(.*?)"/', $hero_video, $youtube_matches);
+    preg_match('/src="(https?\:)?(\/\/)?(.*?)?(vimeo.com\/video)\/(.*?)"/', $hero_video, $vimeo_matches);
+    if (isset($youtube_matches[5]) && !empty($youtube_matches[5])) {
+      $video_obj = new stdClass();
+      $video_obj->type = 'video-youtube';
+      $video_obj->data = array(
+        'id' => str_replace('embed/', '', $youtube_matches[5]),
+      );
+      $new_document['primary_media'] = $video_obj;
+    }
+    else if (isset($vimeo_matches[5]) && !empty($vimeo_matches[5])) {
+      $video_obj = new stdClass();
+      $video_obj->type = 'video-vimeo';
+      $video_obj->data = array(
+        'id' => $vimeo_matches[5],
+      );
+      $new_document['primary_media'] = $video_obj;
+    }
+    else {
+      // if not youtube or vimeo
+      // render as first fragment of body.
+      $hero_video_body = array();
+      $hero_video_body['content'] = $hero_video;
+      $hero_video_body['type']= 'paragraph';
+
+      if (isset($_GET['html'])) {
+        $format = 'html';
+      } else if (isset($_GET['markdown'])) {
+        $format = 'markdown';
+      } else if (isset($_GET['basic_html'])) {
+        $format = 'basic_html';
+      } else {
+        $format = 'text';
+      }
+
+      $hero_video_body['format'] = $format;
+      array_unshift($new_document['body'], $hero_video_body);
+    }
+  }
+  // If brightcove video is empty, need to assign embed youtube video against primary_media.
+  if (!empty($node->type) && 'article' == $node->type) {
+    // To get the brightcove field hero video.
+    $field_video_hero_item = reset(field_get_items('node', $node, 'field_video_hero'));
+    // To get field embed video.
+    $field_embed_video_item = reset(field_get_items('node', $node, 'field_blog_video'));
+    if (empty($field_video_hero_item) && !empty($field_embed_video_item)) {
+      $field_embed_video = $field_embed_video_item['value'];
+      if (!empty($field_embed_video)) {
+        if (preg_match('/(<drupal-entity)/', $field_embed_video, $matches)) {
+          $embed_output = ti_shortcodes_convert_all_to_data($field_embed_video);
+          $new_document['primary_media'] = reset($embed_output);
+        }
+        elseif (preg_match('/(?:youtube\.com\/\S*(?:(?:\/e(?:mbed))?\/|watch\/?\?(?:\S*?&?v\=))|youtu\.be\/)([a-zA-Z0-9_-]{6,11})/', $field_embed_video, $matches)) {
+          $embed_output = array(
+            'nid' => 0,
+            'type' => 'video-youtube',
+            'data' => array(
+              'id' => $matches[1],
+            ),
+          );
+          $new_document['primary_media'] = $embed_output;
+        }
+      }
+    }
+  }
+  if ($node->type == 'gallery') {
+     foreach($new_document['images'] as $key =>$item) {
+       if ($item['type'] == 'video') {
+          $new_document['images'][$key]['is_sticky_video'] = true;
+       }
+     }
+  }
+
+  if ($node->type == 'video') {
+    $new_document['transcript'] = _ti_amg_fwrd_video_transcript($node, TRUE);
+  }
+
+  if ($node->type == 'recipe') {
+    if (!empty($node->field_hero_video[LANGUAGE_NONE])) {
+       $new_document['primary_image']['type'] = 'video';
+       $video_nid = $node->field_hero_video[LANGUAGE_NONE][0]['target_id'];
+       $video = node_load($video_nid);
+    }
+    $issue_info = array();
+    if (isset($node->field_issue[LANGUAGE_NONE][0]['tid'])) {
+      $tid = $node->field_issue[LANGUAGE_NONE][0]['tid'];
+      $issue_obj = taxonomy_term_load($tid);
+      $issue_info['name'] = $issue_obj->name;
+      $issue_date = strtotime($issue_obj->name);
+      $issue_info['title'] = "Food and Wine's " . $issue_obj->name . " Issue";
+      if (isset($issue_obj->field_taxo_issue_label[LANGUAGE_NONE][0]['value'])) {
+        $issue_label = $issue_obj->field_taxo_issue_label[LANGUAGE_NONE]
+            [0]['value'];
+        $issue_info['url'] = "/monthly" . "/" . $issue_label;
+        $new_document['additional_fields']['magazine_date'] = $issue_date;
+        $new_document['additional_fields']['magazine_link'] = $issue_info;
+      }
+    }  
+  }
+}
+
+/**
+ * Helper function for getting term path.
+ */
+function _ti_content_api_config_get_taxonomy_path($term_name) {
+  $term_name = preg_replace("/[^A-Za-z0-9 \-]/", '', $term_name);
+  $term_name = str_replace(' ','-', strtolower($term_name));
+  return str_replace('--','-', $term_name);
+}
+/**
+ * Helper function for getting taxonomy_data.
+ */
+function _ti_content_api_config_get_taxonomy_data($field_name, $node) {
+  $terms_array = array();
+  if (!empty($node->{$field_name}) && !empty($node->{$field_name}[LANGUAGE_NONE])) {
+    foreach ($node->{$field_name}[LANGUAGE_NONE] as $taxo_data) {
+      $term_data = taxonomy_term_load($taxo_data['tid']);
+      array_push($terms_array, $term_data->name);
+    }
+  }
+
+  return $terms_array;
+}

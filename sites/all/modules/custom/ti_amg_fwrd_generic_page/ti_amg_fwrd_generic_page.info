@@ -1,0 +1,6 @@
+name = FW Generic Page responsive design
+description = Create Generic Page functionalities for responsive design template.
+package = Foodandwine
+core = 7.x
+
+

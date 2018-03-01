@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Vertical Gallery Ads feature.
+ */
+
+include_once 'ti_amg_fw_vertical_gallery_ads.features.inc';

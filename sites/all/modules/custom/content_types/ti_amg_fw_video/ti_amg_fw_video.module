@@ -1,0 +1,482 @@
+<?php
+
+/**
+ * @file
+ * Code for the TI AMG Video feature.
+ */
+
+include_once 'ti_amg_fw_video.features.inc';
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ti_amg_fw_video_form_brightcove_field_upload_form_alter(&$form, &$form_state, $form_id) {
+  $form['logo_overlay']['#access'] = FALSE;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fw_video_block_info() {
+  // This example comes from node.module.
+  $blocks['more_videos'] = array(
+    'info' => t('More Videos'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $blocks['video_page_video_player'] = array(
+    'info' => t('Video Page: Video Player'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['video_associated_channel'] = array(
+    'info' => t('Video Page: Associated Channel'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['video_contextual_links'] = array(
+    'info' => t('Video Page: Contextual Links'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fw_video_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'more_videos':
+      $block = _ti_amg_fw_video_get_more_videos();
+      break;
+    case 'video_page_video_player':
+      $block['content'] = _ti_amg_fw_video_page_video_player();
+      break;
+    case 'video_associated_channel':
+      $block['content'] = _ti_amg_fw_video_associated_channel();
+      break;
+    case 'video_contextual_links':
+      $block['content'] = _ti_amg_fw_video_contextual_links();
+      break;
+  }
+
+  return $block;
+}
+
+function _ti_amg_fw_video_page_video_player() {
+  $video_player = NULL;
+  $node = menu_get_object();
+  if (isset($node) && !empty($node)) {
+    $player_wrapper = entity_metadata_wrapper('node', $node);
+    $brightcove_id = $player_wrapper->field_video_id->value();
+    if (ti_amg_core_is_mobile()) {
+      $player_id = '1927049748001';
+      $player_key = 'AQ~~,AAAAABmSxE8~,MYC1IACOuZBYZP3Y07qWs52FmZIhFJ7V';
+      $player_type = 'mobile';
+      $width = 300;
+      $height = 300;
+      $template_handler = 'myTemplateLoaded';
+    }
+    else {
+      $player_id = '2566625550001';
+      $player_key = 'AQ~~,AAAAABmSxE8~,MYC1IACOuZDInXU3swCpXJgo6vwU67av';
+      $player_type = 'default';
+      $width = 640;
+      $height = 360;
+      $template_handler = 'fw_TemplateLoaded';
+    }
+    $bgcolor = '#000000';
+    global $is_https;
+    $is_vid = true;
+      $video_player = theme(
+        'brightcove_field_embed',
+        array('bgcolor' => $bgcolor,
+              'player_id' => $player_id,
+              'player' => $player_type,
+              'video_id' => $brightcove_id,
+              'is_vid' => $is_vid,
+              'is_https'=> $is_https,
+              'player_key' => $player_key,
+              'template_handler' => $template_handler,
+              'width' => $width,
+              'height' => $height
+            )
+          );
+
+  }
+  return $video_player;
+}
+function _ti_amg_fw_video_associated_channel() {
+  $output = null;
+
+  $node = menu_get_object();
+  if (empty($node)) {
+    return $output; // bail out if no node.
+  }
+  $video_wrapper = entity_metadata_wrapper('node', $node->nid);
+
+  // Fetching associated channel of the current node.
+  if ($video_wrapper->field_category->__isset("name")) {
+    $category_wrapper = $video_wrapper->field_category;
+    $child_category_name = $category_wrapper->name->value();
+    $child_category_seopath = $category_wrapper->field_seo_path->value();
+    if ($category_wrapper->parent[0]->__isset('field_seo_path')) {
+      $parent_category_seopath = $category_wrapper->parent[0]->field_seo_path->value();
+      $link = $parent_category_seopath .'/'. $child_category_seopath;
+    }
+    else {
+      $link = $child_category_seopath;
+    }
+    $output = l($child_category_name . ' Video: ', $link , array('absolute' => TRUE));
+  }
+
+  return $output;;
+}
+
+function _ti_amg_fw_video_contextual_links() {
+  $node = menu_get_object();
+  if (isset($node) && $node->type == 'video') {
+    //fetching video page contextual foodandwine details
+    $video_wrapper = entity_metadata_wrapper('node', $node->nid);
+    $contextual_links_wrapper = $video_wrapper->field_contextual_links->value();
+    $output = '';
+    foreach ($contextual_links_wrapper as $contextual_link_wrapper) {
+      if (!empty($contextual_link_wrapper)) {
+        $bundle = $contextual_link_wrapper->type;
+        if(!empty($contextual_link_wrapper->field_tout_headline[LANGUAGE_NONE][0]['value'])) {
+          $headline = strip_tags($contextual_link_wrapper->field_tout_headline[LANGUAGE_NONE][0]['value']);
+        }
+        elseif (!empty($contextual_link_wrapper->field_headline[LANGUAGE_NONE][0]['value'])) {
+          $headline = strip_tags($contextual_link_wrapper->field_headline[LANGUAGE_NONE][0]['value']);
+        }
+        else {
+          $headline = strip_tags($node->title);
+        }
+        $headline = !empty($headline) && $bundle == 'foodandwine' ? 'Get the Foodandwine: ' . $headline : $headline;
+
+        if (!empty($headline)) {
+          $link = _ti_amg_fw_core_get_url($contextual_link_wrapper);
+          $items[] = l($headline . ' »', $link);
+        }
+      }
+    }
+
+    if (!empty($items)) {
+      // Fetching associated channel of the current node.
+      if ($video_wrapper->field_category->__isset("name")) {
+        $category_wrapper = $video_wrapper->field_category;
+        $child_category_name = $category_wrapper->name->value();
+        $child_category_seopath = $category_wrapper->field_seo_path->value();
+        if ($category_wrapper->parent[0]->__isset('field_seo_path')) {
+          $parent_category_seopath = $category_wrapper->parent[0]->field_seo_path->value();
+          $link = $parent_category_seopath .'/'. $child_category_seopath;
+        }
+        else {
+          $link = $child_category_seopath;
+        }
+        $items[] = l('See All '. $child_category_name . ' videos »', $link, array('absolute' => TRUE));
+      }
+      $output = theme('item_list', array('items' => $items));
+    }
+
+    return $output;
+  }
+}
+
+/**
+ * Helper function, returns a block object with the corresponding videos.
+ */
+function _ti_amg_fw_video_get_more_videos() {
+  $block = FALSE;
+  $channel = FALSE;
+  $subchannel = FALSE;
+  $tid = FALSE;
+  $cond = array();
+  $nodes = array();
+  $nids = array();
+  $content = array();
+  $view_mode = 'tout_150x150';
+
+  // Get the context.
+  $node = menu_get_object('node');
+  $outbrain = module_exists('ti_amg_outbrain');
+
+  // If the outbrain module is enabled show 4 articles, otherwise show 6.
+  $limit = ($outbrain ? 4 : 6);
+
+  if (!isset($node)) {
+    return FALSE;
+  }
+
+  // Get the TID for the channel and subchannel and add it to the $cond array.
+  $wrapper = entity_metadata_wrapper('node', $node);
+  if ($wrapper->field_category->value() && taxonomy_term_load($wrapper->field_category->value()->tid)) {
+    $tid = $wrapper->field_category->value()->tid;
+    if ($wrapper->field_category->parent[0]->value() && taxonomy_term_load($wrapper->field_category->parent[0]->value()->tid)) {
+      $channel = $wrapper->field_category->parent[0]->value()->tid;
+      $subchannel = $tid;
+      $cond[] = $channel;
+      $cond[] = $subchannel;
+    }
+    else {
+      $channel = $tid;
+      $cond[] = $channel;
+    }
+  }
+
+  // Find video nodes that are tagged with the channel or subchannel.
+  if (!empty($cond)) {
+    $query = new EntityFieldQuery();
+    $query
+      ->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'video')
+      ->propertyCondition('status', 1)
+      ->propertyOrderBy('created', 'DESC')
+      ->fieldCondition('field_category', 'tid', $cond, 'IN')
+      ->range(0, $limit);
+    $result = $query->execute();
+
+    if (!empty($result)) {
+      $nids = array_keys($result['node']);
+    }
+  }
+
+  // Filler.
+  if (count($nids) < $limit) {
+    $query = new EntityFieldQuery();
+    $query
+      ->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'video')
+      ->propertyCondition('status', 1)
+      ->addTag('random')
+      ->range(0, ($limit - count($nids)));
+    // Avoid duplicates.
+    if (!empty($nids)) {
+      $query->entityCondition('entity_id', $nids, 'NOT IN');
+    }
+    // Execute the query.
+    $result = $query->execute();
+
+    if (!empty($result)) {
+      $nids = array_merge($nids, array_keys($result['node']));
+    }
+  }
+
+  // Prepare the results.
+  if (isset($nids) && !empty($nids)) {
+    $nodes = node_load_multiple($nids);
+    $content = node_view_multiple(node_load_multiple($nids), $view_mode);
+  }
+
+  if (isset($content) && !empty($content)) {
+    // Deliver the results.
+    $block['subject'] = t('More Videos from FoodandWine');
+    $block['content'] = $content;
+
+    return $block;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ *
+ * Prints the query. To use just add ->addTag('efq_debug') to you entity field
+ * query.
+ */
+function ti_amg_fw_video_query_efq_debug_alter($query) {
+  if ($query->hasTag('efq_debug') && module_exists('devel')) {
+    dpm((string) $query);
+  }
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ *
+ * Adds random sorting.
+ */
+function ti_amg_fw_video_query_random_alter($query) {
+  if ($query->hasTag('random')) {
+    $query->orderRandom();
+  }
+}
+
+/**
+ * Implements hook_html_head_alter().
+ */
+function ti_amg_fw_video_html_head_alter(&$head_elements) {
+  $node = menu_get_object();
+
+  if (isset($head_elements['metatag_canonical']) && isset($node) && !empty($node) && $node->type == 'video' ) {
+    $canonical_link = $head_elements['metatag_canonical']['#value'];
+    if (!empty($node->field_credit[LANGUAGE_NONE][0]['safe_value'])) {
+      if (isset($head_elements['metatag_canonical']['#value'])) {
+        $head_elements['metatag_canonical']['#value'] = $node->field_credit[LANGUAGE_NONE][0]['safe_value'];
+      }
+    }
+    else {
+      $head_elements['metatag_canonical']['#value'] = $canonical_link;
+    }
+  }
+}
+
+/**
+ * Implements hook_ad_property_map_alter().
+ * Propagates ad_properties field from franchise to all related franchise items
+ *
+ * @param $map Passed by reference
+ */
+function ti_amg_fw_video_ad_property_map_alter(&$map) {
+  if ($node = menu_get_object()) {
+    // Get the franchise context, if available.
+    if (isset($node) && !empty($node->type) && $node->type == 'video') {
+      // If we are on a franchise node, set it to current node.
+      $video = $node;
+    }
+    else {
+      // we are not on video
+      return NULL;
+    }
+  }
+
+  // Add video franchise mapping
+  if (!empty($video->field_video_franchise)) {
+    // Get video franchise.
+    if ($video_franchise = field_get_items('node', $video, 'field_video_franchise')) {
+      if ($video_franchise = field_view_value('node', $video, 'field_video_franchise', $video_franchise[0])) {
+        $video_franchise = (!empty($video_franchise)) ? render($video_franchise) : '';
+        if (!empty($video_franchise)) {
+          if (!isset($map['video'])) {
+            $map['video'] = array();
+          }
+          $map['video']['video_franchise'] = $video_franchise;
+        }
+      }
+    }
+  }
+
+  // Add a video mapping.
+  if (isset($video) && function_exists('_ti_amg_fw_ads_map_values')) {
+    // Get the ad properties.
+    if ($ad_properties = field_get_items('node', $video, 'field_ad_properties')) {
+      if ($ad_properties = field_view_value('node', $video, 'field_ad_properties', $ad_properties[0])) {
+        $ad_properties = (!empty($ad_properties)) ? render($ad_properties) : '';
+        if (!empty($ad_properties)) {
+          if (!isset($map['video'])) {
+            $map['video'] = array();
+          }
+          $map['video']['ad-properties'] = $ad_properties;
+        }
+      }
+    }
+  }
+}
+/**
+ * Implements hook_entity_info_alter().
+ */
+function ti_amg_fw_video_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes'] += array(
+    'tout_related_videos' => array(
+      'label' => t('Tout: Related Video touts'),
+      'custom settings' => FALSE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function ti_amg_fw_video_preprocess_page(&$variables) {
+  /*$node = menu_get_object();
+
+  if (!empty($node) && isset($node->type) && $node->type == 'video') {
+    $output = 'var currentOverlayVideoData = {' . "\n" .
+      '  "video" : {' . "\n".
+        '    "id" : ' . drupal_json_encode($node->nid) . ',' . "\n" .
+        '    "adkeyvaluepairs" : "' . _ti_amg_video_get_ad_keyvalue_pair($node) . '",' . "\n" .
+      '}' . "\n" .
+    '};';
+
+    drupal_add_js($output, array('type' => 'inline', 'scope' => 'header', 'weight' => 6));
+  }*/
+  return TRUE;
+}
+
+/**
+ * Helper function to get the ad key=value pairs.
+ */
+function _ti_amg_video_get_ad_keyvalue_pair($node) {
+  $output = '';
+
+  // Stop continuing if the $node is empty.
+  if (!isset($node->type) && !empty($node)) {
+    return $output;
+  }
+
+  if ($node->type == 'channel') {
+    $output .= '"ptype"="channel"';
+  }
+  else {
+    // Adding Nid, ctype and ptype to the key value pair.
+    $output .= 'aid=' . $node->nid . '&ptype=content&ctype=' . $node->type;
+  }
+
+  // Appending channel and subchannel key value pair
+  $asso_channel = ti_amg_fw_sitecatalyst_get_channel_sub_channel($node, 'seo_path');
+  if (isset($asso_channel->channel)) {
+    $channel = preg_replace("/[^a-z]/", '', drupal_strtolower($asso_channel->channel));
+    $output .= '&ch=' . $channel;
+  }
+  if (isset($asso_channel->sub_channel)) {
+    $sub_channel = preg_replace("/[^a-z]/", '', drupal_strtolower($asso_channel->sub_channel));
+    $output .= '&sch=' . $sub_channel;
+  }
+
+  // Appending options as key value pairs.
+  $options = array(
+    'field_source' => 'pub',
+    'field_franchise' => 'frnch',
+    'field_courses' => 'cours',
+    'field_cuisines' => 'cuis',
+    'field_main_ingredient' => 'ingr',
+    'field_dietary_considerations' => 'diet',
+    'field_prep_and_equipment' => 'prep',
+    'field_convenience_spec_consid' => 'conv',
+    'field_season_occasion' => 'occ',
+  );
+  foreach ($options as $opt_key => $opt_value) {
+    $term_value = '';
+    $option = $node->$opt_key;
+    if (isset($option[LANGUAGE_NONE][0]['tid']) && !empty($option[LANGUAGE_NONE][0]['tid'])) {
+      foreach ($option[LANGUAGE_NONE] as $key => $value) {
+        if (isset($value['tid']) && !empty($value['tid'])) {
+          $term = taxonomy_term_load($value['tid']);
+          $term_name = (isset($term->name) && !empty($term->name)) ? $term->name : '';
+        }
+        if (isset($term_name) && $term_name != 'None') {
+          $term_value .= ($key > 0) ? '|' . drupal_strtolower($term_name) : drupal_strtolower($term_name);
+        }
+      }
+    }
+    if (isset($term_value) && !empty($term_value)) {
+      $term_safe_value = preg_replace("/[^a-z0-9|]/", '', $term_value);
+      $output .= '&' . $opt_value . '=' . $term_safe_value;
+    }
+  }
+
+  // Appending editorial key value pairs.
+  if (isset($node->field_ad_keys[LANGUAGE_NONE][0]['safe_value']) && !empty($node->field_ad_keys[LANGUAGE_NONE][0]['safe_value'])) {
+    $edit_ad_key_value_pairs = explode(',', $node->field_ad_keys[LANGUAGE_NONE][0]['safe_value']);
+    foreach ($edit_ad_key_value_pairs as $edit_ad_key_value_pair) {
+      $key_val = explode('=', $edit_ad_key_value_pair);
+      if (isset($key_val[0]) && isset($key_val[1]) && !empty($key_val[0]) && !empty($key_val[1])) {
+        $output .= '&' . $key_val[0] . '=' . $key_val[1];
+      }
+    }
+  }
+
+  return $output;
+}
+

@@ -1,0 +1,14 @@
+name = TI AMG FW RECIPE THEMES CONTEXTS
+description = Recipe theme parent and child landing page Contexts
+core = 7.x
+package = FoodandWine Layouts
+version = 7.x-1.4
+project = ti_amg_fw_recipe_themes_contexts
+dependencies[] = context
+dependencies[] = ctools
+dependencies[] = ti_amg_fw_custom
+dependencies[] = views
+features[context][] = ti_amg_fw_recipes_themes_parent_page
+features[ctools][] = context:context:3
+features[features_api][] = api:2
+mtime = 1420056516

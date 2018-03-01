@@ -1,0 +1,5 @@
+name = TI FW Custom
+description =  Customizations for Foodandwine
+core = 7.x
+package = Foodandwine
+version = 7.x-1.2

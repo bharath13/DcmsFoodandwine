@@ -1,0 +1,5 @@
+name = TI AMG FW Pronto Component Video
+description = To handle video component for pronto
+version = 7.x-1.0
+core = 7.x
+dependencies[] = ti_pronto_field_formatters

@@ -1,0 +1,312 @@
+<?php
+
+/**
+ * @file
+ * To create custom functionalities to responsive FW site.
+ */
+
+/*
+ * Implementing hook_preprocess_page
+ */
+
+function ti_amg_fwrd_generic_page_preprocess_page(&$vars) {
+  if (isset($vars['node']->type)) {
+    if ($vars['node']->type == 'page' &&
+        !empty($vars['node']->field_use_redesign_template[LANGUAGE_NONE][0]['value']) &&
+        $vars['node']->field_use_redesign_template[LANGUAGE_NONE][0]['value'] == 1) {
+      if (!empty($vars['node']->field_custom_css[LANGUAGE_NONE][0]['value'])) {
+        $vars['custom_css'] = $vars['node']->field_custom_css[LANGUAGE_NONE][0]['value'];
+      }
+      if (!empty($vars['node']->field_custom_js[LANGUAGE_NONE][0]['value'])) {
+        $vars['custom_js'] = $vars['node']->field_custom_js[LANGUAGE_NONE][0]['value'];
+      }      
+    }
+  }  
+}
+
+/*
+ * Implementing hook_preprocess_node
+ */
+function ti_amg_fwrd_generic_page_preprocess_node(&$vars) {
+  if ($vars['node']->type == 'page' &&
+      !empty($vars['node']->field_use_redesign_template[LANGUAGE_NONE][0]['value']) &&
+      $vars['node']->field_use_redesign_template[LANGUAGE_NONE][0]['value'] == 1) {
+    $vars['html_content'] = '';
+    if (!empty($vars['node']->body[LANGUAGE_NONE][0]['value'])) {
+      $vars['html_content'] = ti_amg_fwrd_custom_get_field_value('node', $vars['node'], 'body');
+    }
+    elseif (!empty($vars['node']->field_custom_html[LANGUAGE_NONE][0]['value'])) {
+      $vars['html_content'] = $vars['node']->field_custom_html[LANGUAGE_NONE][0]['value'];
+    }
+    
+    $vars['disable_second_sidebar'] = FALSE;
+    if ($vars['node']->field_layout['und'][0]['value'] == 'NS') {
+      $vars['disable_second_sidebar'] = TRUE;
+    }
+    $vars['page_ads'] = ti_amg_fwrd_custom_get_ads();
+    // Rendering sub menu header based on the dynamic menu selection.
+    if (!empty($vars['node']->field_dynamic_sub_menu[LANGUAGE_NONE][0]['value'])) {
+      $dynamic_menu = $vars['node']->field_dynamic_sub_menu[LANGUAGE_NONE][0]['value'];
+      $vars['sub_header'] = theme('classic-aspen-header', array('sub_header' => _ti_amg_fwrd_generic_page_subheader($dynamic_menu)));
+    }
+  }
+}
+/*
+ * Implementing hook_custom_theme
+ */
+
+function ti_amg_fwrd_generic_page_custom_theme() {
+  if (path_is_admin(current_path())) {
+    return;
+  }
+  if (arg(0) == 'node') {
+    $node = menu_get_object();
+    if ($node->type == 'page' &&
+        !empty($node->field_use_redesign_template[LANGUAGE_NONE][0]['value']) &&
+        $node->field_use_redesign_template[LANGUAGE_NONE][0]['value'] == 1) {
+      return 'fwresponsive';
+    }
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fwrd_generic_page_block_info() {
+  $block['classic_aspen_header'] = array(
+    'info' => t('FW Responsive Classic Aspen Header'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  return $block;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fwrd_generic_page_block_view($block_key = '') {
+  $block = array();
+  switch ($block_key) {
+    case 'classic_aspen_header':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('classic-aspen-header', array('sub_header' => _ti_amg_fwrd_generic_page_subheader())
+        ),
+      );
+      break;
+    default:
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fwrd_generic_page_theme($existing, $type, $theme, $path) {
+  return array(
+    'classic-aspen-header' => array(
+      'template' => 'classic-aspen-header',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'sub_menu' => array(),
+      )
+    ),
+  );
+}
+
+/**
+ * To construct the dynamic sub menu section.
+ *
+ * @param string $dynamic_menu.
+ *   Menu machine name.
+ *
+ * @return array.
+ *  Array of Sub header.
+ */
+function _ti_amg_fwrd_generic_page_subheader($dynamic_menu = '') {
+    $sub_header = array();
+    $sub_header['header_title'] = '';
+    $sub_header['sub_title'] = '';
+    $sub_header['cta_title'] = '';
+    $sub_header['cta_link'] = '';
+    $sub_header['cta_make_red'] = '';
+    $sub_header['cta_new_window'] = '';
+    $sub_header['sponser_text'] = '';
+    $sub_header['cta'] = '';
+    $sub_header['sponser_img'] = '';
+    $sub_header['classic_home_url'] = '';
+    $sub_header['sub_menu'] = '';
+    $submenu_node = '';
+    if (!empty($dynamic_menu)) {
+      $selected_sub_menu_settings = unserialize(variable_get('selected_sub_menu_settings', ''));
+      if (!empty($selected_sub_menu_settings) && is_array($selected_sub_menu_settings)) {
+        if (array_key_exists($dynamic_menu, $selected_sub_menu_settings)) {
+          $selected_nid = $selected_sub_menu_settings[$dynamic_menu];
+          if (!empty($selected_nid) && is_numeric($selected_nid)) {
+            // Load the respective sub menu settings node object.
+            $submenu_node = node_load($selected_nid);
+          }
+        }
+      }
+    }
+    else {
+      $dynamic_menu = 'menu-classic-in-aspen-menu';
+      // Load the classic aspen menu from the respective sub menu settings node object.
+      $alias = 'sub-menu-settings/food-wine-classic-aspen';
+      $path = drupal_lookup_path("source", $alias);
+      $submenu_node = menu_get_object("node", 1, $path);
+    }
+    if (!empty($submenu_node)) {
+      if (!empty($submenu_node->title)) {
+        $sub_header['header_title'] = $submenu_node->title;
+      }
+      if (!empty($submenu_node->field_header_link[LANGUAGE_NONE][0]['value'])) {
+        $sub_header['classic_home_url'] = $submenu_node->field_header_link[LANGUAGE_NONE][0]['value'];
+      }
+      if (!empty($submenu_node->field_sub_title[LANGUAGE_NONE][0]['value'])) {
+        $sub_header['sub_title'] = $submenu_node->field_sub_title[LANGUAGE_NONE][0]['value'];
+      }
+      if (!empty($submenu_node->field_cta_title[LANGUAGE_NONE][0]['value'])) {
+        $sub_header['cta_title'] = $submenu_node->field_cta_title[LANGUAGE_NONE][0]['value'];
+      }
+      if (!empty($submenu_node->field_cta_link[LANGUAGE_NONE][0]['value'])) {
+        $sub_header['cta_link'] = $submenu_node->field_cta_link[LANGUAGE_NONE][0]['value'];
+      }
+      if (!empty($submenu_node->field_cta_enable_red[LANGUAGE_NONE][0]['value'])) {
+        $sub_header['cta_make_red'] = $submenu_node->field_cta_enable_red[LANGUAGE_NONE][0]['value'];
+      }
+      if (!empty($submenu_node->field_cta_new_window[LANGUAGE_NONE][0]['value'])) {
+        $sub_header['cta_new_window'] = $submenu_node->field_cta_new_window[LANGUAGE_NONE][0]['value'];
+      }
+      if ($sub_header['cta_title']) {
+        $cta_attributes = array();
+        // To Make the CTA link in red color.
+        if ($sub_header['cta_make_red']) {
+          $cta_attributes['class'] = 'cta__make__red';
+        }
+        // To Open the CTA link in new window.
+        if ($sub_header['cta_new_window']) {
+          $cta_attributes['target'] = '_blank';
+        }
+        $sub_header['cta'] = l($sub_header['cta_title'], $sub_header['cta_link'], array(
+          'html' => TRUE,
+          'attributes' => $cta_attributes));          
+      }
+      if (!empty($submenu_node->field_sponsor_text[LANGUAGE_NONE][0]['value'])) {
+        $sub_header['sponser_text'] = $submenu_node->field_sponsor_text[LANGUAGE_NONE][0]['value'];
+      }
+      $sponser_img_path = '';
+      if (!empty($submenu_node->field_sponsor_logo[LANGUAGE_NONE][0]['uri'])) {
+        $sponser_img_path = file_create_url($submenu_node->field_sponsor_logo[LANGUAGE_NONE][0]['uri']);
+        $sub_header['sponser_img'] = theme('image', array(
+        'path' => $sponser_img_path,
+        'alt' => $sub_header['sponser_text'],
+        ));
+      }
+    }
+    $sub_header['sub_menu'] = _ti_amg_fwrd_generic_page_submenu($dynamic_menu);
+    return $sub_header;
+}
+
+function _ti_amg_fwrd_generic_page_submenu($menu_name) {
+  $sub_menu = array();
+  $menu_tree = menu_tree_page_data($menu_name);  
+  foreach ($menu_tree as $key => $menu) {
+    if (!$menu['link']['hidden']) {
+      $menu_link = array();
+      $menu_link['title'] = $menu['link']['link_title'];
+      $href = $menu['link']['link_path'];
+      // To Add the target=_blank attribute if the open in new window checkbox is selected
+      $link_target_using_mlid = variable_get('classic-open-new-window-'.$menu['link']['mlid']);
+      $menu_replace_spaces = drupal_strtolower(str_replace(' ', '-', $menu['link']['link_title']));
+      $menu_without_special_characters =  preg_replace('/[^A-Za-z0-9\-]/', '', $menu_replace_spaces);
+      $link_target_using_title = variable_get($menu_without_special_characters);
+      $set_attributes = '';
+      if ((!empty($link_target_using_mlid) && $link_target_using_mlid == 1) ||
+                (!empty($link_target_using_title) && $link_target_using_title == 1)) {
+          $set_attributes = array('target'=>'_blank', 'title' => $menu_link['title']);
+      }
+      else {
+          $set_attributes = array('title' => $menu_link['title']);
+      }
+      // Checking whether the menu is having a valid page
+      // If not adding <span> tag instead of <a> tag for particular menu item
+      if ($href == '<front>') {        
+        $menu_link['link'] = theme('html_tag', array(
+          'element' => array(
+            '#tag' => 'span',
+            '#attributes' => array(
+              'class' => 'non_clickable',
+            ),
+            '#value' => $menu_link['title'],
+          ),
+        ));
+      }
+      else {
+        $menu_link['link'] = l($menu_link['title'], $href, array('attributes' => $set_attributes));
+      }
+
+      if (!empty($menu['below'])) {
+        $menu_link_leaf = array();
+        foreach ($menu['below'] as $key => $submenu) {
+          if (!$submenu['link']['hidden']) {
+            $menu_link_leaf['title'] = $submenu['link']['link_title'];
+            $href = $submenu['link']['link_path'];
+            // To Add the target=_blank attribute if the open in new window checkbox is selected
+            $submenu_link_target_using_mlid = variable_get('classic-open-new-window-'.$submenu['link']['mlid']);
+            $submenu_replace_spaces = drupal_strtolower(str_replace(' ', '-', $submenu['link']['link_title']));
+            $submenu_without_special_characters =  preg_replace('/[^A-Za-z0-9\-]/', '', $submenu_replace_spaces);
+            $submenu_link_target_using_title = variable_get($submenu_without_special_characters);
+            $sub_menu_set_attributes = '';
+            if ((!empty($submenu_link_target_using_mlid) && $submenu_link_target_using_mlid == 1) ||
+                      (!empty($submenu_link_target_using_title) && $submenu_link_target_using_title == 1)) {
+                $sub_menu_set_attributes = array('target'=>'_blank', 'title' => $menu_link_leaf['title']);
+            }
+            else {
+                $sub_menu_set_attributes = array('title' => $menu_link_leaf['title']);
+            }
+            // Checking whether the menu is having a valid path
+            // If not adding <span> tag instead of <a> tag for particular menu item
+            if ($href == '<front>') {              
+              $menu_link_leaf['link'] = theme('html_tag', array(
+                'element' => array(
+                  '#tag' => 'span',
+                  '#attributes' => array(
+                    'class' => 'non_clickable',
+                  ),
+                  '#value' => $menu_link_leaf['title'],
+                ),
+              ));
+            }
+            else {
+              $menu_link_leaf['link'] = l($menu_link_leaf['title'], $href, array('attributes' => $sub_menu_set_attributes));
+            }
+            
+            $menu_link['leaf'][] = $menu_link_leaf;
+          }
+        }
+      }
+      $sub_menu[] = $menu_link;
+    }
+  }  
+  return $sub_menu;
+}
+
+/**
+ * To get the dynamic menu title by menu machine name.
+ *
+ * @param string $dynamic_menu_name.
+ *   Menu machine name.
+ *
+ * @return string
+ *   Menu title.
+ */
+function _ti_amg_fwrd_generic_page_get_dynamic_menu_title($dynamic_menu_name = '') {
+  $menu_title = '';
+  if (!empty($dynamic_menu_name)) {
+    $menu_title = db_query('SELECT title FROM "menu_custom" WHERE menu_name = :menu_name', array(':menu_name' => $dynamic_menu_name))->fetchField();
+  }
+  return $menu_title;
+}

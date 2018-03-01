@@ -1,0 +1,5 @@
+name = TI FW Redirect
+description =  Module used for redirections in Foodandwine
+core = 7.x
+package = Foodandwine
+version = 7.x-1.0

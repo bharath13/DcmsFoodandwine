@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Install functions, place hook_update_Ns in here.
+ */
+
+/**
+ * Create F&W Header Menu, set initial config for nav.
+ */
+function ti_amg_fw_mm_config_update_7101() {
+  // Create Menu.
+}

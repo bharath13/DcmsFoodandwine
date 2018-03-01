@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Video Landing Page Content Type feature.
+ */
+
+include_once 'ti_amg_fw_video_landing_page_content_type.features.inc';

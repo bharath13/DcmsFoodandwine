@@ -1,0 +1,437 @@
+.blog-container {
+    width: 640px;
+}
+#blog-title {
+    background: url("/sites/all/themes/foodandwine/images/search_bg.gif") repeat scroll 0 0 transparent;
+    border-bottom: 2px solid #000;
+    margin: 0 0 30px;
+    padding: 23px 0 17px;
+    position: relative;
+}
+#blog-title h1 a, #blog-title .min, #blog-title h2 {
+    background: url("/sites/all/themes/foodandwine/images/hd_mouthing_off.png") no-repeat scroll 0 0 transparent;
+    display: block;
+    margin: 0 auto;
+    overflow: hidden;
+    padding: 0;
+    text-indent: -9999px;
+    width: 430px;
+}
+#blog-title h1, #blog-title h1 a {
+    height: 38px;
+    margin: 0 auto;
+    padding: 0;
+}
+#blog-title h2 {
+    background-position: 0 -38px;
+    height: 32px;
+}
+#blog-title .min {
+    background-position: 0 -82px;
+    height: 37px;
+    width: 179px;
+}
+.rss-link {
+    background: url("/sites/all/themes/foodandwine/images/btn_rss.png") no-repeat scroll 0 0 transparent;
+    height: 18px;
+    overflow: hidden;
+    position: absolute;
+    right: 11px;
+    text-indent: -9999px;
+    top: 10px;
+    width: 42px;
+}
+.entry-excerpt {
+    border-right: 1px solid #e1e1e1;
+    float: left;
+    padding-right: 20px;
+    width: 459px;
+}
+.entry {
+    color: #000;
+}
+.entry-excerpt .entry {
+    border-bottom: 1px solid #000;
+    clear: both;
+    line-height: 21px;
+    margin: 30px 0 0;
+    overflow: hidden;
+    position: relative;
+}
+.full-post {
+    margin-top: -5px;
+}
+.entry {
+    font-size: 16px;
+    line-height: 24px;
+}
+.entry:first-child {
+    margin: 0;
+}
+.entry-excerpt h2 {
+    clear: both;
+    font-size: 20px;
+    font-weight: normal;
+    line-height: 1.25;
+    margin: 0 0 5px;
+    padding: 0;
+}
+h1 {
+    font-size: 24px;
+    font-weight: normal;
+    line-height: 30px;
+    margin: 0 0 4px;
+    padding: 0;
+    text-align: center;
+}
+.entry .bubble {
+    display: inline-block;
+    margin-bottom: 12px;
+}
+.entry .body {
+    clear: both;
+    padding: 26px 0 0;
+}
+.entry .byline {
+    color: #7d7d7d;
+    letter-spacing: 1px;
+    line-height: 15px;
+    margin: 0;
+    padding: 0;
+}
+ p {
+    margin: 0 0 24px;
+}
+.entry-excerpt p {
+    margin: 0 0 24px;
+}
+.blog-post-excerpt {
+    margin: 0 0 20px;
+}
+.blog-post-excerpt p:last-of-type {
+    display: inline;
+}
+.blog-post-excerpt p a {
+    color: #3a89ac;
+}
+.read-more-link {
+    display: inline;
+}
+.read-more-link a {
+    color: #e71f3d;
+    font-family: "mr-eaves-modern-aexp",sans-serif;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 13px;
+    padding-left: 5px;
+    text-transform: uppercase;
+}
+.read-more-link a:after {
+    color: #e71f3d;
+    content: "»";
+    display: inline-block;
+    font-family: 'Droid Sans', sans-serif;
+    font-size: 17px;
+    line-height: 17px;
+    margin: 0;
+    text-decoration: none;
+}
+.entry .image img {
+    float: left;
+    margin: 0 20px 20px 0;
+}
+.entry-excerpt .image img {
+    height: auto !important;
+    width: 100px !important;
+}
+.entry-excerpt .creditcont {
+    display: none;
+}
+.creditcont {
+    clear: left;
+    font: bold 10px/1.2 'Droid Sans', sans-serif;
+    max-width: 200px;
+}
+.credit {
+    color: #7d7d7d;
+    font-weight: normal;
+}
+ .image img {
+    margin-bottom: 8px;
+    max-width: 300px;
+}
+ .imgContainer {
+    float: left;
+    margin-bottom: 30px;
+}
+.entry-excerpt .pagination {
+    float: none;
+    text-align: center;
+}
+ h2,  .byline {
+    text-align: center;
+}
+.bubble-container {
+    text-align: center;
+}
+.bubble-container .bubble {
+    margin-bottom: 10px;
+}
+ .related {
+    color: #7d7d7d;
+    font: 9px/15px 'Droid Sans', sans-serif;
+}
+.email-editor {
+    display: block;
+}
+ .feature-separator {
+    margin: 26px 0 0;
+}
+#blog-title.author-title {
+    margin-bottom: 24px;
+}
+.author-page h1 {
+    text-align: left;
+}
+.author-page p {
+    margin: 0;
+}
+.author-page strong {
+    font: bold 11px/21px 'Droid Sans', sans-serif;
+    text-transform: uppercase;
+}
+.author-page .body {
+    font: 14px/21px 'Droid Serif', serif;
+    padding: 1px 0 0;
+}
+#blog-title {
+    margin-right: 20px;
+}
+.caption {
+    color: #000;
+    display: block;
+    font: bold 10px/12px 'Droid Sans', sans-serif;
+}
+.flex-video-container {
+    margin: 0 0 10px;
+}
+#zergnet-widget {
+    padding-top: 10px;
+}
+#zergnet-widget .you-might-also-like {
+    color: #000;
+    float: left;
+    font: 14px 'Droid Serif', serif;
+    letter-spacing: 1px;
+    margin: 10px 0;
+    text-transform: uppercase;
+    width: 640px;
+}
+#zergnet-widget .you-might-also-like span {
+    float: right;
+    font-size: 9px;
+    margin-right: 18px;
+    margin-top: 5px;
+}
+#zergnet-widget .explorer-widget {
+    padding: 0;
+    text-align: left;
+}
+#zergnet-widget .explorer-widget .explorer-widget-story-container {
+    margin-right: 18px;
+}
+#zergnet-widget .explorer-widget .explorer-widget-story-container:last-child {
+    margin-right: 0;
+}
+.blog-additional-content p {
+    margin: 0;
+}
+.blog-additional-content {
+    float: left;
+    overflow: hidden;
+    width: 100%;
+}
+.blog-list-container {
+    background-position: center 30px;
+    background-repeat: no-repeat;
+    border-top: 1px solid #000000;
+    padding: 35px 25px;
+    position: relative;
+}
+.blog-list-container:before {
+    border-top: 1px solid #000000;
+    content: " ";
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 3px;
+    z-index: -1;
+}
+.blog-list-title {
+    color: #000000;
+    font-family: 'Droid Sans', sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 20px;
+    margin: 0 auto 10px;
+    text-transform: none;
+}
+.blog-list-links {
+    display: block;
+    margin: 0 10%;
+    overflow: hidden;
+    padding: 0;
+    width: 80%;
+}
+.blog-list-links ul {
+    float: left;
+    width: 50%;
+}
+.blog-list-links ul:first-of-type {
+    margin-right: 2%;
+    width: 48%;
+}
+.blog-list-links ul li {
+    color: #fff;
+    cursor: pointer;
+    height: 42px;
+    line-height: 42px;
+    list-style: outside none none;
+    margin: 0 0 15px;
+    text-transform: uppercase;
+    width: 100%;
+}
+.blog-additional-content .blog-list-links ul li p {
+    background: url("/sites/all/themes/foodandwine/images/arrow.png") no-repeat scroll right center rgba(0, 0, 0, 0);
+    font-family: "mr-eaves-modern-aexp",sans-serif!important;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 45px;
+    margin: 0 20px;
+}
+.blog-additional-content .blog-list-links ul li p a {
+    color: #fff;
+    display: block;
+    height: 100%;
+    letter-spacing: 1px;
+    width: 100%;
+}
+.blog-list-links ul li:nth-child(2n) {
+    background: none repeat scroll 0 0 rgba(185, 1, 1, 0.8);
+}
+.blog-list-links ul li:nth-child(2n+1) {
+    background: none repeat scroll 0 0 rgba(107, 2, 2, 0.8);
+}
+.blog-list-links ul:first-of-type li:nth-child(2n) {
+    background: none repeat scroll 0 0 rgba(107, 2, 2, 0.8);
+}
+.blog-list-links ul:first-of-type li:nth-child(2n+1) {
+    background: none repeat scroll 0 0 rgba(185, 1, 1, 0.8);
+}
+.blog-info-content {
+    color: #555555;
+    font-family: 'Droid Sans', sans-serif;
+    font-size: 10px;
+    line-height: 13px;
+    margin: 10px 0;
+    width: 100%;
+}
+.blog-two-columns-container, .blog-thumb-article-row {
+    overflow: hidden;
+    width: 100%;
+}
+.blog-two-columns-container {
+    border-bottom: 1px solid #000;
+    padding: 0 0 20px;
+}
+.blog-thumb-article-row {
+    border-bottom: 1px solid #e1e1e1;
+    padding: 20px 0;
+}
+.blog-thumb-article-row .credit {
+    margin: 0;
+}
+ul {
+    margin: 10px 0 0;
+    padding: 0;
+}
+.blog-left-column ul li, .blog-left-column ul li a, .blog-right-column ul li, .blog-right-column ul li a {
+    color: #3a89ac;
+    font-family: 'Droid Sans', sans-serif;
+    font-size: 13px;
+    line-height: 26px;
+    list-style: outside none none;
+}
+.blog-left-column, .blog-right-column, .blog-thumb-column, .blog-thumb-article-column {
+    float: left;
+}
+.blog-left-column {
+    margin-right: 20px;
+    width: 300px;
+}
+.blog-right-column {
+    width: 340px;
+}
+.blog-thumb-column {
+    margin-right: 20px;
+    position: relative;
+    width: 220px;
+}
+.blog-thumb-column img {
+    width: 100%;
+}
+.blog-thumb-article-column {
+    width: 400px;
+}
+.blog-additional-content h3.blog-thumb-title {
+    font-family: 'Droid Serif', serif;
+    font-size: 21px;
+    line-height: 24px;
+    margin: 0 0 15px;
+    padding: 0;
+    font-weight: bold;
+}
+.thumb-badge {
+    bottom: 0;
+    height: 90px;
+    position: absolute;
+    right: 5px;
+    width: 105px;
+}
+.line-subtitle {
+    border-bottom: 1px solid #000000; 
+    border-top: 2px solid #000000;
+    color: #000000;
+    font-family: "mr-eaves-modern-aexp",sans-serif;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 33px;
+    text-transform: uppercase;
+}
+.line-subtitle.center {
+    text-align: center;
+}
+.line-subtitle.red {
+    border-bottom: 1px solid #cb0013;
+    border-top: 2px solid #cb0013;
+    color: #cb0013;
+}
+.blog-thumb-column img {
+    margin-bottom: 10px;
+    width: 100%;
+}
+.credit, .chef-image-credit {
+    color: #7d7d7d !important;
+    font: 9px/15px 'Droid Sans', sans-serif;
+}
+.blog-right-column .pTitle {
+    display: none !important;
+}
+.blog-right-column .qContent {
+    margin-bottom: 10px!important;
+}

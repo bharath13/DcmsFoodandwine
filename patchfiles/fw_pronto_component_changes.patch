@@ -1,0 +1,42 @@
+diff --git a/modules/pronto_component_text/pronto_component_text.module b/modules/pronto_component_text/pronto_component_text.module
+index 4e1fc37..e36e604 100755
+--- a/modules/pronto_component_text/pronto_component_text.module
++++ b/modules/pronto_component_text/pronto_component_text.module
+@@ -46,6 +46,9 @@ function pronto_component_text_field_formatter_view($entity_type, $entity, $fiel
+   switch ($display['type']) {
+     case 'pronto_component_text':
+       foreach ($items as $delta => $item) {
++        if (empty($item['value'])) {
++          break;
++        }
+         if ($settings['uri_friendly']) {
+           if (module_load_include('inc', 'pathauto', 'pathauto') !== FALSE) {
+             module_load_include('inc', 'pathauto', 'pathauto');
+diff --git a/modules/pronto_component_title/pronto_component_title.module b/modules/pronto_component_title/pronto_component_title.module
+index 1d593f8..2d601a6 100755
+--- a/modules/pronto_component_title/pronto_component_title.module
++++ b/modules/pronto_component_title/pronto_component_title.module
+@@ -28,14 +28,21 @@ function pronto_component_title_field_formatter_view($entity_type, $entity, $fie
+ 
+   switch ($display['type']) {
+     case 'pronto_component_title':
+-      $items = reset($items);
++      if (!empty($items)) {
++        $items = reset($items);
++        $title = $items['value'];
++      }
++      else {
++        // Picking the node title.
++        $title = $entity->title;
++      }
+       $filter_name = $settings['pronto_filter_title_field'] ? $settings['pronto_filter_title_field'] : $items['format'];
+       $pronto_component_title = array(
+         'type' => 'components/article/title',
+         'version' => 1,
+         'weight' => $display['weight'],
+         'data' => array(
+-          'title' => check_markup($items['value'], $filter_name, $langcode),
++          'title' => check_markup($title, $filter_name, $langcode),
+         ),
+       );
+ 

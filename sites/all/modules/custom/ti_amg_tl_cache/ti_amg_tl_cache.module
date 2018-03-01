@@ -1,0 +1,31 @@
+<?php
+/**
+ * @file
+ * Module file for cache.
+ */
+include_once 'TLMemCacheDrupalCookie.inc';
+
+/**
+function ti_amg_tl_cache_init() {
+
+  $cache_edge_control_maxage = 300; // variable_get('cache_edge_control_maxage', -1);
+
+  if ($cache_edge_control_maxage > -1 && !user_is_logged_in()) {
+
+    if (drupal_page_is_cacheable() && !headers_sent()) {
+// Specify TTL in server cache.
+
+      drupal_add_http_header('Edge-Control',
+        'cache-maxage=' . $cache_edge_control_maxage . 's'
+      );
+      drupal_add_http_header('Cache-Control',
+        'max-age=' . $cache_edge_control_maxage . 's'
+      );
+      drupal_add_http_header('Pragma', FALSE);
+
+    }
+
+  }
+
+}*/
+

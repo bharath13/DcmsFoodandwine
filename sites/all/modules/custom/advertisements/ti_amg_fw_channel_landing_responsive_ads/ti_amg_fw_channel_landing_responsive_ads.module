@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Channel Landing Responsive Ads feature.
+ */
+
+include_once 'ti_amg_fw_channel_landing_responsive_ads.features.inc';

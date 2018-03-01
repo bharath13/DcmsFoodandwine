@@ -1,0 +1,16 @@
+input {
+  padding: 10px 12px;
+  border: 1px solid $color-mid-grey;
+  box-sizing: border-box;
+  border-radius: 0;
+  background-color: #f6f6f6;
+  color: #797979;
+  font-size: rem(15);
+  @include appearance(none);
+
+  &:focus {
+    border-color: darken($color-mid-grey, 10%);
+    outline: none;
+    box-shadow: 0 0 3px rgba(#000000, .2);
+  }
+}

@@ -1,0 +1,129 @@
+<?php
+
+/**
+ * @file
+ * Code for the TI AMG FW Caching feature.
+ */
+
+include_once 'ti_amg_fw_caching.features.inc';
+
+/**
+ * Implements hook_init))
+ *
+ */
+function ti_amg_fw_caching_init() {
+  global $conf;
+  // variable_get('cache_edge_control_maxage', -1);
+  // Set different cache expiration time for home page
+  // and other site pages using custom cache settings
+  // at admin/config/development/performance/cache-settings
+  if (drupal_is_front_page()) {
+    $home_ec_maxage = variable_get('home_edge_control_maxage', 300);
+    $home_browser_maxage = variable_get('home_browser_maxage', 900);
+    $cache_edge_control_maxage =
+      ($home_ec_maxage != '') ? $home_ec_maxage : 300;
+    $cache_browser_maxage =
+      ($home_browser_maxage != '') ? $home_browser_maxage : 900;
+  }
+  else {
+    $site_ec_maxage = variable_get('site_edge_control_maxage', 5400);
+    $site_browser_maxage = variable_get('site_browser_maxage', 5400);
+    $cache_edge_control_maxage =
+      ($site_ec_maxage != '') ? $site_ec_maxage : 5400;
+    $cache_browser_maxage =
+      ($site_browser_maxage != '') ? $site_browser_maxage : 5400;
+  }
+
+  $conf['cache'] = 1;
+  $conf['block_cache'] = TRUE;
+  $conf['preprocess_css'] = TRUE;
+  $conf['preprocess_js'] = TRUE;
+
+  if ($cache_edge_control_maxage > -1 && !user_is_logged_in()) {
+    // Specify TTL in server cache.
+      if (drupal_page_is_cacheable() && !headers_sent()) {
+        drupal_add_http_header('Cache-Control', 'public, max-age=' . $cache_browser_maxage . ', s-maxage=' . $cache_edge_control_maxage);
+      }
+  }
+}
+
+/**
+ * Implements hook_expire_cache_alter().
+ *
+ * Clear the proper Akamai origin URL when Expire 2.x fires. Also clear
+ * a path alias if it is set.
+ */
+function ti_amg_fw_caching_expire_cache_alter(&$urls, $object_type, $object, $absolute_urls_passed) {
+  $base_url = $GLOBALS['conf']['securepages_basepath'];
+  if ($absolute_urls_passed == FALSE) {
+    foreach ($urls as $key => $path) {
+      if ($path == '<front>') {
+        $urls['front'] = $base_url . '/';
+        $cid = url('<front>', array('absolute' => TRUE));
+        ti_amg_fw_caching_clear_all($cid, 'cache_page');
+      }
+      else {
+        // Add in the $base_url for the main (non-editor) domain.
+        if (substr($path, 0, 4) != 'http') {
+          $urls[$key] = $base_url . '/' . $path;
+        }
+        // Also clear the path alias if it exists.
+        $alias = drupal_get_path_alias($path);
+        if ($alias != $path) {
+          $urls[$key . '-alias'] = $base_url . '/' . $alias;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Expires data from the cache.
+ *
+ * @param int $cid
+ * If set, the cache ID or an array of cache IDs. Otherwise, all cache entries
+ * that can expire are deleted. The $wildcard argument will be ignored if set
+ * to NULL.
+ * @param int $bin
+ * If set, the cache bin to delete from. Mandatory argument if $cid is set.
+ * @param string $wildcard
+ * If TRUE, the $cid argument must contain a string value and cache IDs
+ * starting with $cid are deleted in addition to the exact cache ID specified
+ * by $cid. If $wildcard is TRUE and $cid is '*', the entire cache is emptied.
+ *
+ * @return NULL|boolean
+ * Boolean if page cache was cleared, null if not.
+ */
+function ti_amg_fw_caching_clear_all($cid = NULL, $bin = NULL, $wildcard = FALSE) {
+  // If called with the arguments $cid and $bin set to NULL or omitted, then
+  // expirable entries will be cleared from the cache_page and cache_block bins,
+  // and the $wildcard argument is ignored.
+  if (!isset($cid) && !isset($bin)) {
+    // Clear the block cache first, so stale data will
+    // not end up in the page cache.
+    if (module_exists('block')) {
+      ti_amg_fw_caching_clear_all(NULL, 'cache_block');
+    }
+    ti_amg_fw_caching_clear_all(NULL, 'cache_page');
+    return;
+  }
+  return _ti_amg_fw_caching_get_object($bin)->clear($cid, $wildcard);
+}
+
+/**
+ * Gets the cache object for a cache bin.
+ *
+ * @param int $bin
+ * The cache bin for which the cache object should be returned.
+ *
+ *
+ * @return DrupalCacheInterface
+ * The cache object associated with the specified bin.
+ */
+function _ti_amg_fw_caching_get_object($bin) {
+  // By default, this returns an instance of the DrupalDatabaseCache class.
+  // Classes implementing DrupalCacheInterface can register themselves
+  // both as a default implementation and for specific bins.
+  $cache_object = new TLMemCacheDrupalCookie($bin);
+  return $cache_object;
+}

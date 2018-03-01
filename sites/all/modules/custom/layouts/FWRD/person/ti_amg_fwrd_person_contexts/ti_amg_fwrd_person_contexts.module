@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FWRD Person Contexts feature.
+ */
+
+include_once 'ti_amg_fwrd_person_contexts.features.inc';

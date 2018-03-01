@@ -1,0 +1,101 @@
+<?php
+/**
+ * @file
+ * Module used for FoodAndWine Redirects.
+ */
+/**
+ * Implements hook_init().
+ */
+function ti_amg_fw_redirect_init() {
+
+  // Redirections for F&W pages
+
+  if (arg(0) && arg(0) == 'articles_feeds') {
+    $build_url = url('feeds/latest_articles', array('absolute' => TRUE));
+    drupal_goto($build_url, array(), 301);
+  }
+  if (arg(0) && arg(0) == 'recipes_feeds') {
+    $build_url = url('feeds/latest_recipes', array('absolute' => TRUE));
+    drupal_goto($build_url, array(), 301);
+  }
+
+  // Redirecting to blogs.atom
+  if (request_uri() == '/blogs/mouthing-off?format=atom' || (arg(0) && arg(0) == 'blogs_feed')) {
+    $build_url = url('blogs.atom', array('absolute' => TRUE));
+    drupal_goto($build_url, array(), 301);
+  }
+}
+
+/**
+ * Implements hook_menu().
+ * redirecting Wine, Activities & Hotel listing pages
+ * Alternate was to use redirect module
+ */
+function ti_amg_fw_redirect_menu() {
+  $items = array();
+  $items['hotels/%'] = array(
+    'title' => 'Redirect',
+    'page callback' => '_ti_amg_fw_redirect',
+    'page arguments' => array(NULL),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['activities/%'] = array(
+    'title' => 'Redirect',
+    'page callback' => '_ti_amg_fw_redirect',
+    'page arguments' => array(NULL),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['restaurants/%'] = array(
+        'title' => 'Redirect',
+        'page callback' => '_ti_amg_fw_redirect',
+        'page arguments' => array(NULL),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+    );
+  $items['entertaining/%'] = array(
+        'title' => 'Redirect',
+        'page callback' => '_ti_amg_fw_redirect',
+        'page arguments' => array(NULL),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+    );
+  
+  return $items;
+}
+/**
+ * Implements _ti_amg_fw_redirect()
+ */
+function _ti_amg_fw_redirect($id = NULL) {
+
+  // Check if the arg(0) Hotel and arg(1) Exists
+  if (count(arg()) > 1 && arg(0) && drupal_strtolower(arg(0)) == 'hotels') {
+    $build_url = url('restaurants', array('absolute' => TRUE));
+    drupal_goto($build_url, array(), 301);
+    exit;
+  }
+  if (count(arg()) == 1 && arg(0) && drupal_strtolower(arg(0)) == 'hotels') {
+        $build_url = url('tasting-and-travel-guide', array('absolute' => TRUE));
+        drupal_goto($build_url, array(), 301);
+        exit;
+   }
+  // Check if the arg(0) Activities and arg(1) Exists
+  if (count(arg()) > 1 && arg(0) && drupal_strtolower(arg(0)) == 'activities') {
+    $build_url = url('restaurants', array('absolute' => TRUE));
+    drupal_goto($build_url, array(), 301);
+    exit;
+  }
+
+  if (count(arg()) > 1 && arg(0) && drupal_strtolower(arg(0)) == 'restaurants') {
+        $build_url = url(arg(0), array('absolute' => TRUE));
+        drupal_goto($build_url, array(), 301);
+        exit;
+  }
+  if (count(arg()) > 1 && arg(0) && drupal_strtolower(arg(0)) == 'entertaining') {
+        $build_url = url(arg(0), array('absolute' => TRUE));
+        drupal_goto($build_url, array(), 301);
+        exit;
+  }
+}
+

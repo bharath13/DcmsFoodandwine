@@ -1,0 +1,14 @@
+name = TI AMG FW Brightcove Settings
+description = TI AMG FW Brightcove Settings
+core = 7.x
+package = Foodandwine
+version = 7.x-1.0
+project = ti_amg_fw_brightcove_settings
+dependencies[] = ctools
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[variable][] = ti_editorial_brightcove_notify_callback
+features[variable][] = ti_editorial_brightcove_notify_emails
+features[variable][] = ti_editorial_brightcove_preparer
+features[variable][] = ti_editorial_brightcove_publisher_id

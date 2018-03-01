@@ -1,0 +1,872 @@
+<?php
+
+/**
+ * @file
+ * Skyword content production platform connector module.
+ */
+
+const SKYWORD_VERSION = "1.3.1";
+
+/**
+ * Implements the hook_help().
+ */
+function skyword_help($path, $arg) {
+
+  if ($path == 'admin/help#skyword') {
+    return t('Connects to the Skyword content production platform.');
+  }
+
+}
+
+/**
+ * Generate term id for a given vocabulary word.
+ *
+ * @param string $term_val
+ *   Term value.
+ * @param string $vocabulary_val
+ *   Vocabulary name.
+ *
+ * @return int
+ *    tid.
+ */
+function skyword_get_tid_for_term($term_val, $vocabulary_val) {
+  $term = taxonomy_get_term_by_name($term_val, $vocabulary_val);
+  $vocabulary = taxonomy_vocabulary_machine_name_load($vocabulary_val);
+
+  if ($vocabulary == NULL) {
+    $vocabulary = new stdClass();
+    $vocabulary->name = $vocabulary_val;
+    $vocabulary->machine_name = $vocabulary_val;
+    taxonomy_vocabulary_save($vocabulary);
+  }
+
+  if ($term == NULL) {
+    $term = new stdClass();
+    $term->vid = $vocabulary->vid;
+    $term->name = $term_val;
+    $term->description = $term_val;
+    taxonomy_term_save($term);
+  }
+
+  if (is_array($term)) {
+    $term_array = array_keys($term);
+    $tid = $term_array['0'];
+  }
+  else {
+    $tid = $term->tid;
+  }
+  return $tid;
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * Adds SEO title tag.
+ */
+function skyword_preprocess_node(&$vars) {
+  $node = menu_get_object();
+  if ($node != NULL) {
+    if (variable_get('skyword_enable_title') == TRUE
+        && !empty($node->skyword_seo_title[LANGUAGE_NONE][0]['value'])) {
+      $seo_title_val = $node->skyword_seo_title[LANGUAGE_NONE][0]['value'];
+      $vars['title'] = $node->title;
+      drupal_set_title($seo_title_val);
+    }
+  }
+}
+
+/**
+ * Implements hook_node_view_alter().
+ *
+ * Adds meta tags if configured.
+ */
+function skyword_node_view_alter(&$build) {
+  $node = menu_get_object();
+
+  if ($node != NULL) {
+
+    if (!empty($node->skyword_tracking_tag[LANGUAGE_NONE][0]['value'])) {
+      $tracker_val = $node->skyword_tracking_tag[LANGUAGE_NONE][0]['value'];
+
+      $tracker = array(
+        '#type'   => 'markup',
+        '#markup' => $tracker_val,
+      );
+      drupal_add_html_head($tracker, 'jquery-tmpl');
+    }
+
+    if (variable_get('skyword_enable_meta') == TRUE) {
+
+      $type = array(
+        '#tag'        => 'meta',
+        '#attributes' => array(
+          'property' => 'type',
+          'content'  => "article",
+        ),
+      );
+      drupal_add_html_head($type, 'skyword_type');
+
+      if (!empty($node->skyword_metadescription[LANGUAGE_NONE][0]['value'])) {
+
+        $description_val = $node->skyword_metadescription[LANGUAGE_NONE][0]['value'];
+
+        $desc = array(
+          '#tag'        => 'meta',
+          '#attributes' => array(
+            'name'    => 'description',
+            'content' => check_plain($description_val),
+          ),
+        );
+        drupal_add_html_head($desc, 'skyword_description');
+      }
+    }
+
+    if (variable_get('skyword_enable_og') == TRUE &&
+        !empty($node->skyword_seo_title[LANGUAGE_NONE][0]['value'])
+    ) {
+
+      $seo_title_val = $node->skyword_seo_title[LANGUAGE_NONE][0]['value'];
+
+      $og_title = array(
+        '#tag'        => 'meta',
+        '#attributes' => array(
+          'property' => 'og:title',
+          'content'  => check_plain($seo_title_val),
+        ),
+      );
+      drupal_add_html_head($og_title, 'skyword_og_title');
+
+      $og_url = array(
+        '#tag'        => 'meta',
+        '#attributes' => array(
+          'property' => 'og:url',
+          'content'  => url('node/' . $node->nid, array('absolute' => TRUE)
+          ),
+        ),
+      );
+      drupal_add_html_head($og_url, 'skyword_og_url');
+
+      $name = array(
+        '#tag'        => 'meta',
+        '#attributes' => array(
+          'property' => 'og:site_name',
+          'content'  => check_plain(variable_get('site_name', '')),
+        ),
+      );
+      drupal_add_html_head($name, 'site_name');
+
+      if (!empty($description_val)) {
+        $og_desc = array(
+          '#tag'        => 'meta',
+          '#attributes' => array(
+            'property' => 'og:description',
+            'content'  => check_plain($description_val),
+          ),
+        );
+        drupal_add_html_head($og_desc, 'skyword_og_description');
+      }
+    }
+
+    if (!empty($node->field_image)) {
+      $img_url = file_create_url($node->field_image[LANGUAGE_NONE][0]['uri']);;
+      $og_image = array(
+        '#tag'        => 'meta',
+        '#attributes' => array(
+          'property' => 'og:image',
+          'content'  => check_plain($img_url),
+        ),
+      );
+      drupal_add_html_head($og_image, 'skyword_og_image');
+    }
+
+    if (variable_get('skyword_enable_keywords') == TRUE &&
+        !empty($node->skyword_keyword[LANGUAGE_NONE][0]['value'])
+    ) {
+
+      $keyword_val = $node->skyword_keyword[LANGUAGE_NONE][0]['value'];
+      $keywords    = array(
+        '#tag'        => 'meta',
+        '#attributes' => array(
+          'property' => 'news_keywords',
+          'content'  => check_plain($keyword_val),
+        ),
+      );
+      drupal_add_html_head($keywords, 'news_keywords');
+    }
+  }
+}
+
+/**
+ * Generates meta fields.
+ *
+ * @param array $content
+ *   Content sent from Skyword.
+ */
+function skyword_create_metafields(array $content) {
+
+  if (!field_info_instance('node', 'skyword_tracking_tag', $content['type'])) {
+    $description = 'The Skyword Tracking Tag is used to provide article performance data to the Skyword platform. This must be included on the page the article is being displayed.';
+    skyword_create_field('skyword_tracking_tag', 'Skyword Tracking Tag', $description, $content['type']);
+  }
+  if (!field_info_instance('node', 'skyword_metadescription', $content['type'])) {
+    $description = 'This is the search optimized meta description that was written with the Skyword platform.';
+    skyword_create_field('skyword_metadescription', 'Meta Description', $description, $content['type']);
+  }
+  if (!field_info_instance('node', 'skyword_seo_title', $content['type'])) {
+    $description = 'This is the search optimized title creating with the Skyword platform.';
+    skyword_create_field('skyword_seo_title', 'HTML Title', $description, $content['type']);
+  }
+  if (!field_info_instance('node', 'skyword_keyword', $content['type']) && variable_get('skyword_enable_keywords') == TRUE) {
+    skyword_create_field('skyword_keyword', 'Google News Keyword', '', $content['type']);
+  }
+  if (!field_info_instance('node', 'skyword_content_id', $content['type'])) {
+    $description = 'This is the content ID in the Skyword platform. Please include this content ID when contacting Skyword Support.';
+    skyword_create_field('skyword_content_id', 'Skyword Content Id', $description, $content['type']);
+  }
+
+}
+
+/**
+ * Creates fields.
+ *
+ * @param string $field_name
+ *   Name of field.
+ * @param string $label
+ *   Label name.
+ * @param string $description
+ *   Description for field.
+ * @param string $bundle
+ *   Bundle name.
+ *
+ * @throws \Exception
+ *   General Exception.
+ */
+function skyword_create_field($field_name, $label, $description, $bundle) {
+
+  /* Create field if it doesn't exist. */
+  if (!field_info_field($field_name)) {
+    $field = array(
+      'field_name'    => $field_name,
+      'type'          => 'text',
+    );
+    field_create_field($field);
+  }
+
+  /* Create content type instance. */
+  $field_instance = array(
+    'field_name'    => $field_name,
+    'entity_type'   => 'node',
+    'bundle'        => $bundle,
+    'label'         => $label,
+    'description'   => $description,
+    'display' => array(
+      'default' => array('type' => 'hidden'),
+    ),
+  );
+  field_create_instance($field_instance);
+
+}
+
+/**
+ * Checks if secret key is valid.
+ *
+ * @param string $hash
+ *   Hashed key.
+ * @param string $timestamp
+ *   Timestamp.
+ *
+ * @return array|bool
+ *   Return true if valid, error message data if not valid.
+ */
+function skyword_validate_secret($hash, $timestamp) {
+  $temp_time = time();
+  $api_key = variable_get('skyword_api_key');
+  if ($temp_time - $timestamp <= 200 && $temp_time - $timestamp >= -200) {
+    if ($api_key != "") {
+      $temp_hash = md5($api_key . $timestamp);
+      if ($temp_hash == $hash) {
+        return TRUE;
+      }
+      else {
+        $error_data = array(
+          'message' => t('Could not match hash'),
+          'error_code' => 405,
+          'status' => "error",
+        );
+        return $error_data;
+      }
+    }
+    else {
+      $error_data = array(
+        'message' => t('Skyword API key not set'),
+        'error_code' => 401,
+        'status' => "error",
+      );
+      return $error_data;
+    }
+  }
+  watchdog('user', 'Invalid connection attempt - bad timestamp used');
+  $error_data = array(
+    'message' => t('Bad timestamp used. Timestamp sent: @timestamp', array('@timestamp' => $timestamp)),
+    'error_code' => 401,
+    'status' => "error",
+  );
+  return $error_data;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function skyword_permission() {
+  return array(
+    'Access Skyword Admin' => array(
+      'title' => t('Access Skyword Admin'),
+      'description' => t('Access Skyword admin.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function skyword_menu() {
+  $items = array();
+  $items['admin/config/services/skyword'] = array(
+    'title' => 'Skyword',
+    'description' => 'Allows administrators to configure the Skyword module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('skyword_adminpage'),
+    'file' => 'skyword.admin.inc',
+    'access arguments' => array('Access Skyword Admin'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function skyword_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'skyword_adminpage') {
+    $form['#validate'][] = 'skyword_form_validate';
+  }
+}
+
+/**
+ * Validate Skyword API Key.
+ */
+function skyword_form_validate($form, &$form_state) {
+  $skyword_api_key = $form_state['values']['skyword_api_key'];
+  if (strlen($skyword_api_key) < 20) {
+    form_set_error('skyword_api_key', t('Key must be at least 20 characters'));
+  }
+  if (!ctype_alnum($skyword_api_key)) {
+    form_set_error('skyword_api_key', t('Key must be alphanumeric'));
+  }
+}
+
+/******* XML-RPC *******/
+
+/**
+ * Implements the hook_xmlrpc().
+ */
+function skyword_xmlrpc() {
+  $methods[] = array(
+    'skyword.version',
+    'skyword_version_callback',
+    array(
+      'array',
+      'string',
+      'string',
+    ),
+    t('Tests whether connection info is correct'),
+  );
+
+  $methods[] = array(
+    'skyword.post',
+    'skyword_post_callback',
+    array(
+      'string',
+      'string',
+      'string',
+      'array',
+    ),
+    t('Creates a content item from the Skyword content platform.'),
+  );
+
+  $methods[] = array(
+    'skyword.author',
+    'skyword_author_callback',
+    array(
+      'array',
+      'string',
+      'string',
+      'array',
+    ),
+    t('Checks if user exists, and adds them if not'),
+  );
+
+  $methods[] = array(
+    'skyword.get_post',
+    'skyword_get_post_callback',
+    array(
+      'array',
+      'string',
+      'string',
+      'string',
+    ),
+    t('Retrieves a post.'),
+  );
+
+  $methods[] = array(
+    'skyword.delete_post',
+    'skyword_delete_post_callback',
+    array(
+      'array',
+      'string',
+      'string',
+      'string',
+    ),
+    t('Delete a post.'),
+  );
+
+  $methods[] = array(
+    'skyword.newMediaObject',
+    'skyword_new_media_object_callback',
+    array(
+      'array',
+      'string',
+      'string',
+      'array',
+    ),
+    t('Uploads a file to your webserver.'),
+  );
+
+  $methods[] = array(
+    'skyword.getAuthors',
+    'skyword_get_authors_callback',
+    array(
+      'array',
+      'string',
+      'string',
+    ),
+    t('Sync Authors.'),
+  );
+
+  $methods[] = array(
+    'skyword.getVocabularies',
+    'skyword_get_vocabularies_callback',
+    array(
+      'array',
+      'string',
+      'string',
+    ),
+    t('Get vocabularies.'),
+  );
+
+  $methods[] = array(
+    'skyword.getVocabularyTerms',
+    'skyword_get_vocabulary_terms_callback',
+    array(
+      'array',
+      'string',
+      'string',
+      'integer'
+    ),
+    t('Get vocabulary terms.'),
+  );
+
+  $methods[] = array(
+    'skyword.get_taxonomies',
+    'skyword_get_taxonomies_callback',
+    array(
+      'array',
+      'string',
+      'string',
+    ),
+    t('Sync taxonomies.'),
+  );
+
+  $methods[] = array(
+    'skyword.getPhpInfo',
+    'skyword_get_php_info_callback',
+    array(
+      'array',
+      'string',
+      'string',
+    ),
+    t('Get phpinfo for diagnostics.'),
+  );
+
+  return $methods;
+}
+
+/**
+ * Used to return plugin version to publishing site.
+ */
+function skyword_version_callback($hash, $timestamp) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+  else {
+    $success = array(
+      'status' => "success",
+      'plugin_version' => SKYWORD_VERSION,
+      'drupal_version' => VERSION,
+    );
+    return $success;
+  }
+}
+/**
+ * Creates users if they do not exist for article.
+ */
+function skyword_author_callback($hash, $timestamp, $struct) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+  else {
+
+    if (isset($struct['user_id']) && user_load($struct['user_id'])) {
+      $account = user_load($struct['user_id']);
+    }
+    elseif (isset($struct['username']) && user_load_by_name($struct['username']) != FALSE) {
+      // User found.
+      $account = user_load_by_name($struct['username']);
+    }
+    else {
+      $password = user_password(8);
+      /* Set up the user fields. */
+
+      $new_user = array(
+        'name' => $struct['username'],
+        'pass' => $password,
+        'mail' => 'sw-' . $struct['account_id'] . '@skyword.com',
+        'signature_format' => 'full_html',
+        'status' => 1,
+        'timezone' => 'America/New_York',
+        'init' => 'sw-' . $struct['account_id'] . '@skyword.com',
+        'roles' => array(),
+      );
+      $account = user_save(NULL, $new_user);
+
+    }
+    return array(
+      "status" => "success",
+      "uid" => $account->uid,
+    );
+
+  }
+}
+/**
+ * Create post.
+ */
+function skyword_post_callback($hash, $timestamp, $content) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+
+  module_load_include('inc', 'node', 'node.pages');
+  $author = user_load($content['user-id']);
+
+  $node = (object) array(
+    'type' => $content['type'],
+    'language' => LANGUAGE_NONE,
+  );
+  if ($content['publication_state'] == "draft") {
+    $node->status = NODE_NOT_PUBLISHED;
+  }
+  else {
+    $node->status = NODE_PUBLISHED;
+  }
+  if (node_type_get_type($content['type']) === FALSE) {
+    return array(
+      "status" => "error",
+      "message" => "Content type does not exist",
+    );
+  }
+  if (isset($content['nid'])) {
+    /* Only do an update if the node exists. */
+    $existing_node = node_load($content['nid']);
+    if ($existing_node != FALSE) {
+      $node = $existing_node;
+    }
+  }
+
+  node_object_prepare($node);
+  $form_state = array();
+  $form_state['values']['op'] = t('Save');
+  drupal_form_submit("{$node->type}_node_form", $form_state, $node);
+  skyword_create_metafields($content);
+
+  $node->{'skyword_tracking_tag'}[LANGUAGE_NONE][0]['value'] = $content['tracking'];
+  $node->{'skyword_content_id'}[LANGUAGE_NONE][0]['value'] = $content['skyword_content_id'];
+
+  if (isset($content['metatitle'])) {
+    $node->{'skyword_seo_title'}[LANGUAGE_NONE][0]['value'] = $content['metatitle'];
+  }
+
+  if (isset($content['metadescription'])) {
+    $node->{'skyword_metadescription'}[LANGUAGE_NONE][0]['value'] = $content['metadescription'];
+  }
+  if (isset($content['metakeyword']) && variable_get('skyword_enable_keywords') == TRUE) {
+    $node->{'skyword_keyword'}[LANGUAGE_NONE][0]['value'] = $content['metakeyword'];
+  }
+
+  $image_alt_text = NULL;
+  $image_title = NULL;
+  $file = NULL;
+  foreach ($content['template_elements'] as $field) {
+    switch ($field['type']) {
+      case 'title':
+        $node->{$field['key']} = $field['value'];
+        break;
+
+      case 'text':
+        if ($field['key'] == "field_media_alt_text") {
+          $image_alt_text = $field['value'];
+          break;
+        }
+        if ($field['key'] == "field_media_title") {
+          $image_title = $field['value'];
+          break;
+        }
+        if ($field['key'] == 'field_meta_description' && function_exists('metatags_quick_field_insert')) {
+          $node->{$field['key']}[LANGUAGE_NONE][0]['metatags_quick'] = array($field['value']);
+          break;
+        }
+        if ($field['key'] == 'body|summary') {
+          $node->body[LANGUAGE_NONE][0]['summary'] = $field['value'];
+          break;
+        }
+
+        $format = 'full_html';
+        if (strpos($field['key'], '|') !== FALSE) {
+          $field_key_array = explode('|', $field['key']);
+          $field['key'] = $field_key_array[0];
+          $format = $field_key_array[1];
+        }
+
+        $node->{$field['key']}[LANGUAGE_NONE][0]['value'] = $field['value'];
+
+        $node->{$field['key']}[LANGUAGE_NONE][0]['format'] = $format;
+        break;
+
+      case 'boolean':
+        $node->{$field['key']}[LANGUAGE_NONE][]['value'] = intval($field['value']);
+        break;
+
+      case 'file':
+        if ($field['key'] == "field_image") {
+          $file = file_load($field["value"]);
+        }
+        $node->{$field['key']}[LANGUAGE_NONE][] = array('fid' => $field['value']);
+        break;
+
+      case 'taxonomy':
+        $tax_value_ids = explode(",", $field['valueIds']);
+        $tax_values = array_map('trim', explode(',', $field['value']));
+        $node->{$field['key']}[LANGUAGE_NONE] = array();
+
+        //If taxonomy is for a list just save values
+        if (strpos($field['key'], '|list') !== FALSE) {
+
+          $field['key'] = str_replace('|list', '', $field['key']);
+
+          foreach ($tax_values as $value) {
+            $node->{$field['key']}[LANGUAGE_NONE][]['value'] = $value;
+          }
+          break;
+        }
+
+        foreach ($tax_value_ids as $value_id) {
+          if (is_numeric($value_id) && !taxonomy_term_load(trim($value_id))) {
+            $node->{$field['key']}[LANGUAGE_NONE][]['tid'] = trim($value_id);
+          }
+        }
+
+        if (empty($node->{$field['key']}[LANGUAGE_NONE])) {
+          foreach ($tax_values as $value) {
+            $node->{$field['key']}[LANGUAGE_NONE][]['tid'] = skyword_get_tid_for_term(trim($value), $field['vocabulary']);
+          }
+        }
+        break;
+
+      default:
+        $node->{$field['key']}[LANGUAGE_NONE][]['value'] = $field['value'];
+        break;
+
+    }
+  }
+
+  /* Update image alt and title if needed */
+  if (!empty($file)) {
+    $file->alt = $image_alt_text;
+    $file->title = $image_title;
+    $node->field_image[LANGUAGE_NONE][0] = (array) $file;
+  }
+
+  /* Allow updates. */
+  if (!empty($existing_node)) {
+    $check = node_last_changed($node->nid);
+    $node->vid = $content['nid'];
+    $node->changed = $check + 10;
+  }
+
+  $node->uid = $author->uid;
+  node_save($node);
+  return array(
+    "nid" => $node->nid,
+    "link" => url('node/' . $node->nid, array('absolute' => TRUE)),
+    'uid' => $author->uid,
+  );
+
+}
+/**
+ * Delete post.
+ */
+function skyword_delete_post_callback($hash, $timestamp, $postid) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+  node_delete($postid);
+  return array(
+    "status" => "success",
+  );
+}
+/**
+ * Uploads file.
+ */
+function skyword_new_media_object_callback($hash, $timestamp, $file) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+  else {
+    $dest = file_build_uri(basename($file['name']));
+    $data = $file['bits'];
+
+    if (!$file = file_save_data($data, $dest, FILE_EXISTS_REPLACE)) {
+      return drupal_get_messages('error');
+    }
+    else {
+      // Return the successful result.
+      file_usage_add($file, 'file', 'skyword', 1);
+      return array(
+        'status' => 'success',
+        'url' => file_create_url($dest),
+        'slug' => $dest,
+        'clientIdentifier' => $file->fid,
+      );
+    }
+  }
+}
+/**
+ * Pulls lists of users from system.
+ */
+function skyword_get_authors_callback($hash, $timestamp) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+  $users = entity_load('user', FALSE, NULL, TRUE);
+  $output = array();
+  foreach ($users as $key => $user) {
+
+    if(empty($user->name)){
+      continue;
+    }
+
+    $output[$key]["name"] = $user->name;
+    $output[$key]["uid"]  = $user->uid;
+  }
+
+  return $output;
+}
+
+/**
+ * Pull vocabulary ids
+ */
+function skyword_get_vocabularies_callback($hash, $timestamp) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+
+ return taxonomy_get_vocabularies();
+}
+
+/**
+ * Pull terms for vocabulary
+ */
+function skyword_get_vocabulary_terms_callback($hash, $timestamp, $vid) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+
+  $taxonomy_tree =  taxonomy_get_tree($vid);
+  $terms = array();
+  foreach($taxonomy_tree as $taxonomy) {
+    $terms[$taxonomy->tid] = array(
+      'tid' => $taxonomy->tid,
+      'name' => $taxonomy->name
+    );
+
+  }
+
+  return $terms;
+}
+
+/**
+ * Pull taxonomies from system.
+ */
+function skyword_get_taxonomies_callback($hash, $timestamp) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+  else {
+    $vocabulary_array = taxonomy_get_vocabularies();
+    $taxonomies       = array();
+
+    foreach ($vocabulary_array as $vocabulary) {
+      $taxonomy_array = taxonomy_get_tree($vocabulary->vid, 0);
+      $temp_array     = array();
+      foreach ($taxonomy_array as $taxonomy) {
+        $temp_array[] = array(
+          'tid'  => $taxonomy->tid,
+          'term' => $taxonomy->name,
+        );
+      }
+      $taxonomies[$vocabulary->name . "||" . $vocabulary->machine_name] = $temp_array;
+    }
+
+    return $taxonomies;
+  }
+}
+
+/**
+ * Get phpinfo() for diagnosis. Can only be called by authorized user using HTTPS.
+ */
+function skyword_get_php_info_callback($hash, $timestamp) {
+  $test = skyword_validate_secret($hash, $timestamp);
+  if (is_array($test)) {
+    return $test;
+  }
+  else {
+    if($_SERVER['HTTPS'] == 'on'){
+      ob_start();
+      phpinfo();
+      $phpinfo = ob_get_contents();
+      ob_get_clean();
+      return $phpinfo;
+    }
+
+    return xmlrpc_error(400, "You must be using HTTPS to use this method.");
+  }
+}

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Search Page Ads feature.
+ */
+
+include_once 'ti_amg_fw_search_page_ads.features.inc';

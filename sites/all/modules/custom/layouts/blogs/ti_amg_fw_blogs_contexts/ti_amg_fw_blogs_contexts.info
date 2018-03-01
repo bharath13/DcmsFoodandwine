@@ -1,0 +1,16 @@
+name = TI AMG FW Blog Contexts
+description = Global Common Context for Blogs
+core = 7.x
+package = FoodandWine Layouts
+version = 7.x-1.12
+project = ti_amg_fw_blogs_contexts
+dependencies[] = context
+dependencies[] = ctools
+dependencies[] = search
+dependencies[] = ti_amg_ads
+dependencies[] = ti_amg_fw_custom
+dependencies[] = ti_amg_fw_hat
+dependencies[] = views
+features[context][] = ti_amg_fw_blog_context
+features[ctools][] = context:context:3
+features[features_api][] = api:2

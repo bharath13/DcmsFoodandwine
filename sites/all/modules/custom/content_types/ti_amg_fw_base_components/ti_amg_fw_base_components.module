@@ -1,0 +1,907 @@
+<?php
+
+/**
+ * @file
+ * Code for the TI AMG FW Base Components feature.
+ *
+ * \defgroup ti_amg_fw_base_components FoodandWine.com Base Components
+ * \ingroup Features
+ * \brief Provides base fields and helper functions for FoodandWine.com.
+ *
+ * @{
+ */
+
+include_once 'ti_amg_fw_base_components.features.inc';
+
+/**
+ * Define constants for Base Components.
+ */
+define('TI_AMG_SL_THEME', 'foodandwine');
+
+/**
+ * Helper function to prevent unauthorized users from viewing a node.
+ *
+ * @param string $type
+ *   The node type.
+ *
+ *   \details Helper function to prevent various node types from being viewed at
+ *          node/%nid, except by administrators. These nodes are only allowed to
+ *          be viewed within the context of some other piece of content.
+ */
+function ti_amg_fw_base_components_prevent_node_view($type) {
+  $node = menu_get_object('node');
+
+  if (is_object($node) && $node->type == $type && count(arg()) == 2 && !user_access('administer nodes')) {
+    drupal_not_found();
+    drupal_exit();
+  }
+}
+
+/**
+ * Override or insert variables into the HTML head.
+ *
+ * @param array $head_elements
+ *   An array of variables to pass to the HTML head.
+ */
+function ti_amg_fw_base_components_html_head_alter(&$head_elements) {
+  global $base_url;
+  $metatag_description = '';
+  $meta_desc = '';
+   // Remove unneeded links.
+  $remove = array(
+    // Shortlink.
+    '/^drupal_add_html_head_link:shortlink:/',
+  );
+  foreach ($remove as $item) {
+    foreach (preg_grep($item, array_keys($head_elements)) as $key) {
+      unset($head_elements[$key]);
+    }
+  }
+  if (isset($head_elements['description'])) {
+    $metatag_description = $head_elements['description']['#attributes']['content'];
+    $head_elements['metatag_description_0']['#value'] = $metatag_description;
+  }
+  else
+  if (isset($head_elements['meta_description']['#attributes'])) {
+    $metatag_description = $head_elements['meta_description']['#attributes']['content'];
+    $head_elements['metatag_description_0']['#value'] = $metatag_description;
+  }
+  else {
+    if (isset($head_elements['metatag_description_0'])) {
+      $metatag_description = $head_elements['metatag_description_0']['#value'];
+    }
+  }
+
+  // set og meta description.
+  if (isset($head_elements['metatag_og:description_0'])) {
+    $head_elements['metatag_og:description_0']['#value'] = !empty($metatag_description) ? $metatag_description : $head_elements['metatag_og:description_0']['#value'];
+  }
+  // set twiiter card value.
+  if (isset($head_elements['metatag_twitter:card_0'])) {
+    $head_elements['metatag_twitter:card_0']['#value'] = !empty($metatag_description) ? $metatag_description : $head_elements['metatag_twitter:description_0']['#value'];
+  }
+  // set twitter meta description.
+  if (isset($head_elements['metatag_twitter:description_0'])) {
+    $head_elements['metatag_twitter:description_0']['#value'] = !empty($metatag_description) ? $metatag_description : $head_elements['metatag_twitter:description_0']['#value'];
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function ti_amg_fw_base_components_preprocess_page(&$variables) {
+  // If field_show_right_rail exists and is set to 0
+  // Then remove $page['sidebar_first'].
+  if (!empty($variables['node']->field_show_right_rail) && $variables['node']->field_show_right_rail[LANGUAGE_NONE][0]['value'] == "0") {
+    unset($variables['page']['sidebar_first']);
+    // Add sidebar--removed class to page-wrapper for styling.
+    $variables['page']['page_classes'] = 'sidebar--removed';
+  }
+
+  // All content types to optionally have their own page level templates.
+  if (isset($variables['node'])) {
+    $suggest = "page__node__{$variables['node']->type}";
+    $variables['theme_hook_suggestions'][] = $suggest;
+  }
+
+  // Add <meta name="path" content="[field_seo_path]" /> to head.
+  if (isset($variables['node']->field_seo_path)) {
+    // Load entity, get seo_path.
+    $node_entity = entity_load_single('node', $variables['node']->nid);
+    $node_seo_variable = field_get_items('node', $node_entity, 'field_seo_path');
+    $node_seo_path = $node_seo_variable[0]['safe_value'];
+
+    $meta_path = array(
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'name' => 'path',
+        'content' => $node_seo_path,
+      ),
+      '#weight' => -1,
+    );
+    drupal_add_html_head($meta_path, 'path_head_meta');
+  }
+
+  if (isset($variables['node'])) {
+    $type = $variables['node']->type;
+    switch ($type) {
+      case 'campaign':
+        // Find the url of the image entity referenced in the banner bg field.
+        if (!empty($variables['node']->field_banner_bg_image)) {
+          $entity = entity_load_single('node', $variables['node']->field_banner_bg_image[LANGUAGE_NONE][0]['target_id']);
+          $banner_bg_uri = $entity->field_image[LANGUAGE_NONE][0]['uri'];
+          $banner_bg_url = file_create_url($banner_bg_uri);
+          $variables['field_banner_bg_image'] = $banner_bg_url;
+        }
+
+        // Assign field_headline to $field_headline in page.tpl level templates.
+        if (!empty($variables['node']->field_headline)) {
+          $field_headline = $variables['node']->field_headline[LANGUAGE_NONE][0]['safe_value'];
+          $variables['field_headline'] = $field_headline;
+        }
+
+        // Assign field_deck to $field_deck in page.tpl level templates.
+        if (!empty($variables['node']->field_deck)) {
+          $field_deck = $variables['node']->field_deck[LANGUAGE_NONE][0]['value'];
+          $variables['field_deck'] = $field_deck;
+        }
+
+        // Provide a value for when webforms are enabled/disabled.
+        if (isset($variables['node']->webform['scheduler']) && $variables['node']->webform['scheduler']['disabled'] == TRUE) {
+          $field_webform_active = 'campaign-expired';
+          $variables['field_webform_active'] = $field_webform_active;
+        }
+        else {
+          $field_webform_active = 'campaign-active';
+          $variables['field_webform_active'] = $field_webform_active;
+        }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function ti_amg_fw_base_components_preprocess_node(&$variables) {
+  $variables['view_mode'] = $variables['elements']['#view_mode'];
+  $variables['node'] = $variables['elements']['#node'];
+  $node = $variables['node'];
+
+  // Template suggestions for all tout view modes.
+  if (strpos($variables['view_mode'], 'tout_') !== FALSE) {
+    $variables['theme_hook_suggestions'][] = 'node__tout_default';
+    $variables['theme_hook_suggestions'][] = 'node__' . $variables['view_mode'];
+  }
+
+  // Template suggestions for all index view modes.
+  if (strpos($variables['view_mode'], 'index_') !== FALSE) {
+    $variables['theme_hook_suggestions'][] = 'node__' . $variables['view_mode'];
+  }
+
+  // Template suggestions for all franchise view modes.
+  if (strpos($variables['view_mode'], 'franchise_') !== FALSE) {
+    $variables['theme_hook_suggestions'][] = 'franchise__' . $variables['view_mode'];
+  }
+
+  // Template suggestions for all image view modes.
+  if (strpos($variables['view_mode'], 'image_') !== FALSE) {
+    $variables['theme_hook_suggestions'][] = 'node__image_default';
+    $variables['theme_hook_suggestions'][] = 'node__image__' . $variables['view_mode'];
+    $variables['ay_image_class'] = strtolower('tout-' . str_replace('_', '-', $variables['view_mode']));
+  }
+
+  $variables['theme_hook_suggestions'][] = 'node__' . $node->type . '__' . $variables['view_mode'];
+
+  ti_amg_fw_base_components_tout_fallbacks($variables);
+
+  // Replace node_url with field_external_link on tout nodes, if available.
+  if ($node->type == 'tout' && isset($variables['field_external_link'])) {
+    if ($external_links = field_get_items('node', $node, 'field_external_link')) {
+      if (isset($external_links[0]['value'])) {
+        $external_link = $external_links[0]['value'];
+        $variables['node_url'] = $external_link;
+      }
+    }
+  }
+
+  // Hide various fields on view modes.
+  $field_names = array(
+    'field_external_link',
+  );
+  foreach ($field_names as $field_name) {
+    if (isset($variables['content'][$field_name])) {
+      hide($variables['content'][$field_name]);
+    }
+  }
+
+  // Inject the read more links inside the tout deck as required by most touts.
+  $read_more_modes = array(
+    'tout_150x150',
+    'tout_75x75',
+    'tout_featured',
+    'tout_item',
+    'index_featured_text',
+    'tout_channel_left_nav',
+  );
+  // Set $skip_more_link for this node preprocess.
+  $skip_more_link_content_types = array(
+    'list_tout',
+  );
+  if (!empty($node->skip_more_link) || in_array($node->type, $skip_more_link_content_types)) {
+    $skip_more_link = TRUE;
+  }
+  else {
+    $skip_more_link = FALSE;
+  }
+  // Check the view mode and if we would like to skip the more link.
+  if (!$skip_more_link && in_array($variables['view_mode'], $read_more_modes)) {
+    if (isset($variables['content']['field_tout_deck']) && !empty($variables['content']['field_tout_deck'])) {
+      // Create the theme_more_link variables array.
+      // Ensure landing page of tout $node_url should refer external link or tout item.
+      if (isset($node->type) && $node->type == 'tout') {
+        if (isset($node->field_external_link[LANGUAGE_NONE][0]['url'])) {
+          $more_url = trim($node->field_external_link[LANGUAGE_NONE][0]['url']);
+        }
+        elseif (isset($node->field_tout_item[LANGUAGE_NONE][0]['target_id'])) {
+          $more_url = drupal_get_path_alias('node/' . $node->field_tout_item[LANGUAGE_NONE][0]['target_id']);
+        }
+        else {
+          $more_url = '';
+        }
+      }
+      else {
+        $more_url = drupal_get_normal_path(trim($variables['node_url'], '/'));
+      }
+      $more_link_vars = array(
+        'url' => $more_url,
+        'title' => $variables['title'],
+      );
+      // Update the link text if this is a tout of a video node.
+      switch ($node->type) {
+
+        case 'video':
+          $more_link_vars['link_text'] = t('Watch it <img src="' . path_to_theme('foodandwine') . '/images/static/i/icon-video.gif" class="iconVideo" alt="video"> &raquo');
+          break;
+
+        case 'topic_page_child':
+          $more_link_vars['link_text'] = t('See All &raquo');
+          break;
+
+        case 'gallery':
+          $more_link_vars['link_text'] = t('See Photos &raquo');
+          break;
+
+        case 'tout':
+          if (isset($node->field_override_see_more) && !empty($node->field_override_see_more)) {
+            $more_link_vars['link_text'] = $node->field_override_see_more[LANGUAGE_NONE][0]['title'];
+          }
+          else {
+            $more_link_vars['link_text'] = t('See More &raquo');
+          }
+
+          $variables['node_url'] = '';
+          break;
+      }
+
+      $variables['content']['field_tout_deck'][0]['#markup'] .= theme('more_link', $more_link_vars);
+    }
+  }
+
+  if (($node->type == 'campaign') && ($variables['elements']['#view_mode'] == "full") && (isset($variables['field_text_tout'][0]))) {
+    // We want the 'body' of touts to display on campaigns.
+    if (is_object($variables['field_text_tout'][0]['entity'])) {
+      $text_tout_entity = entity_load_single('node', $variables['field_text_tout'][0]['entity']->nid);
+      $tout_deck = field_get_items('node', $text_tout_entity, 'field_tout_deck');
+      if (!empty($tout_deck)) {
+        $variables['content']['text_tout_deck'] = $tout_deck[0]['safe_value'];
+      }
+      // Text Tout Headline.
+      $tout_headline = field_get_items('node', $text_tout_entity, 'field_tout_headline');
+      if (!empty($tout_headline)) {
+        $variables['content']['text_tout_headline'] = $tout_headline[0]['safe_value'];
+      }
+    }
+  }
+
+  // Handle List Tout titles output.
+  if ($variables['type'] == 'list_tout' && $variables['view_mode'] != 'full') {
+    // Set the title attributes class for List Touts.
+    $variables['title_attributes_array']['class'][] = 'linkToutHeader';
+    $variables['no_title_link'] = TRUE;
+  }
+
+}
+
+/**
+ * Handle Tout fallbacks.
+ *
+ * Helper function. Massages the fields to make sure nodes being displayed
+ * using the tout view modes have the expected fields.
+ *
+ * Disregarding the type, all nodes using a tout view mode will look for the
+ * following fields: field_tout_image, field_tout_headline and field_tout_deck.
+ */
+function ti_amg_fw_base_components_tout_fallbacks(&$variables) {
+  if ((strpos($variables['view_mode'], 'tout_') === FALSE)
+    && (strpos($variables['view_mode'], 'index_') === FALSE)
+    && (strpos($variables['view_mode'], 'gallery') === FALSE)) {
+    return;
+  }
+
+  // @TODO: This function is not handling the multiple-value field needs
+  // of the gallery_print view mode, so just skipping all of this.
+  // Perhaps it could be reworked later if this functionality is
+  // required.
+  if ($variables['view_mode'] == 'gallery_print') {
+    return;
+  }
+
+  // Image field mapping.
+  $image_field_mapping = array(
+    'article' => 'field_images',
+    'recipe' => 'field_images',
+    'calendar' => 'field_calendar_image',
+    'campaign' => 'field_contest_image',
+    'gallery' => 'field_gallery_slides_grid',
+    'menu' => 'field_menu_image',
+  );
+
+  $node = $variables['node'];
+  $type = $node->type;
+
+  // Get the fallback image field name.
+  $image_field = (in_array($type, array_keys($image_field_mapping))) ? $image_field_mapping[$type] : FALSE;
+  // Image fallback.
+  if ($image_field && empty($variables['content']['field_tout_image'])) {
+    if (isset($variables['content'][$image_field]['#items'][0]['entity']) && !empty($variables['content'][$image_field]['#items'][0]['entity'])) {
+      // Only take the first image.
+      // @TODO: This looks like an area that we need to make
+      // work with a multi-value field.
+      $variables['content'][$image_field]['#items'] = array($variables['content'][$image_field]['#items'][0]);
+      // Replace field_tout_image with the fallback image's render array.
+      $variables['content']['field_tout_image'] = $variables['content'][$image_field];
+    }
+    // Special handling of Gallery Touts due to extra level of field collections for slides.
+    elseif ($image_field == 'field_gallery_slides_grid' && isset($variables[$image_field]) && !empty($variables[$image_field])) {
+      // Asign correct view mode to image based on tout view_mode.
+      // This is needed since gallery and images have different view_modes.
+      switch ($variables['view_mode']) {
+        case 'tout_75x75':
+          $view_mode = 'image_thumb';
+          break;
+
+        case 'tout_featured':
+          $view_mode = 'image_300x300';
+          break;
+
+        case 'tout_150x150':
+        case 'tout_channel_left_nav':
+        case 'topic_150':
+        case 'search_index':
+        default:
+          $view_mode = 'image_150x150';
+          break;
+      }
+      $slide_items = field_get_items('node', $variables['node'], 'field_gallery_slides_grid');
+      $slide = field_collection_item_revision_load($slide_items[0]['revision_id']);
+      // Use first image in slides grid for tout image.
+      if (isset($slide->field_slides[LANGUAGE_NONE][0]['target_id']) && !empty($slide->field_slides[LANGUAGE_NONE][0]['target_id'])) {
+        $slide_item = array();
+        $slide_item[0]['value'] = $slide->field_slides[LANGUAGE_NONE][0]['target_id'];
+        $slide_reference = array_pop(entity_load('node', $slide_item[0]));
+        $slide_image = node_view($slide_reference, $view_mode);
+        // Replace field_tout_image with the fallback image's render array.
+        $variables['content']['field_tout_image'] = $slide_image;
+      }
+    }
+  }
+  // Wrap the image output so we have a constant class to work with.
+  if (isset($variables['content']['field_tout_image'])) {
+    $variables['content']['field_tout_image']['#prefix'] = '<div class="tout-image">';
+    $variables['content']['field_tout_image']['#suffix'] = '</div>';
+  }
+  // Remove image fallback fields.
+  if ($image_field && (isset($variables['content'][$image_field]))) {
+    hide($variables['content'][$image_field]);
+  }
+
+  // Headline fallback.
+  if (_ti_amg_fw_base_components_is_empty($variables, 'field_tout_headline')) {
+    if (!_ti_amg_fw_base_components_is_empty($variables, 'field_headline')) {
+      $variables['content']['field_tout_headline'] = $variables['content']['field_headline'];
+    }
+    elseif (!empty($node->title)) {
+      $variables['content']['field_tout_headline'] = array(
+        '#type' => 'markup',
+        '#markup' => $node->title,
+      );
+    }
+  }
+  // Wrap the headline output so we have a constant class to work with.
+  if (isset($variables['content']['field_tout_headline'])) {
+    $variables['content']['field_tout_headline']['#prefix'] = '<div class="tout-headline">';
+    $variables['content']['field_tout_headline']['#suffix'] = '</div>';
+  }
+  // Remove headline fallback fields.
+  if (isset($variables['content']['field_headline'])) {
+    hide($variables['content']['field_headline']);
+  }
+
+  // Deck fallback.
+  if (_ti_amg_fw_base_components_is_empty($variables, 'field_tout_deck')) {
+    if (!_ti_amg_fw_base_components_is_empty($variables, 'field_deck')) {
+      $variables['content']['field_tout_deck'] = $variables['content']['field_deck'];
+    }
+    elseif (!_ti_amg_fw_base_components_is_empty($variables, 'body')) {
+      $variables['content']['field_tout_deck'] = $variables['content']['body'];
+    }
+  }
+  // Wrap the deck output so we have a constant class to work with.
+  if (isset($variables['content']['field_tout_deck'])) {
+    $variables['content']['field_tout_deck']['#prefix'] = '<div class="tout-deck">';
+    $variables['content']['field_tout_deck']['#suffix'] = '</div>';
+  }
+  // Remove deck fallback fields.
+  if (isset($variables['content']['field_deck'])) {
+    hide($variables['content']['field_deck']);
+  }
+  if (isset($variables['content']['body'])) {
+    hide($variables['content']['body']);
+  }
+}
+
+/**
+ * Helper function to return if a field is not set or has an empty value.
+ *
+ * @param array $variables
+ *   The variables array.
+ * @param string $field_name
+ *   The field name.
+ *
+ *   \details Helper function to return if a field is not set or if it has an
+ *          empty value.
+ */
+function _ti_amg_fw_base_components_is_empty($variables, $field_name) {
+  // Check if content variable is set.
+  if (empty($variables['content'][$field_name])) {
+    return TRUE;
+  }
+  // Check if markup value is empty.
+  if (empty($variables['content'][$field_name][0]['#markup'])) {
+    return TRUE;
+  }
+  // Check if removing spaces from markup value returns empty.
+  $markup = str_replace(' ', '', $variables['content'][$field_name][0]['#markup']);
+  if (empty($markup)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function ti_amg_fw_base_components_token_info() {
+  $node = array();
+
+  // Add any new tokens.
+  $node['amg_headline'] = array(
+    'name' => t("FoodandWine Headline"),
+    'description' => t('Token to return the FoodandWine content headline with fallback.'),
+  );
+  $node['image_300'] = array(
+    'name' => t("Image 300x300"),
+    'description' => t('Token to return a relevant 300x300 Image for each content type with fallback.'),
+  );
+    $node['image_920x517'] = array(
+    'name' => t("Image 920x517"),
+    'description' => t('Token to return a relevant 920x517 image'),
+  );
+  $node['image_thumb'] = array(
+    'name' => t("Image Thumbnail"),
+    'description' => t('Token to return a relevant Thumbnail Image for each content type with fallback.'),
+  );
+  $node['jumptime_logo_url'] = array(
+    'name' => t("Jumptime Logo URL"),
+    'description' => t('Token to return a Logo Image for the site for Jumptime.'),
+  );
+  $node['jumptime_logo_url_alt'] = array(
+    'name' => t("Jumptime Logo URL Alt"),
+    'description' => t('Token to return a Alt Logo Image for the site for Jumptime.'),
+  );
+  $node['ka_ad_legacy_id'] = array(
+    'name' => t("Legacy Id to pass to grocery server "),
+    'description' => t('Returns legacy id with nid fallback'),
+  );
+  $node['ka_ad_legacy_url'] = array(
+    'name' => t("Legacy URL to pass to grocery server "),
+    'description' => t('Returns legacy URL with node URL fallback'),
+  );
+
+  return array(
+    'tokens' => array('node' => $node),
+  );
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function ti_amg_fw_base_components_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $replacements = array();
+
+  if ($type == 'node' && !empty($data['node'])) {
+    $node = $data['node'];
+    // Loop through each of the available tokens.
+    foreach ($tokens as $name => $original) {
+      // Find the desired token by name.
+      switch ($name) {
+        case 'amg_headline':
+          $new = ti_amg_fw_base_components_get_headline($node);
+          $replacements[$original] = $new;
+          break;
+
+        case 'image_300':
+          $new = file_create_url(ti_amg_fw_base_components_get_image($node, 'field_image_300x300', 'field_image_thumb'));
+          $replacements[$original] = $new;
+          break;
+          
+        case  'image_920x517':
+          $new = ti_amg_fw_base_components_get_social_image($node);
+          $replacements[$original] = $new;
+          break;  
+
+        case 'image_thumb':
+          $new = file_create_url(ti_amg_fw_base_components_get_image($node, 'field_image_thumb', 'field_image'));
+          $replacements[$original] = $new;
+          break;
+
+        case 'jumptime_logo_url':
+          $new = file_create_url(url(drupal_get_path('theme', TI_AMG_SL_THEME) . '/images/logo-150x15.png', array('absolute' => TRUE)));
+          $replacements[$original] = $new;
+          break;
+
+        case 'jumptime_logo_url_alt':
+          $new = file_create_url(url(drupal_get_path('theme', TI_AMG_SL_THEME) . '/images/logo-88x31.png', array('absolute' => TRUE)));
+          $replacements[$original] = $new;
+          break;
+
+        case  'ka_ad_legacy_id':
+          $new = ti_amg_fw_base_components_get_legacy_id($node);
+          $replacements[$original] = $new;
+          break;
+
+        case  'ka_ad_legacy_url':
+          $new = ti_amg_fw_base_components_get_legacy_url($node);
+          $replacements[$original] = $new;
+          break;
+      }
+    }
+  }
+
+  // Return the replacements.
+  return $replacements;
+}
+
+/**
+ * Gets a Legacy URL for a node, falling back to node URL.
+ *
+ * @param [Object] $node
+ *   Parent Node.
+ *
+ * @return [String]
+ *   Returns value of a field.
+ */
+
+function ti_amg_fw_base_components_get_legacy_url($node) {
+  global $base_url;
+  if ($items = field_get_items('node', $node, 'field_legacy_url')) {
+    if ($legacy_url = field_view_value('node', $node, 'field_legacy_url', $items[0])) {
+      if (isset($legacy_url['#markup'])) {
+        $legacy_url['#markup'] = $base_url . $legacy_url['#markup'];
+      }
+      return render($legacy_url);
+    }
+  }
+  elseif (!empty($node->nid)) {
+    return $base_url . '/' . drupal_get_path_alias('node/' . $node->nid);
+  }
+  return '';
+}
+
+/**
+ * Gets a Legacy Id for a node, falling back to nid.
+ *
+ * @param [Object] $node
+ *   Parent Node.
+ *
+ * @return [int]
+ *   Returns value of a field.
+ */
+
+function ti_amg_fw_base_components_get_legacy_id($node) {
+  if ($items = field_get_items('node', $node, 'field_legacy_id')) {
+    if ($legacy_id = field_view_value('node', $node, 'field_legacy_id', $items[0])) {
+      return render($legacy_id);
+    }
+  }
+  elseif (!empty($node->nid)) {
+    return $node->nid;
+  }
+  return '';
+}
+
+/**
+ * Gets a headline for a node, falling back to title.
+ *
+ * @param [Object] $node
+ *   Parent Node.
+ *
+ * @return [String]
+ *   Returns value of a field.
+ */
+function ti_amg_fw_base_components_get_headline($node) {
+  $field_name = 'field_headline';
+
+  if ($items = field_get_items('node', $node, 'field_headline')) {
+    if ($headline = field_view_value('node', $node, 'field_headline', $items[0])) {
+      return render($headline);
+    }
+  }
+  elseif (!empty($node->title)) {
+    return $node->title;
+  }
+
+  return '';
+}
+
+/**
+ * Get an image field value from a node.
+ *
+ * @param [Object] $node
+ *   Parent Node.
+ * @param [String] $image_asset_field
+ *   Field from which value needs to be fetched.
+ * @param [String] $image_asset_fallback_field
+ *   Fallback if $image_asset_field value is empty.
+ *
+ * @return [String]
+ *   Returns value of a field.
+ */
+function ti_amg_fw_base_components_get_image($node, $image_asset_field, $image_asset_fallback_field) {
+  // Image field mapping.
+  $image_field_mapping = array(
+    'article' => 'field_images',
+    'calendar' => 'field_calendar_image',
+    'campaign' => 'field_contest_image',
+    'gallery' => 'field_slides',
+    'recipe' => 'field_images',
+    'menu' => 'field_menu_image',
+    'playlist' => 'field_playlist_image',
+    'tout' => 'field_tout_item',
+  );
+  $type = $node->type;
+  // Get the fallback image field name.
+  $image_field = (in_array($type, array_keys($image_field_mapping))) ? $image_field_mapping[$type] : FALSE;
+  $node_wrapper = entity_metadata_wrapper('node', $node);
+  $tout_image = (!empty($node_wrapper->field_tout_image)) ? $node_wrapper->field_tout_image->value() : NULL;
+  $alt_image = (!empty($node_wrapper->$image_field)) ? $node_wrapper->$image_field->value() : NULL;
+  $uri = '';
+
+  if (!empty($tout_image)) {
+    $uri = _ti_amg_fw_base_components_get_field_value($tout_image, $image_asset_field, $image_asset_fallback_field, TRUE);
+  }
+
+  if ($image_field && empty($tout_image) && !empty($alt_image) && empty($uri)) {
+    $alt = is_array($alt_image) ? $alt_image[0] : $alt_image;
+
+    switch ($type) {
+      // @TODO: Not sure if this needs more entries. There must be a better way
+      // of doing this.
+      case 'tout':
+        $uri = ti_amg_fw_base_components_get_image($alt, $image_asset_field, $image_asset_fallback_field);
+        break;
+
+      case 'article':
+      case 'gallery':
+      case 'recipe':
+      case 'menu':
+      case 'playlist':
+        $uri = _ti_amg_fw_base_components_get_field_value($alt, $image_asset_field, $image_asset_fallback_field, TRUE);
+        break;
+
+      default:
+        $uri = _ti_amg_fw_base_components_get_field_value($alt, $image_asset_field, $image_asset_fallback_field, TRUE);
+        break;
+    }
+  }
+
+  return $uri;
+}
+
+
+/**
+ * Get an og image field value from a node.
+ *
+ * @param [Object] $node
+ *   Parent Node.
+ *
+ * @return [String]
+ *   Returns the image uri.
+ */
+function ti_amg_fw_base_components_get_social_image($node) {
+  // Image field mapping.
+  $image_path = '';
+  $default_image_style = '4_3_horizontal_-_900x675';
+  $type = $node->type;
+  $image_style = variable_get('image_style_hero_image', 'ti_amg_fwrd_920x517');
+  if ($type == 'article') {
+    if (!empty($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+      $image_tid = $node->field_images[LANGUAGE_NONE][0]['target_id'];
+      $og_image = ti_amg_fwrd_custom_get_image($image_tid, $image_style);
+      $image_path = $og_image['uri'];
+    }
+    else {
+      $image_path = image_style_url($default_image_style, DEFAULT_VIDEO_TOUT_IMAGE_URI);
+    }
+  }
+  return $image_path;
+ }
+   
+/**
+ * Get an image node corresponding to a node.
+ *
+ * @param [Object] $node
+ *   Parent Node.
+ *
+ * @return [Object]
+ *   Returns the Image node corresponding to the main image of the parent node.
+ */
+function ti_amg_fw_base_components_get_image_node($node) {
+  if ($node->type == 'image') {
+    return $node;
+  }
+
+  // Image field mapping.
+  $image_field_mapping = array(
+    'article' => 'field_images',
+    'calendar' => 'field_calendar_image',
+    'campaign' => 'field_contest_image',
+    'gallery' => 'field_slides',
+    'recipe' => 'field_images',
+    'menu' => 'field_menu_image',
+    'playlist' => 'field_playlist_image',
+  );
+  $type = $node->type;
+  // Get the fallback image field name.
+  $image_field = (in_array($type, array_keys($image_field_mapping))) ? $image_field_mapping[$type] : FALSE;
+  $node_wrapper = entity_metadata_wrapper('node', $node);
+  $tout_image = (!empty($node_wrapper->field_tout_image)) ? $node_wrapper->field_tout_image->value() : NULL;
+  $alt_image = (!empty($node_wrapper->$image_field)) ? $node_wrapper->$image_field->value() : NULL;
+
+  if (!empty($alt_image)) {
+    if (is_array($alt_image)) {
+      $alt_image = array_shift($alt_image);
+    }
+  }
+
+  if (!empty($tout_image)) {
+    return $tout_image;
+  }
+
+  return $alt_image;
+}
+
+/**
+ * Function _ti_amg_fw_base_components_get_field_value gets a field value.
+ *
+ * @param [Object] $node
+ *   Parent Node.
+ * @param [String] $ti_amg_field_name
+ *   Field from which value needs to be fetched.
+ * @param [String] $ti_amg_field_name_fallback
+ *   Fallback if $ti_amg_field_name is empty.
+ * @param [Boolean] $ti_amg_is_image
+ *   True if parent node is an image.
+ *
+ * @return [String]
+ *   Returns value of a field.
+ */
+function _ti_amg_fw_base_components_get_field_value($node, $ti_amg_field_name, $ti_amg_field_name_fallback = NULL, $ti_amg_is_image = NULL) {
+  // @TODO: We could also put more error-checking in here.
+  if (!empty($node) && is_object($node) && !empty($node->nid)) {
+    if ($ti_amg_field = field_get_items('node', $node, $ti_amg_field_name)) {
+      if ($ti_amg_is_image) {
+        if (!empty($ti_amg_field[0]['uri'])) {
+          return $ti_amg_field[0]['uri'];
+        }
+      }
+      else {
+        if (!empty($ti_amg_field[0]['value'])) {
+          return $ti_amg_field[0]['value'];
+        }
+      }
+    }
+    if ($ti_amg_field = field_get_items('node', $node, $ti_amg_field_name_fallback)) {
+      if ($ti_amg_is_image) {
+        return $ti_amg_field[0]['uri'];
+      }
+      else {
+        return $ti_amg_field[0]['value'];
+      }
+    }
+  }
+}
+
+/**
+ * Function ti_amg_fw_base_components_get_clean_headline returns
+ *   headline stripped of new lines and markup.
+ *
+ * @param $node
+ *   node
+ *
+ * @return String
+ *   Returns headline without new lines and markup
+ */
+function ti_amg_fw_base_components_get_clean_headline($node) {
+  $headline = ti_amg_fw_base_components_get_headline($node);
+  $clean_headline = strip_tags(trim(preg_replace('/\s+/', ' ', $headline)));
+
+  return $clean_headline;
+}
+
+/**
+ * Function ti_amg_fw_base_components_get_meta_description returns
+ *   meta description of a node.
+ *
+ * @param $node
+ *   node
+ * */
+function ti_amg_fw_base_components_get_meta_description($node) {
+  if (isset($node->metatags[LANGUAGE_NONE]['description']['value']) && !empty($node->metatags[LANGUAGE_NONE]['description']['value'])) {
+    $description = $node->metatags[LANGUAGE_NONE]['description']['value'];
+    $clean_description = strip_tags(trim(preg_replace('/\s+/', ' ', $description)));
+
+    return $clean_description;
+  }
+}
+
+/**
+ * Implements hook_preprocess_html.
+ */
+function ti_amg_fw_base_components_preprocess_html(&$variables) {
+
+  $title = $variables['head_title'];
+
+  if (arg(0) == 'blogs' && count(arg()) == 2 && $title == 'Hungry Crowd | Food & Wine') {
+    $name = str_replace('-', ' ', mb_convert_case(arg(1), MB_CASE_TITLE, "UTF-8"));
+    $variables['head_title'] = $name . ' - ' . $title;
+    $meta_title = array(
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'property' => 'og:title',
+        'content' => $name,
+      ),
+    );
+    drupal_add_html_head($meta_title, 'title');
+  }
+
+  if (arg(0) == 'monthly' && count(arg()) == 2) {
+    $name = str_replace('-', ' ', ucfirst(arg(1)));
+    $variables['head_title'] = $name . ' - ' . $title;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ti_amg_fw_base_components_form_node_form_alter(&$form, $form_state) {
+  // Using new ckeditor profile for headline including existing contents.
+  if (!empty($form['field_headline'][LANGUAGE_NONE][0]['#format'])) {
+    $form['field_headline'][LANGUAGE_NONE][0]['#format'] = 'fw_headline_html';
+  }
+  
+  // Using new ckeditor profile for article body, including existing contents.
+  if ('article' == $form['type']['#value'] && !empty($form['body'][LANGUAGE_NONE][0]['#format'])) {
+    $form['body'][LANGUAGE_NONE][0]['#format'] = 'article_html';
+  }
+}

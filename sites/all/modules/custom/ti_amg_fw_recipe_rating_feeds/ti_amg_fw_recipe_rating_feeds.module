@@ -1,0 +1,66 @@
+<?php
+
+/**
+ * @file
+ * Code for the TI AMG FW RSS Feeds feature.
+ */
+
+  define('TI_AMG_FW_RECIPE_RATING_CACHE', 'cache_ti_amg_fw_recipe_rating');
+  
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fw_recipe_rating_feeds_menu() {
+    $items = array();
+    $items['recipes-ratings/%'] = array(
+      'page callback' => 'ti_amg_fw_recipe_rating_feed_get_ajax',
+      'page arguments' => array(1),
+      'delivery callback' => 'drupal_json_output',
+      'access callback' => TRUE,
+      'type' => MENU_NORMAL_ITEM,
+    );
+
+    return $items;
+}
+
+/** 
+  * Parameter is passed - get the recipies by range /1, /2, /3, /4 etc, 
+  * each page will get thousand recipies from the latest to old.
+  */
+function ti_amg_fw_recipe_rating_feed_get_ajax($current_rating = NULL) {
+  global $base_url;
+  $feeds = array();
+	$query = new EntityFieldQuery();
+	if (isset($current_rating) && ($current_rating != "")) {
+		$records_per_page = 1000;
+	  $range_starts = ($current_rating - 1) * $records_per_page;
+		$query->entityCondition('entity_type', 'node')
+				->entityCondition('bundle', array('recipe'))
+				->fieldCondition('field_rating', 'value', '', '<>')
+				->propertyCondition('status', 1)
+				->propertyOrderBy('changed', 'DESC')
+				->range($range_starts, $records_per_page);
+  }
+	$result = $query->execute();
+	if (isset($result['node'])) {
+		$recipe_nids = array_keys($result['node']);         
+		foreach ($recipe_nids as $key_cuonter => $item) {
+			$recipe_item = entity_load('node', array($item));
+			if (isset($recipe_item)) {
+				foreach ($recipe_item as $key => $item) {
+					$recipe = array();
+					$recipe['count'] = $range_starts++;
+					$recipe['id'] = $item->nid;
+					$recipe['title'] = trim(strip_tags($item->title));
+					$recipe['url'] = $base_url . '/' . url('node/' . $item->nid);  
+					$recipe['rating'] = (isset($item->field_rating[LANGUAGE_NONE][0]['value'])) ? $item->field_rating[LANGUAGE_NONE][0]['value'] : '' ;
+					$feeds[] = $recipe;  
+				} 
+			}          
+		}
+	}
+	
+  $json_encoded_feed = $feeds;
+       
+  return $json_encoded_feed;
+}

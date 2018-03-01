@@ -1,0 +1,4065 @@
+<?php
+
+/**
+ * @file
+ * Module used for FoodAndWine customizations.
+ */
+include_once 'ti_amg_fw_custom.inc';
+include_once module_load_include('inc', 'pathauto');
+
+/**
+ * Implements hook_init().
+ */
+function ti_amg_fw_custom_init() {
+  // To add the TGX JS Library
+  global $is_https, $conf, $theme_key;
+
+  //Include BrightcoveExperiences.js file in header for loading video player
+  if ($is_https) {
+    $bc_js = 'https://admin.brightcove.com/js/BrightcoveExperiences.js';
+  }
+  else {
+    $bc_js = 'http://admin.brightcove.com/js/BrightcoveExperiences.js';
+  }
+  if (!path_is_admin(current_path())) {
+    drupal_add_js($bc_js, 'external', 
+        array('scope' => 'header', 'weight' => 0, 'defer' => TRUE)
+    );
+    //Include brightcove.createExperiences() function in footer
+    drupal_add_js('brightcove.createExperiences();', 
+        array('type' => 'inline', 'scope' => 'footer', 'weight' => 0)
+    );
+  }
+  if (arg(1) == 'servings') {
+    resave_numeric_term_weights();
+  }
+  //Including bootstrap theme file if not existed in theme_key
+  if (strpos($theme_key, 'bootstrap') === FALSE) {
+    include_once(drupal_get_path('theme', 'bootstrap') . '/theme/process.inc');
+  }
+
+  // Apply redirect condition only for anonymous user.
+  if (user_is_anonymous()) {
+    // Extract different variables that Drupal utilizes for routing
+    $menu_item = menu_get_item();
+    $path = $menu_item['path'];     // node/%
+    $href = $menu_item['href'];     // node/1
+    $current_path = current_path(); // node/1/broken
+    if (arg(0) != 'partner') {
+      // Check if the actual path ($current_path) is different than the Drupal assumption ($href)
+      if (!empty($menu_item['page_callback'])) {
+        if ($menu_item['page_callback'] == 'views_page' && arg(0) == 'blogs' && arg(1) != '') {
+          if ($href != $current_path) {
+            // Redirect user to 404 page which will hanlde the HTTP response as well
+            fast_404_error_return(TRUE);
+          }
+          elseif ($href == $current_path) {
+            $tid = get_tid_from_label(array(arg(1)), 'field_taxo_topic_label');
+            if (empty($tid)) {
+              // Redirect user to 404 page which will hanlde the HTTP response as well
+              fast_404_error_return(TRUE);
+            }
+          }
+        }
+      }
+      else {
+        if ($href != $current_path) {
+          // Redirect user to 404 page which will hanlde the HTTP response as well
+          fast_404_error_return(TRUE);
+        }
+      }
+    }
+  }
+  // Monthly TOC page custom condition.
+  if (arg(0) == 'monthly' && empty(arg(1)))  {
+    $selected_path = variable_get('default_month', '');
+    if ($selected_path) {
+      // Option was selected by Editor
+      $toc_page_path = 'monthly/' . $selected_path;
+      drupal_goto($toc_page_path);
+    }
+    else {
+      fast_404_error_return(TRUE);
+    }    
+  }  
+}
+
+/**
+ * Implements hook_form_alter().
+ * Hide Time field for Article Content Type Publish Scheduler
+ */
+function ti_amg_fw_custom_form_alter(&$form, $form_state) {
+  global $base_url;
+  if ($form['#id'] == 'blog-node-form' || $form['#id'] == 'article-node-form') {
+    //Disabling ckeditor for video field
+    $form['field_blog_video'][LANGUAGE_NONE][0]['#wysiwyg'] = TRUE;
+  }
+  elseif ($form['#id'] == 'channel-landing-page-node-form') {
+    //Disabling ckeditor for video field
+    $form['field_clp_video'][LANGUAGE_NONE][0]['#wysiwyg'] = FALSE;
+  }
+  elseif (substr($form['#id'], 0, 17) == 'search-block-form') {
+    //Add advance search link by suffix
+    $advsrch_title = t('Advanced Search');
+    $advsrch_url = 'search/advanced';
+    $advsrch_options = array(
+      'attributes' => array(
+        'class' => array('head_adv_search_link'),
+        'title' => $advsrch_title,
+      ),
+    );
+    $search_text = 'Search';
+    $form['search_block_form']['#default_value'] = $search_text;
+    $form['search_block_form']['#attributes'] = array(
+      'onfocus' => "if (this.value == '$search_text') {this.value = '';}",
+      'onblur' => "if (this.value == '') {this.value = '$search_text';}",
+    );
+    $form['submit']['#suffix'] = 
+        l($advsrch_title, $advsrch_url, $advsrch_options);
+  }
+  elseif ($form['#id'] == 'recipe-node-form') {
+    if (isset($form['#node']->nid)) {
+      drupal_add_js(
+          array('ti_amg_fw_custom' => array('rcp_node_op' => 'update')), 
+          array('type' => 'setting'));
+      drupal_add_js(
+          array('ti_amg_fw_custom' => 
+            array('rcp_node_status' => $form['#node']->status)), 
+          array('type' => 'setting'));
+    }
+    else {
+      drupal_add_js(
+          array('ti_amg_fw_custom' => array('rcp_node_op' => 'create')), 
+          array('type' => 'setting'));
+      drupal_add_js(
+          array('ti_amg_fw_custom' => array('rcp_node_status' => '')),
+          array('type' => 'setting'));
+    }
+    $recipe_issue_list = $form['field_issue']['und']['#options'];
+    if (isset($recipe_issue_list) && count($recipe_issue_list) > 1) {
+      $form['field_issue']['und']['#options'] = 
+          node_form_issue_sorting($recipe_issue_list);
+    }
+    $form['#validate'][] = 'ti_amg_fw_custom_node_validate';
+  }
+  elseif ($form['#id'] == 'gallery-node-form') {
+    $slide_default_arr = array();
+    $slide_default_val = '';
+    if (isset($form['#node']->nid)) {
+      if (isset($form['#node']->path['pathauto']) && 
+          $form['#node']->path['pathauto'] == 1) {
+        if ($form['#node']->path['alias'] != '') {
+          $ss_link = $base_url . '/' . $form['#node']->path['alias'];
+        }
+        else {
+          $ss_link = $base_url . '/slideshows/' . 
+              trim(pathauto_cleanstring($form['#node']->title));
+        }
+      }
+      else {
+        if ($form['#node']->path['alias'] != '') {
+          $ss_link = $base_url . '/' . $form['#node']->path['alias'];
+        }
+        else {
+          $ss_link = $base_url . '/' . drupal_get_path_alias('node/' . 
+              $form['#node']->nid);
+        }
+      }
+      //Updating slideshow info to the corresponding recipe
+      if (count($form['#node']->field_slide_info[LANGUAGE_NONE]) > 0) {
+        foreach ($form['#node']->field_slide_info[LANGUAGE_NONE] as $slide) {
+          $slide_entity = entity_load('field_collection_item', 
+              array($slide['value']));
+          $slide_entity_id = $slide['value'];
+          if (isset($slide_entity[$slide_entity_id]->field_slide_link_url
+              [LANGUAGE_NONE][0]['url'])) {
+            $slide_rcp_links = 
+                $slide_entity[$slide_entity_id]->field_slide_link_url
+                [LANGUAGE_NONE][0]['url'];
+            //Checking whether the url having the recipes pattern
+            if (preg_match("/recipes/i", $slide_rcp_links)) {
+              //Load the default slide recipe link to the array
+              $slide_default_arr[] = get_url_part($slide_rcp_links);
+            }
+          }
+        }
+        variable_set($slide_default_val, $slide_default_arr);
+      }
+    }
+  }
+  // To check the node forms list and add custom.js
+  $node_forms = array('article-node-form', 'blog-node-form',
+    'channel-landing-page-node-form', 'recipe-node-form',
+    'featured-directory-node-form', 'gallery-node-form',
+    'home-page-node-form', 'home-page-node-form',
+    'video-node-form', 'page-node-form',
+  );
+  if (in_array($form['#id'], $node_forms)) {
+    $form['#attached']['js'] = array(
+      drupal_get_path('module', 'ti_amg_fw_custom') . '/js/custom.js',
+    );
+  }
+  if ($form['#id'] == 'taxonomy-form-term') {
+    $form['#attached']['js'] = array(
+      drupal_get_path('module', 'ti_amg_fw_custom') . '/js/admin-form.js',
+    );
+  }
+  // Making the legacy id field to readonly field.
+  if (isset($form['#node_edit_form']) && 
+      $form['#form_id'] == $form['type']['#value'] . '_node_form') {
+    $form['#after_build'][] = 'ti_amg_fw_custom_after_build';
+  }
+  // Removing the Required Field for person title
+  // Making the readonly for title field
+  // Ordering the BNC Year Listing in node form
+  if ($form['#id'] == 'person-node-form') {
+    //Ordering the BNC Year Listing
+    $bnc_year_list = $form['field_bnc_year']['und']['#options'];
+    if (isset($bnc_year_list) && count($bnc_year_list) > 1) {
+      $form['field_bnc_year']['und']['#options'] = 
+          node_form_issue_sorting($bnc_year_list);
+    }
+    $form['title']['#required'] = FALSE;
+    $form['title']['#attributes']['readonly'] = 'readonly';
+  }
+  //Adding custom checkbox on menu add/edit form.
+  if ($form['#id'] == 'menu-edit-menu') {
+    $default_checkbox_val = 0;
+    $default_selected_val = 0;
+    if (!empty($form_state['build_info']['args'][0]) && $form_state['build_info']['args'][0] == 'edit') {
+      // Checking dynamic menu checkbox.
+      $selected_dynamic_menus = unserialize(variable_get('selected_dynamic_menus', ''));
+      if (!empty($selected_dynamic_menus) && is_array($selected_dynamic_menus) && !empty($form_state['build_info']['args'][1]['menu_name'])) {
+        if (in_array($form_state['build_info']['args'][1]['menu_name'], $selected_dynamic_menus)) {
+          $default_checkbox_val = 1;
+        }
+      }
+      // Checking sub menu settings selection.
+      $selected_sub_menu_settings = unserialize(variable_get('selected_sub_menu_settings', ''));
+      if (!empty($selected_sub_menu_settings) && is_array($selected_sub_menu_settings) && !empty($form_state['build_info']['args'][1]['menu_name'])) {
+        if (array_key_exists($form_state['build_info']['args'][1]['menu_name'], $selected_sub_menu_settings)) {
+          $default_selected_val = $selected_sub_menu_settings[$form_state['build_info']['args'][1]['menu_name']];
+        }
+      }
+    }
+    $form['menu']['generic_page_menu'] = array(
+      '#title' => 'Generic Page Menu',
+      '#type' => 'checkbox',
+      '#default_value' => $default_checkbox_val,
+      '#description' => "Add this menu to generic page.",
+    );
+    $form['menu']['sub_menu_settings_list'] = array(
+       '#type' => 'select',
+       '#title' => t('Sub Menu Settings List'),
+       '#options' => _ti_amg_fw_custom_get_submenu_settings_content(),
+       '#default_value' => $default_selected_val,
+       '#description' => t('Select the appropriate sub menu content to this menu.'),
+    );
+    $form['#submit'][] = '_ti_amg_fw_custom_menuedit_form_submit';
+  }
+}
+
+/**
+ * Implements hook_form_base_form_id_alter().
+ * Update dynamic sub menu select field options from custom function.
+ */
+function ti_amg_fw_custom_form_page_node_form_alter(&$form, &$form_state, $form_id) {
+  $default = 0;
+  if (!empty($form['#node']->field_dynamic_sub_menu['und'][0]['value'])) {
+    $default = $form['#node']->field_dynamic_sub_menu['und'][0]['value'];
+  }
+  $selected_dynamic_menus = unserialize(variable_get('selected_dynamic_menus', ''));
+  if (!empty($selected_dynamic_menus) && is_array($selected_dynamic_menus)) {
+    $submenu_options = array();
+    $submenu_options = _ti_amg_fw_custom_get_submenu_options($selected_dynamic_menus);
+    $form['field_dynamic_sub_menu']['und']['#options'] = $submenu_options;
+    $form['field_dynamic_sub_menu']['und']['#default_value'] = $default;
+  }
+}
+
+/**
+ * Implements hook_form_submit().
+ * Handling custom checkbox on menu add/edit form.
+ */
+function _ti_amg_fw_custom_menuedit_form_submit(&$form, $form_state) {
+  $selected_dynamic_menus = unserialize(variable_get('selected_dynamic_menus', ''));
+  $selected_sub_menu_settings = unserialize(variable_get('selected_sub_menu_settings', ''));
+
+  $menu_name = '';
+  if (!empty($form_state['redirect'])) {
+    $menu_name_arr = explode('/', $form_state['redirect']);
+    if (count($menu_name_arr) == 5) {
+      $menu_name = $menu_name_arr[count($menu_name_arr) - 1];
+    }
+  }
+  if (!empty($menu_name)) {
+    if (!empty($form_state['values']['generic_page_menu']) && $form_state['values']['generic_page_menu'] == 1) {
+      if (!empty($selected_dynamic_menus) && is_array($selected_dynamic_menus)) {
+        if (!in_array($menu_name, $selected_dynamic_menus)) {
+          array_push($selected_dynamic_menus, $menu_name);
+          variable_set('selected_dynamic_menus', serialize($selected_dynamic_menus));
+        }
+      }
+      else {
+        $selected_dynamic_menus = array($menu_name);
+        variable_set('selected_dynamic_menus', serialize($selected_dynamic_menus));
+      }
+    }
+    else {
+      if (!empty($selected_dynamic_menus) && is_array($selected_dynamic_menus)) {
+        if (in_array($menu_name, $selected_dynamic_menus)) {
+          unset($selected_dynamic_menus[array_search($menu_name, $selected_dynamic_menus)]);
+          $selected_dynamic_menus = array_values($selected_dynamic_menus);
+          variable_set('selected_dynamic_menus', serialize($selected_dynamic_menus));
+        }
+      }
+    }
+    //Sub Menu Settings Field.
+    if (!empty($form_state['values']['sub_menu_settings_list'])) {
+      if (!empty($selected_sub_menu_settings) && is_array($selected_sub_menu_settings)) {
+        if (!array_key_exists($menu_name, $selected_sub_menu_settings)) {
+          $selected_sub_menu_settings[$menu_name] = $form_state['values']['sub_menu_settings_list'];
+          variable_set('selected_sub_menu_settings', serialize($selected_sub_menu_settings));
+        }
+        elseif (array_key_exists($menu_name, $selected_sub_menu_settings)) {
+          if ($selected_sub_menu_settings[$menu_name] != $form_state['values']['sub_menu_settings_list']) {
+            $selected_sub_menu_settings[$menu_name] = $form_state['values']['sub_menu_settings_list'];
+            variable_set('selected_sub_menu_settings', serialize($selected_sub_menu_settings));    
+          }
+        }
+      }
+      else {
+        $selected_sub_menu_settings = array($menu_name => $form_state['values']['sub_menu_settings_list']);
+        variable_set('selected_sub_menu_settings', serialize($selected_sub_menu_settings));
+      }
+    }
+    else {
+      if (!empty($selected_sub_menu_settings) && is_array($selected_sub_menu_settings)) {
+        if (array_key_exists($menu_name, $selected_sub_menu_settings)) {
+          unset($selected_sub_menu_settings[$menu_name]);
+          variable_set('selected_sub_menu_settings', serialize($selected_sub_menu_settings));
+        }
+      }
+    }
+  }
+}
+
+// Constructing dynamic sub mneu options.
+function _ti_amg_fw_custom_get_submenu_options($submenus = '') {
+  $options = array();
+  $options[] = '-None-';
+  if (!empty($submenus)) {
+    foreach ($submenus as $submenu) {
+      $menu_name = db_query('SELECT title FROM "menu_custom" WHERE menu_name = :menu_name', array(':menu_name' => $submenu))->fetchField();
+      $options[$submenu] = $menu_name;
+    }
+  }
+  return $options;
+}
+
+// Fetching sub menu settings content and loading into options.
+function _ti_amg_fw_custom_get_submenu_settings_content() {
+  $options = array();
+  $options[] = '-None-';
+  $sub_menu_settings = db_query('SELECT nid, title FROM "node" WHERE type = :node_type and status = :node_status', array(':node_type' => 'sub_menu_settings',':node_status' => 1))->fetchAll();
+  if (!empty($sub_menu_settings) && count($sub_menu_settings) >0) {
+    foreach ($sub_menu_settings as $sub_menu_setting) {
+      $options[$sub_menu_setting->nid] = $sub_menu_setting->title;
+    }
+  }
+  return $options;
+}
+
+//Updating Recipe Under Related Recipe Section with the Slideshow Info
+function update_recipe_by_slideshow($optr = '', $rnid = '', $ss_title = '', 
+    $ss_link = '') {
+  $rcp_slide_array = array();
+  if ($optr == 'add') {
+    //Add Slideshow Info - Updating to the Related Recipe
+    if ($rnid != '' && $ss_title != '' && $ss_link != '') {
+      $node = node_load($rnid);
+      //Checking Whether the Recipe's Related Links Exist Or Not
+      if (isset($node->field_related_links)) {
+        //Checking the count of the Recipe's Related Links
+        if (isset($node->field_related_links[LANGUAGE_NONE]) && 
+            count($node->field_related_links[LANGUAGE_NONE]) > 0) {
+          //Construct the existing recipe's related slideshow array
+          foreach ($node->field_related_links[LANGUAGE_NONE] as $related_link) {
+            if ($related_link['url'] != '') {
+              $rcp_slide_array[] = get_url_part($related_link['url']);
+            }
+          }
+          if (count($rcp_slide_array) > 0) {
+            $ss_urlpart = get_url_part($ss_link);
+            if (!in_array($ss_urlpart, $rcp_slide_array)) {
+              $node->field_related_links[LANGUAGE_NONE][count($rcp_slide_array)]
+                  ['title'] = $ss_title;
+              $node->field_related_links[LANGUAGE_NONE][count($rcp_slide_array)]
+                  ['url'] = $ss_link;
+            }
+          }
+        }
+        else {
+          $node->field_related_links[LANGUAGE_NONE][0]['title'] = $ss_title;
+          $node->field_related_links[LANGUAGE_NONE][0]['url'] = $ss_link;
+        }
+        node_save($node);
+      }
+    }
+  }
+  elseif ($optr == 'remove') {
+    //Remove Slideshow Info - Updating to the Related Recipe
+    if ($rnid != '' && $ss_title != '' && $ss_link != '') {
+      $node = node_load($rnid);
+      $i = 0;
+      //Checking Whether the Recipe's Related Links Exist Or Not
+      if (isset($node->field_related_links)) {
+        //Checking the count of the Recipe's Related Links
+        if (isset($node->field_related_links[LANGUAGE_NONE]) && 
+            count($node->field_related_links[LANGUAGE_NONE]) > 0) {
+          //Construct the existing recipe's related slideshow array
+          foreach ($node->field_related_links[LANGUAGE_NONE] as $related_link) {
+            if ($related_link['url'] != '') {
+              if (get_url_part($ss_link) == 
+                  get_url_part($related_link['url'])) {
+                unset($node->field_related_links[LANGUAGE_NONE][$i]);
+              }
+            }
+            $i++;
+          }
+        }
+        node_save($node);
+      }
+    }
+  }
+}
+//Updating Recipes Under Related Recipe Section with 
+//the Slideshow Info By Drush Command Function
+function update_recipe_by_slideshow_drushcmnd($rnid = '', $ss_title = '', 
+    $ss_link = '') {
+  $rcp_slide_array = array();
+  $r_cntr = 0;
+  //Add Slideshow Info - Updating to the Related Recipe
+  if ($rnid != '' && $ss_title != '' && $ss_link != '') {
+    $node = node_load($rnid);
+    //Checking Whether the Recipe's Related Links Exist Or Not
+    if (isset($node->field_related_links)) {
+      //Checking the count of the Recipe's Related Links
+      if (isset($node->field_related_links[LANGUAGE_NONE]) && 
+          count($node->field_related_links[LANGUAGE_NONE]) > 0) {
+        //Construct the existing recipe's related slideshow array
+        foreach ($node->field_related_links[LANGUAGE_NONE] as $related_link) {
+          if ($related_link['url'] != '') {
+            $rcp_slide_array[] = get_url_part($related_link['url']);
+          }
+        }
+        if (count($rcp_slide_array) > 0) {
+          $ss_urlpart = get_url_part($ss_link);
+          if (!in_array($ss_urlpart, $rcp_slide_array)) {
+            $node->field_related_links[LANGUAGE_NONE][count($rcp_slide_array)]
+                ['title'] = $ss_title;
+            $node->field_related_links[LANGUAGE_NONE][count($rcp_slide_array)]
+                ['url'] = $ss_link;
+            $r_cntr = 1;
+            node_save($node);
+            drush_print("\n" . '--Recipe Saved----' . "\n");
+          }
+        }
+      }
+      else {
+        $node->field_related_links[LANGUAGE_NONE][0]['title'] = $ss_title;
+        $node->field_related_links[LANGUAGE_NONE][0]['url'] = $ss_link;
+        $r_cntr = 1;
+        node_save($node);
+        drush_print("\n" . '--Recipe Saved----' . "\n");
+      }
+    }
+  }
+  return $r_cntr;
+}
+
+//To get the part of the url
+function get_url_part($link) {
+  $url_part = '';
+  if ($link != '') {
+    $slide_lnk_arr = explode('/', $link);
+    if (count($slide_lnk_arr) >= 5) {
+      if ((isset($slide_lnk_arr[3])) && 
+          ($slide_lnk_arr[3] == 'recipes' || 
+          $slide_lnk_arr[3] == 'slideshows')) {
+        $url_part = $slide_lnk_arr[3] . '/' . $slide_lnk_arr[4];
+      }
+    }
+  }
+  return $url_part;
+}
+
+//To get the part of the url of recipes
+function get_url_part_recipes($link) {
+  $url_part = '';
+  if ($link != '') {
+    $slide_lnk_arr = explode('/', $link);
+    if (count($slide_lnk_arr) >= 5) {
+      if ((isset($slide_lnk_arr[3])) && ($slide_lnk_arr[3] == 'recipes')) {
+        $url_part = $slide_lnk_arr[3] . '/' . $slide_lnk_arr[4];
+      }
+    }
+  }
+  return $url_part;
+}
+
+/**
+ * Implements hook_after_build().
+ */
+function ti_amg_fw_custom_after_build($form, &$form_state) {
+  $field = 'field_legacy_id';
+  // Adding readonly attribute to the field
+  $form[$field]['und'][0]['value']['#attributes']['readonly'] = 'readonly';
+  return $form;
+}
+
+/**
+ * Implements hook_node_validate().
+ * Validating for workflow flags in Recipes
+ */
+function ti_amg_fw_custom_node_validate($node, $form, &$form_state = '') {
+  if (isset($node->type) && $node->type == 'recipe' && $node->status == 1) {
+    if ($node->field_wf_producer_qa[LANGUAGE_NONE][0]['value'] == 0) {
+      $info = field_info_instance('node', 'field_wf_producer_qa', $node->type);
+      form_set_error('field_wf_producer_qa', 
+          t($info['label'] . ' workflow flag is required'));
+    }
+    if ($node->field_wf_parsing[LANGUAGE_NONE][0]['value'] == 0) {
+      $info = field_info_instance('node', 'field_wf_parsing', $node->type);
+      form_set_error('field_wf_parsing', 
+          t($info['label'] . ' workflow flag is required'));
+    }
+    if ($node->field_wf_parsing_qa[LANGUAGE_NONE][0]['value'] == 0) {
+      $info = field_info_instance('node', 'field_wf_parsing_qa', $node->type);
+      form_set_error('field_wf_parsing_qa', 
+          t($info['label'] . ' workflow flag is required'));
+    }
+    if ($node->field_wf_edit_check_1[LANGUAGE_NONE][0]['value'] == 0) {
+      $info = field_info_instance('node', 'field_wf_edit_check_1', $node->type);
+      form_set_error('field_wf_edit_check_1', 
+          t($info['label'] . ' workflow flag is required'));
+    }
+    if ($node->field_wf_edit_check_2[LANGUAGE_NONE][0]['value'] == 0) {
+      $info = field_info_instance('node', 'field_wf_edit_check_2', $node->type);
+      form_set_error('field_wf_edit_check_2', 
+          t($info['label'] . ' workflow flag is required'));
+    }
+    if ($node->field_wf_final_check[LANGUAGE_NONE][0]['value'] == 0) {
+      $info = field_info_instance('node', 'field_wf_final_check', $node->type);
+      form_set_error('field_wf_final_check', 
+          t($info['label'] . ' workflow flag is required'));
+    }
+  }
+  // Validating the Person node form
+  // Assigning the first name and last name as title of the page
+  if (isset($node) && isset($node->type) && $node->type == 'person') {
+    if ($node->field_person_type[LANGUAGE_NONE][0]['value'] == 'p') {
+      $first_name = $form_state['values']['field_given_name'][LANGUAGE_NONE]
+          [0]['value'];
+      $last_name = $form_state['values']['field_last_name'][LANGUAGE_NONE]
+          [0]['value'];
+      if ($first_name == '' & $last_name == '') {
+        form_set_error('field_given_name', 
+            t('Please Enter First Name & Lastt Name'));
+      }
+      elseif ($first_name == '') {
+        form_set_error('field_given_name', t('Please Enter First Name'));
+      }
+      elseif ($last_name == '') {
+        form_set_error('field_last_name', t('Please Enter Last Name'));
+      }
+      elseif (!(isset($node->nid) && $node->nid != NULL && $node->nid != '')) {
+        $url = $first_name . ' ' . $last_name;
+        $url = pathauto_cleanstring($url);
+        $alias = 'contributors/' . $url;
+        $path = drupal_lookup_path("source", $alias);
+        $existed_node = menu_get_object("node", 1, $path);
+        //If alias existed in the site, through an error
+        if ((isset($existed_node->nid) && 
+            $existed_node->nid != NULL && 
+            $existed_node->nid != '')) {
+          form_set_error('field_given_name', 
+              t('URL already existed with same first name and last name'));
+        }
+      }
+    }
+    elseif ($node->field_person_type[LANGUAGE_NONE][0]['value'] == 's') {
+      $source_name = $form_state['values']['field_source_name'][LANGUAGE_NONE]
+          [0]['value'];
+      if ($source_name == '') {
+        form_set_error('field_source_name', t('Please Enter Source Name'));
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of form validate function
+ * Set time for Article Content Type Publish Scheduler to
+ * midnight of the given date.
+ *
+ * @param type $form
+ * @param type $form_state
+ */
+function article_set_default_publishtime(&$form, &$form_state) {
+  if ($form_state['values']['publish_on']) {
+    $form_state['values']['publish_on'] .= ' 00:00:00';
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ * Hide Image from Blog Details Page, If image and video are uploaded
+ */
+function ti_amg_fw_custom_views_pre_render(&$view) {
+  global $conf, $multiple_images_info;
+  $multiple_images_info = array();
+  //Modifying Related Video Module View
+  if ($view->name == "ti_amg_fw_related_video_module" && 
+      $view->current_display == 'block') {    
+    $vid_cntid = 0;
+    foreach ($view->result as $key => $value) {
+      if (isset($value->field_field_video_id[0]['raw']['value'])) {
+        $vid = $value->field_field_video_id[0]['raw']['value'];
+        $value->field_field_video_id[0]['rendered']['#markup'] = 
+            ti_amg_fw_custom_get_video($vid, $vid_cntid);
+      }
+    }
+  }
+  // Add Image style to video detail Page Videos
+  if ($view->name == "ti_amg_fw_related_video_module" && 
+      $view->current_display == 'block_1') {
+    foreach ($view->result as $key => $value) {
+      if (isset($value->field_field_video_still[0]['raw']['uri'])) {
+        $img_info_still = image_get_info($value->field_field_video_still[0]
+            ['raw']['uri']);
+      }
+      if (isset($value->field_field_video_thumbnail[0]['raw']['uri'])) {
+        $img_info_thumb = image_get_info($value->field_field_video_thumbnail[0]
+            ['raw']['uri']);
+      }
+      if (isset($value->field_field_video_still[0]['raw']['uri']) && 
+          $img_info_still['file_size'] > 0) {
+        $video_uri = $value->field_field_video_still[0]['raw']['uri'];
+        $vimage = theme("image_style",
+          array('style_name' => '90x90', 'path' => $video_uri)
+        );
+        $value->field_field_video_still[0]['rendered'] = $vimage;
+      }
+      elseif (isset($value->field_field_video_thumbnail[0]['raw']['uri']) 
+          && $img_info_thumb['file_size'] > 0 && ($img_info_still['size'] == 0 
+          || $value->field_field_video_still[0]['raw']['uri'] == '')) {
+        $video_uri = $value->field_field_video_thumbnail[0]['raw']['uri'];
+        $vimage = theme("image_style",
+          array('style_name' => '90x90', 'path' => $video_uri)
+        );
+        $value->field_field_video_still[0]['rendered'] = $vimage;
+      }
+      else {
+        $vimage = array(
+          'path' => $conf['ti_amg_fw_blog_default_image'], 
+          'attributes' => array('class' => 'vid-def-img'));
+        $value->field_field_video_still[0]['rendered'] = theme_image($vimage);
+      }
+    }
+  }
+
+  // Keeping default image for home page blogs section
+  if ($view->name == "ti_amg_fw_homepage_blocks" && 
+      $view->current_display == 'block_3') {
+    if (isset($view->result[0]->field_field_video_id[0]['raw']['value'])) {
+      $vid = $view->result[0]->field_field_video_id[0]['raw']['value'];
+    }
+    else {
+      $vid = '';
+    }
+    //Checking whether the related video field is empty or not
+    if ($vid != '') {
+      $vid_cntid = 0;
+      $view->result[0]->field_field_blog_video[0]['rendered']['#markup'] = 
+          ti_amg_fw_custom_get_video($vid, $vid_cntid);
+      $videocnt = $view->result[0]->field_field_blog_video[0]
+          ['rendered']['#markup'];
+    }
+    else {
+      if (isset($view->result[0]->field_field_blog_video[0]['raw']['value'])) {
+        $videocnt = $view->result[0]->field_field_blog_video[0]['raw']['value'];
+        if ($view->result[0]->field_field_blog_video[0]
+            ['rendered']['#markup'] == '') {
+          $view->result[0]->field_field_blog_video[0]['rendered']['#markup'] = 
+              $videocnt;
+        }
+      }
+      else {
+        $videocnt = '';
+      }
+    }
+    //If video is there then unset the image field
+    if (isset($videocnt) && $videocnt != '') {
+      unset($view->result[0]->field_field_image[0]['rendered']);
+    }
+    //Adding default image, If both video and image fields are empty
+    if ((!isset($videocnt) || $videocnt == '') &&
+      (empty($view->result[0]->field_field_image[0]['rendered']))
+    ) {
+      if (isset($conf['ti_amg_fw_blog_default_image']) &&
+        !empty($conf['ti_amg_fw_blog_default_image'])
+      ) {
+        $dfimgarr = array(
+          'path' => $conf['ti_amg_fw_blog_default_image'],
+          'alt' => t('FoodandWine'),
+          'title' => t('FoodandWine'),
+          'attributes' => array('class' => 'homepage-blog-default-img'),
+        );
+        $dfimg_str = '<div class="field field-name-field-image
+              field-type-image field-label-hidden"><div class="field-items">
+              <div class="field-item even">';
+        $dfimg_end = '</div></div></div>';
+        $view->result[0]->field_field_image[0]['rendered'] = $dfimg_str . 
+            theme_image($dfimgarr) . $dfimg_end;
+      }
+    }
+  }
+  if ($view->name == "ti_amg_fw_homepage_blocks" && 
+      $view->current_display == 'block_4') {
+    $vid_cntid = 1;
+    foreach ($view->result as $key => $value) {
+      if (isset($value->field_field_video_id[0]['raw']['value'])) {
+        $vid = $value->field_field_video_id[0]['raw']['value'];
+      }
+      else {
+        $vid = '';
+      }
+      //Checking whether the related video field is empty or not
+      if ($vid != '') {
+        $value->field_field_blog_video[0]['rendered']['#markup'] = 
+            ti_amg_fw_custom_get_video($vid, $vid_cntid);
+        $videocnt = $value->field_field_blog_video[0]['rendered']['#markup'];
+      }
+      else {
+        if (isset($value->field_field_blog_video[0]['raw']['value'])) {
+          $videocnt = $value->field_field_blog_video[0]['raw']['value'];
+          if ($value->field_field_blog_video[0]['rendered']['#markup'] == '') {
+            $value->field_field_blog_video[0]['rendered']['#markup'] = 
+                $videocnt;
+          }
+        }
+        else {
+          $videocnt = '';
+        }
+      }
+      //If video is there then unset the image field
+      if (isset($videocnt) && $videocnt != '') {
+        unset($value->field_field_image[0]['rendered']);
+      }
+      //Adding default image, If both video and image fields are empty
+      if ((!isset($videocnt) || $videocnt == '') &&
+        (empty($value->field_field_image[0]['rendered']))
+      ) {
+        if (isset($conf['ti_amg_fw_blog_default_image']) &&
+          !empty($conf['ti_amg_fw_blog_default_image'])
+        ) {
+          $dfimgarr = array(
+            'path' => $conf['ti_amg_fw_blog_default_image'],
+            'alt' => t('FoodandWine'),
+            'title' => t('FoodandWine'),
+            'attributes' => array('class' => 'homepage-blog-default-img'),
+          );
+          $dfimg_str = '<div class="field field-name-field-image
+                   field-type-image field-label-hidden">
+                   <div class="field-items">
+                   <div class="field-item even">';
+          $dfimg_end = '</div></div></div>';
+          $value->field_field_image[0]['rendered'] = $dfimg_str . 
+              theme_image($dfimgarr) . $dfimg_end;
+        }
+      }
+      $vid_cntid++;
+    }
+  }
+  //Checking for Blog Detail Page
+  if ($view->name == "ti_amg_fw_blog_details") {
+    $vid_cntid = 0;
+    foreach ($view->result as $key => $value) {
+      if (isset($value->field_field_video_id[$key]['raw']['value'])) {
+        $vid = $value->field_field_video_id[$key]['raw']['value'];
+      }
+      else {
+        $vid = '';
+      }
+      //Checking whether the related video field is empty or not
+      if ($vid != '') {
+        $value->field_field_blog_video[$key]['rendered']['#markup'] = 
+            ti_amg_fw_custom_get_video($vid, $vid_cntid);
+        $videocnt = $value->field_field_blog_video[$key]['rendered']['#markup'];
+      }
+      else {
+        if (isset($value->field_field_blog_video[$key]['raw']['value'])) {
+          $videocnt = $value->field_field_blog_video[$key]['raw']['value'];
+          if ($value->field_field_blog_video[$key]['rendered']['#markup'] == '')
+            {
+            $value->field_field_blog_video[$key]['rendered']['#markup'] = 
+                $videocnt;
+          }
+        }
+        else {
+          $videocnt = '';
+        }
+      }
+      //If video is there then unset the image field
+      if (isset($videocnt) && $videocnt != '') {
+        unset($value->field_field_image[$key]['rendered']);
+      }
+      //Adding default image, If both video and image fields are empty
+      if ((!isset($videocnt) || $videocnt == '') &&
+        (empty($value->field_field_image[$key]['rendered']))
+      ) {
+        if (isset($conf['ti_amg_fw_blog_default_image']) &&
+          !empty($conf['ti_amg_fw_blog_default_image'])
+        ) {
+          $dfimgarr = array(
+            'path' => $conf['ti_amg_fw_blog_default_image'],
+            'alt' => t('FoodandWine'),
+            'title' => t('FoodandWine'),
+            'attributes' => array('class' => 'blog-default-img'),
+          );
+          $dfimg_str = '<div class="field field-name-field-image
+              field-type-image field-label-hidden"><div class="field-items">
+              <div class="field-item even">';
+          $dfimg_end = '</div></div></div>';
+          $value->field_field_image[$key]['rendered'] = $dfimg_str . 
+              theme_image($dfimgarr) . $dfimg_end;
+        }
+      }
+      //Adding Image Alt Text to Blog detail Page Image
+      elseif (!empty($value->field_field_image[$key]['rendered'])) {
+        if (isset($value->field_field_overwrite_image_alt_text)) {
+          $value->field_field_image[0]['rendered']['#item']['alt'] = 
+              $value->field_field_overwrite_image_alt_text[0]['raw']['value'];
+        }
+        elseif (!isset($value->field_field_overwrite_image_alt_text) && 
+            isset($value->field_field_alt_text)
+        ) {
+          $value->field_field_image[0]['rendered']['#item']['alt'] = 
+              $value->field_field_alt_text[0]['raw']['value'];
+        }
+      }
+
+      //Tagging multiple images to the blog body's token
+      if (!empty($view->result[$key]->_field_data['nid']['entity']
+          ->field_multiple_images)) {
+        $mltpl_images = $view->result[$key]->_field_data['nid']['entity']
+            ->field_multiple_images[LANGUAGE_NONE];
+        if (isset($mltpl_images)) {
+          $body_cnt = '';
+          if (isset($value->field_body[$key]['raw']['value'])) {
+            $body_cnt = $value->field_body[$key]['raw']['value'];
+          }
+          if (count($mltpl_images) > 0) {
+            // Define Multiple Images Array
+            $multi_imgs = array();           
+            //Define Body Image Styles: 
+            //500x500 size on desktop and 300x300 on phone
+            $img_style = 
+                ($_COOKIE['TI_PREFS'] == 'phone') ? '300x300' : '500x500';           
+            foreach ($mltpl_images as $jkey => $imgres) {
+              if ($imgres['target_id'] != '') {
+                //Get the corresponding image style with attributes and 
+                //load it to multi_imgs array
+                $multi_imgs[] = ti_amg_fw_custom_get_image_style(
+                    $imgres['target_id'], $img_style);
+              }
+            }           
+            //Assigning tagged body content to views result body field
+            $value->field_body[$key]['rendered']['#markup'] = 
+                ti_amg_fw_custom_replace_multi_img_tokens(
+                    $multi_imgs, $body_cnt);
+          }
+        }
+      }
+    }
+  }
+
+  //Checking for Blog, Topics and Related Tags Landing Pages
+  if ($view->name == "ti_amg_fw_blogs_topics_listing") {
+    $vid_cntid = 1;
+    foreach ($view->result as $key => $value) {
+      if (isset($value->field_field_video_id[0]['raw']['value'])) {
+        $vid = $value->field_field_video_id[0]['raw']['value'];
+      }
+      else {
+        $vid = '';
+      }
+      //Checking whether the related video field is empty or not
+      if ($vid != '') {
+        $value->field_field_blog_video[0]['rendered']['#markup'] = 
+            ti_amg_fw_custom_get_video($vid, $vid_cntid);
+        $videocnt = $value->field_field_blog_video[0]['rendered']['#markup'];
+      }
+      else {
+        if (isset($value->field_field_blog_video[0]['raw']['value'])) {
+          $videocnt = $value->field_field_blog_video[0]['raw']['value'];
+          if ($value->field_field_blog_video[0]['rendered']['#markup'] == '') {
+            $value->field_field_blog_video[0]['rendered']['#markup'] = 
+                $videocnt;
+          }
+        }
+        else {
+          $videocnt = '';
+        }
+      }
+      //If video is there then unset the image field
+      if (isset($videocnt) && $videocnt != '') {
+        unset($value->field_field_image[0]['rendered']);
+      }
+      //Adding default image, If both video and image fields are empty
+      if ((!isset($videocnt) || $videocnt == '') &&
+        (empty($value->field_field_image[0]['rendered']))
+      ) {
+        if (isset($conf['ti_amg_fw_blog_default_image']) &&
+          !empty($conf['ti_amg_fw_blog_default_image'])
+        ) {
+          $dfimgarr = array(
+            'path' => $conf['ti_amg_fw_blog_default_image'],
+            'alt' => t('FoodandWine'),
+            'title' => t('FoodandWine'),
+            'width' => '100',
+            'height' => '100',
+            'attributes' => array('class' => 'blog-landing-default-img'),
+          );
+          $dfimg_str = '<div class="field field-name-field-image
+              field-type-image field-label-hidden"><div class="field-items">
+              <div class="field-item even">';
+          $dfimg_end = '</div></div></div>';
+          $value->field_field_image[0]['rendered'] = $dfimg_str . 
+              theme_image($dfimgarr) . $dfimg_end;
+        }
+      }
+      $vid_cntid++;
+    }
+  }
+  if ($view->name == "related_articles" && $view->current_display == 'block') {
+    foreach ($view->result as $key => $value) {
+      $decoded_title = html_entity_decode(
+          $value->field_field_related_content[0]['rendered']);
+      $value->field_field_related_content[0]['rendered'] = 
+          strip_tags($decoded_title, '<a>');
+    }
+  }
+  //Channel Landing Page Videos Block View Section
+  if ($view->name == "ti_amg_fw_channel_landing_page_front_features_video_block"
+      && $view->current_display == 'block') {
+    $vid_cntid = 1;
+    foreach ($view->result as $key => $value) {
+      if (isset($value->field_field_video_id[0]['raw']['value'])) {
+        $vid = $value->field_field_video_id[0]['raw']['value'];
+      }
+      else {
+        $vid = '';
+      }
+      //Checking whether the related video field is empty or not
+      if ($vid != '') {
+        $value->field_field_video_id[0]['rendered'] = 
+            ti_amg_fw_custom_get_video($vid, $vid_cntid);
+      }
+      else {
+        $value->field_field_video_id[0]['rendered'] = '';
+      }
+      $vid_cntid++;
+    }
+  }
+  //Persons Related Videos Block View Section
+  if ($view->name == "ti_amg_fw_person_related_videos" && 
+      $view->current_display == 'block') {
+    $vid_cntid = 1;
+    foreach ($view->result as $key => $value) {
+      if (isset($value->field_field_video_id[0]['raw']['value'])) {
+        $vid = $value->field_field_video_id[0]['raw']['value'];
+      }
+      else {
+        $vid = '';
+      }
+      //Checking whether the related video field is empty or not
+      if ($vid != '') {
+        $value->field_field_video_id[0]['rendered'] = 
+            ti_amg_fw_custom_get_video($vid, $vid_cntid);
+      }
+      else {
+        $value->field_field_video_id[0]['rendered'] = '';
+      }
+      $vid_cntid++;
+    }
+  }
+  //Recipes Related Videos Views Section
+  if ($view->name == "ti_amg_fw_recipes_related_videos" && 
+      $view->current_display == 'block') {
+    $vid_stillimg = '';
+    foreach ($view->result as $key => $value) {
+      if (isset($value->field_field_video_still[0]['raw']['uri'])) {
+        $video_uri = $value->field_field_video_still[0]['raw']['uri'];
+        $video_url = image_style_url('310x235', $video_uri);
+        if ($value->node_field_data_field_related_videos_title != '') {
+          $vtitle = $value->node_field_data_field_related_videos_title;
+        }
+        if ($value->node_field_data_field_related_videos_nid != '') {
+          $path = $value->node_field_data_field_related_videos_nid;
+          $vpath = "node/" . $path;
+        }
+        $vid_stillimg = $video_url;
+        if ($vid_stillimg != '' && $path != '') {
+          $vimg = array('path' => $vid_stillimg,
+            'alt' => t($vtitle),
+            'title' => t($vtitle),
+            'attributes' => array('class' => 'reltdvideo-img'),
+          );
+          $vimage = theme_image($vimg);
+          $linked_image = l($vimage, $vpath, array('html' => TRUE));
+          $value->field_field_video_still[0]['rendered'] = $linked_image;
+        }
+      }
+      else {
+        $value->field_field_video_still[0]['rendered'] = '';
+      }
+    }
+  }
+  // Add Image style to video landing page videos
+  if ($view->name == "ti_amg_fw_tags_related_videos" && 
+      $view->current_display == 'block') {
+    foreach ($view->result as $key => $value) {
+
+      if (isset($value->field_field_video_still[0]['raw']['uri'])) {
+        $img_info_still = image_get_info($value->field_field_video_still[0]
+            ['raw']['uri']);
+      }
+      if (isset($value->field_field_video_thumbnail[0]['raw']['uri'])) {
+        $img_info_thumb = image_get_info($value->field_field_video_thumbnail[0]
+            ['raw']['uri']);
+      }
+      if (isset($value->field_field_video_still[0]['raw']['uri']) && 
+          $img_info_still['file_size'] > 0) {
+        $video_uri = $value->field_field_video_still[0]['raw']['uri'];
+        $vimage = theme("image_style",
+          array('style_name' => '120x90', 'path' => $video_uri)
+        );
+        $value->field_field_video_still[0]['rendered'] = $vimage;
+      }
+      elseif (isset($value->field_field_video_thumbnail[0]['raw']['uri']) && 
+          $img_info_thumb['file_size'] > 0 && ($img_info_still['size'] == 0 || 
+          $value->field_field_video_still[0]['raw']['uri'] == '')) {
+        $video_uri = $value->field_field_video_thumbnail[0]['raw']['uri'];
+        $vimage = theme("image_style",
+          array('style_name' => '120x90', 'path' => $video_uri)
+        );
+        $value->field_field_video_still[0]['rendered'] = $vimage;
+      }
+      else {
+        $vimage = array(
+          'path' => $conf['ti_amg_fw_blog_default_image'], 
+          'attributes' => array('class' => 'vid-def-img'));
+        $value->field_field_video_still[0]['rendered'] = theme_image($vimage);
+      }
+    }
+  }
+
+  // Add Image style to video detail Page Videos
+  if ($view->name == "ti_amg_fw_video_list" && 
+      $view->current_display == 'block') {
+    foreach ($view->result as $key => $value) {
+      if (isset($value->field_field_video_still[0]['raw']['uri'])) {
+        $img_info_still = image_get_info($value->field_field_video_still[0]
+            ['raw']['uri']);
+      }
+      if (isset($value->field_field_video_thumbnail[0]['raw']['uri'])) {
+        $img_info_thumb = image_get_info($value->field_field_video_thumbnail[0]
+            ['raw']['uri']);
+      }
+      if (isset($value->field_field_video_still[0]['raw']['uri']) && 
+          $img_info_still['file_size'] > 0) {
+        $video_uri = $value->field_field_video_still[0]['raw']['uri'];
+        $vimage = theme("image_style",
+          array('style_name' => '90x90', 'path' => $video_uri)
+        );
+        $value->field_field_video_still[0]['rendered'] = $vimage;
+      }
+      elseif (isset($value->field_field_video_thumbnail[0]['raw']['uri']) && 
+          $img_info_thumb['file_size'] > 0 && ($img_info_still['size'] == 0 || 
+          $value->field_field_video_still[0]['raw']['uri'] == '')) {
+        $video_uri = $value->field_field_video_thumbnail[0]['raw']['uri'];
+        $vimage = theme("image_style",
+          array('style_name' => '90x90', 'path' => $video_uri)
+        );
+        $value->field_field_video_still[0]['rendered'] = $vimage;
+      }
+      else {
+        $vimage = array(
+          'path' => $conf['ti_amg_fw_blog_default_image'], 
+          'attributes' => array('class' => 'vid-def-img'));
+        $value->field_field_video_still[0]['rendered'] = theme_image($vimage);
+      }
+    }
+  }
+  //Related Videos on video landing page
+  if ($view->name == "ti_amg_fw_video_landing_page") {
+    $vid_cntid = 1;
+    foreach ($view->result as $key => $value) {
+      if (isset($view->result[$key]->field_field_video_id[0]['rendered'])) {
+        if (preg_match('/\d+/', $view->result[$key]->field_field_video_id[0]
+            ['rendered'], $matches)) {
+          $view->result[$key]->field_field_video_id[0]['rendered'] = 
+              ti_amg_fw_custom_get_video($matches[0], $vid_cntid);
+        }
+      }
+      $vid_cntid++;
+    }
+  }
+
+  // Stripping the html tags from title
+  if (($view->name == "ti_amg_fw_person_blocks" && 
+      $view->current_display == 'block_3') ||
+    ($view->name == "ti_amg_fw_mobile_recipe_finder_results" && 
+          $view->current_display == 'block_1') ||
+    ($view->name == "ti_amg_fw_recipe_finder_child" && 
+              $view->current_display == 'page')
+  ) {
+    foreach ($view->result as $record) {
+      $record->node_title = strip_tags($record->node_title);
+    }
+  }
+
+  //Add Image alt text to person detail view
+  if ($view->name == "ti_amg_fw_person_blocks" && 
+      $view->current_display == 'block_1') {
+    foreach ($view->result as $value) {
+      if (isset($value->field_field_overwrite_image_alt_text[0]
+          ['raw']['value'])) {
+        $value->field_field_image[0]['rendered']['#item']['alt'] = 
+            $value->field_field_overwrite_image_alt_text[0]['raw']['value'];
+      }
+      elseif (!isset(
+          $value->field_field_overwrite_image_alt_text[0]['raw']['value'])
+        && isset($value->field_field_alt_text[0]['raw']['value'])
+      ) {
+        $value->field_field_image[0]['rendered']['#item']['alt'] = 
+            $value->field_field_alt_text[0]['raw']['value'];
+      }
+    }
+  }
+
+  //Checking for Mobile Blog Landing Pages
+  if ($view->name == "ti_amg_fw_mobile_blog_blocks" || 
+      $view->name == "ti_amg_fw_mobile_home_page_blocks") {
+    if ($_COOKIE['TI_PREFS'] == 'phone') {      
+      $vid_cntid = 1;
+      foreach ($view->result as $key => $value) {
+        if (isset($value->field_field_video_id[0]['raw']['value'])) {
+          $vid = $value->field_field_video_id[0]['raw']['value'];
+        }
+        else {
+          $vid = '';
+        }
+        //Checking whether the related video field is empty or not
+        if ($vid != '') {
+          $value->field_field_blog_video[0]['rendered'] = 
+              ti_amg_fw_custom_get_video($vid, $vid_cntid);
+          $videocnt = $value->field_field_blog_video[0]['rendered'];
+        }
+        else {
+          if (isset($value->field_field_blog_video[0]['raw']['value'])) {
+            $videocnt = $value->field_field_blog_video[0]['raw']['value'];
+          }
+          else {
+            $videocnt = '';
+          }
+        }
+        //If video is there then unset the image field
+        if (isset($videocnt) && $videocnt != '') {
+          unset($value->field_field_image[0]['rendered']);
+        }
+
+        //Adding default image, If both video and image fields are empty
+        if ((!isset($videocnt) || $videocnt == '') &&
+          (empty($value->field_field_image[0]['rendered']))
+        ) {
+          if (isset($conf['ti_amg_fw_blog_default_image']) &&
+            !empty($conf['ti_amg_fw_blog_default_image'])
+          ) {
+            $dfimgarr = array(
+              'path' => $conf['ti_amg_fw_blog_default_image'],
+              'alt' => t('FoodandWine'),
+              'title' => t('FoodandWine'),
+              'width' => '100',
+              'height' => '100',
+              'attributes' => array('class' => 'blog-landing-default-img'),
+            );
+            $dfimg_str = '<div class="field field-name-field-image
+              field-type-image field-label-hidden">';
+            $dfimg_end = '</div>';
+            $value->field_field_image[0]['rendered'] = $dfimg_str . 
+                theme_image($dfimgarr) . $dfimg_end;
+          }
+        }
+        $vid_cntid++;
+      }
+    }
+  }
+  //Adding "Serves" prefex for all servings taxonomy term name in 
+  //recipe finder listing.
+  if ($view->name == "ti_amg_fw_recipes_themes_parent_terms") {
+    if (arg(1) == "servings") {
+      $label = 'Serves';
+      foreach ($view->result as $key => $value) {
+        $value->taxonomy_term_data_name = $label . ' ' . 
+            $value->taxonomy_term_data_name;
+      }
+    }
+  }
+        
+  // Updating the feeds body image tokens with corresponding images
+  if ($view->name == 'ti_amg_fw_blogs_flipboard' || 
+      $view->name == 'ti_amg_fw_msn_blogs_feed') {    
+        foreach ($view->result as $row => $item) {
+          $multi_imgs = array();
+          $multiple_images_nids = array();
+            if (isset($item->_field_data['nid']['entity']
+                ->field_multiple_images[LANGUAGE_NONE]))
+                $multiple_images_nids = $item->_field_data['nid']['entity']
+                ->field_multiple_images[LANGUAGE_NONE];
+            //Verify if any multiple images uploaded to the blog
+            if (isset($multiple_images_nids) && 
+                count($multiple_images_nids) > 0) {
+                $body_content = '';
+                if (isset($item->field_body[0]['rendered']['#markup']))
+                    $body_content = $item->field_body[0]['rendered']['#markup'];
+                //Define Body Image Styles: 
+                //500x500 size on desktop and 300x300 on phone
+                $img_style = 
+                    ($_COOKIE['TI_PREFS'] == 'phone') ? '300x300' : '500x500';
+                foreach ($multiple_images_nids as $key => $image_item) {
+                    if ($image_item['target_id'] != '') {
+                        //Get the corresponding image style with attributes 
+                        //and load it to multi_imgs array
+                        $multi_imgs[] = ti_amg_fw_custom_get_image_style(
+                            $image_item['target_id'], $img_style);
+                    }
+                }
+                
+                //Replacing the blog body image tokens
+                if($view->name == 'ti_amg_fw_msn_blogs_feed') {
+                  $item->field_body[0]['rendered']['#markup'] = 
+                    ti_amg_fw_custom_replace_multi_img_tokens($multi_imgs, 
+                        $body_content, 'msn_blogs_feed');
+                }                
+            }
+            //$multiple_images_info[$row] = $multi_imgs;
+        }
+    }
+}
+
+/**
+ * Getting video object by passing video id
+ */
+function ti_amg_fw_custom_get_video($vid = '', $vid_count = '') {
+  $output = '';
+  if ($vid != '') {
+    //Setting video_asset_id to Tealium UDO
+    ti_udo_set("video_asset_id", $vid);
+    if ($vid_count == 0) {
+      $vid_count = '';
+    }
+    if ($_COOKIE['TI_PREFS'] == 'phone') {
+      $output .= '<div style="display:none"></div>
+                <object id="' . 'myExperience' . $vid_count . '"  
+                  class="BrightcoveExperience">
+                <param name="bgcolor" value="#FFFFFF" />
+                <param name="width" value="480" />
+                <param name="height" value="450" />
+                <param name="@videoPlayer" value="' . $vid . '" />
+                <param name="playerID" value="4066850662001" />
+                <param name="playerKey" 
+                value="AQ~~,AAAAAGL7jok~,vslbwQw3pdViubO4peidiQm3L4nyveDa" />
+                <param name="isVid" value="true" />                
+                <param name="isUI" value="true" />
+                <param name="includeAPI" value="true" />
+                <param name="templateLoadHandler" value="omni_onTemplateLoad" />
+                <param name="templateReadyHandler" 
+                value="omni_onTemplateReady"/>
+                <param name="dynamicStreaming" value="true" />
+              </object>';
+    }
+    else {
+      $output .= '<div style="display:none"></div>
+              <object id="' . 'myExperience' . $vid_count . '"  
+                class="BrightcoveExperience">
+                <param name="bgcolor" value="#FFFFFF" />
+                <param name="width" value="620" />
+                <param name="height" value="350" />
+                <param name="@videoPlayer" value="' . $vid . '" />
+                <param name="playerID" value="3866761842001" />
+                <param name="playerKey" 
+                value="AQ~~,AAAAAGL7jok~,vslbwQw3pdXn5PSsSjmiZNRU4ChTuD39" />
+                <param name="isVid" value="true" />                
+                <param name="isUI" value="true" />
+                <param name="includeAPI" value="true" />
+                <param name="templateLoadHandler" value="omni_onTemplateLoad" />
+                <param name="templateReadyHandler" 
+                value="omni_onTemplateReady"/>
+                <param name="dynamicStreaming" value="true" />
+              </object>';
+    }
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_views_post_render().
+ */
+function ti_amg_fw_custom_views_post_render(&$view, &$output, &$cache) {
+  //Featured Recipes Section. Article image will be showing, 
+  //If Related Recipes images are not available.
+  if ($view->name == "ti_amg_fw_featured_recipes" && 
+      $view->current_display == 'block') {
+    $viewres = '';
+    foreach ($view->result as $key => $value) {
+      if (count($view->result <= 1)) {
+        if (empty($view->result[$key]->
+            node_field_data_field_related_recipes_nid) && 
+            !empty($view->result[$key]->node_field_data_field_images_1_nid)) {
+          $article_img_array = $view->result[$key]->_field_data
+              ["node_field_data_field_images_1_nid"]["entity"];
+          if (isset($value->field_field_overwrite_image_alt_text[0]
+              ['raw']['value']) && 
+              !empty($value->field_field_overwrite_image_alt_text[0]['raw']
+                  ['value'])) {
+            $alt_text = $value->field_field_overwrite_image_alt_text[0]
+                ['raw']['value'];
+          }
+          elseif (isset($article_img_array
+              ->field_alt_text[LANGUAGE_NONE][0]['value']) 
+              && !empty($article_img_array->field_alt_text[LANGUAGE_NONE]
+              [0]['value'])
+            && !isset($value->field_field_overwrite_image_alt_text[0]
+              ['raw']['value'])
+          ) {
+            $alt_text = $article_img_array->field_alt_text[LANGUAGE_NONE]
+                [0]['value'];
+          }          
+          $viewres .= '<div class="art-mnimg-section">';
+          if (isset($article_img_array->field_image[LANGUAGE_NONE][0]['uri']) 
+              && !empty($article_img_array->field_image[LANGUAGE_NONE]
+                  [0]['uri'])) {
+            $style = '200x250';
+            $image_uri = $article_img_array->field_image[LANGUAGE_NONE]
+                [0]['uri'];
+            $imgstyle_path = image_style_url($style, $image_uri);
+            $artimg_path = file_create_url($imgstyle_path);
+            $art_img = array(
+              'path' => $artimg_path,
+              'alt' => $alt_text,
+              'title' => t('FoodandWine'),
+              'attributes' => array('class' => 'article-main-img'),
+            );
+            $viewres .= theme_image($art_img);
+          }
+          if (isset($value->field_field_overwrite_image_caption[0]['raw']
+              ['value']) && !empty($value->field_field_overwrite_image_caption
+                  [0]['raw']['value'])) {
+            $viewres .= '<div class = "image-caption">' . 
+                $value->field_field_overwrite_image_caption[0]['raw']['value'] .
+                '</div>';
+          }
+          elseif (isset($article_img_array->field_caption[LANGUAGE_NONE]
+              [0]['value']) && !empty($article_img_array->field_caption
+              [LANGUAGE_NONE][0]['value'])) {
+            $viewres .= '<div class = "image-caption">' . 
+                $article_img_array->field_caption[LANGUAGE_NONE][0]['value'] . 
+                '</div>';
+          }
+          if (isset($value->field_field_overwrite_image_credit[0]
+              ['raw']['value']) && 
+              !empty($value->field_field_overwrite_image_credit[0]
+                  ['raw']['value'])) {
+            $viewres .= '<div class = "image-credit">' . 
+                $value->field_field_overwrite_image_credit[0]['raw']['value'] . 
+                '</div>';
+          }
+          elseif (
+              isset($article_img_array->field_credit[LANGUAGE_NONE][0]['value'])
+              && !empty($article_img_array->field_credit[LANGUAGE_NONE]
+              [0]['value'])) {
+            $viewres .= '<div class = "image-credit">' . $article_img_array
+                ->field_credit[LANGUAGE_NONE][0]['value'] . '</div>';
+          }
+          $viewres .= '</div>';
+          $output = $viewres;
+        }
+        elseif (empty($view->result[$key]->
+            node_field_data_field_related_recipes_nid) && 
+            empty($view->result[$key]->node_field_data_field_images_1_nid)) {
+          $viewres .= '<div class="art-mnimg-section">';
+          $art_recp_dfimg = array(
+            'path' => '/sites/default/files/recipe-placeholder.gif',
+            'alt' => t('FoodandWine Recipe'),
+            'title' => t('FoodandWine Recipe'),
+            'width' => '200',
+            'height' => '250',
+            'attributes' => array('class' => 'recipe-df-img'),
+          );
+          $viewres .= theme_image($art_recp_dfimg);
+          $viewres .= '</div>';
+          $output = $viewres;
+        }
+      }
+    }
+  }
+  //In person node form, displaying readonly recipe paths withour 'recipes' word
+  if ($view->name == "ti_amg_fw_person_blocks" && 
+      ($view->current_display == 'block_4' ||
+      $view->current_display == 'block_6'
+    )) {
+    $output = str_replace("/recipes/", "", $output);
+  }
+  //In person node form, displaying the article paths withour 'articles' word
+  if ($view->name == "ti_amg_fw_person_blocks" && 
+      $view->current_display == 'block_2') {
+    $output = str_replace("/articles/", "", $output);
+  }
+}
+
+/**
+ * Implements toc_page_display().
+ */
+function toc_page_display() {
+  $selected_path = variable_get('default_month', '');
+  if ($selected_path) {
+    // Option was selected by Editor
+    $toc_page_path = 'monthly/' . $selected_path;
+    drupal_goto($toc_page_path);
+  }
+  else {
+    fast_404_error_return(TRUE);
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fw_custom_block_info() {
+  $block['toc_issue_dropdown'] = array(
+    'info' => t('TOC Page Issue Dropdown'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $block['fw_social_media_block'] = array(
+    'info' => t('FoodandWine Social Media Header Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_twitter_block'] = array(
+    'info' => t('Twitter Block Integration'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_newsletter_block'] = array(
+    'info' => t('Newsletter Block Integration'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_pinterest_block'] = array(
+    'info' => t('Pinterest Block Integration'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_logo_block'] = array(
+    'info' => t('FW Logo Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_blog_header'] = array(
+    'info' => t('FW Blog Page Header'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_outbrain_block'] = array(
+    'info' => t('Outbrain Block Integration'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_swoop_block'] = array(
+    'info' => t('Swoop Block Integration'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_recipe_search_block'] = array(
+    'info' => t('Recipe Search Block'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $block['recipe_page_title'] = array(
+    'info' => t('Recipe Page Title Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['video_listing'] = array(
+    'info' => t('Tags Related Vedio Lists Block'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $block['fw_zergnet_block'] = array(
+    'info' => t('Zergnet Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['recipe_finder'] = array(
+    'info' => t('Recipe Finder Block'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $block['fw_custom_related_videos_block'] = array(
+    'info' => t('Foodandwine Custom Related Videos Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_legacy_cmtopad_220x100_block'] = array(
+    'info' => t('TI AMG FW Legacy CM Top Ad 220x100 Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );  
+  $block['fw_legacy_multiad_300x250_block'] = array(
+    'info' => t('TI AMG FW Legacy Multi Ad 300x250 Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_legacy_normalad_300x250_block'] = array(
+    'info' => t('TI AMG FW Legacy Normal Ad 300x250 Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_legacy_cmtoutad_300x250_block'] = array(
+    'info' => t('TI AMG FW Legacy CM Tout AD 300x250 Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_legacy_marketplacead_block_1'] = array(
+    'info' => t('FW Legacy Marketplace AD Block 1'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_legacy_marketplacead_block_2'] = array(
+    'info' => t('FW Legacy Marketplace AD Block 2'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_legacy_marketplacead_block_3'] = array(
+    'info' => t('FW Legacy Marketplace AD Block 3'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_legacy_leaderboardad_block'] = array(
+    'info' => t('FW Legacy Leaderboard Ad Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_mobilead_320x320_block'] = array(
+    'info' => t('FW Legacy Mobile 320x320 Ad Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $block['fw_legacy_300x100ad_block'] = array(
+    'info' => t('FW Legacy 300x100 Ad Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );  
+
+  return $block;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fw_custom_block_view($block_key) {
+  $block = array();
+  if ($block_key == 'toc_issue_dropdown') {
+    //This is the title of the block.
+    $block['content'] = drupal_render(toc_page_issue_dropdown_form());
+  }
+  if ($block_key == 'fw_social_media_block') {
+    //Content of the block
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_custom_social_media'),
+    );
+  }
+  if ($block_key == 'fw_twitter_block') {
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_custom_twitter'),
+    );
+  }
+  if ($block_key == 'fw_newsletter_block') {
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_custom_newsletter'),
+    );
+  }
+  if ($block_key == 'fw_pinterest_block') {
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_custom_pinterest'),
+    );
+  }
+  if ($block_key == 'fw_logo_block') {
+    $theme_enabled = substr(strrchr(path_to_theme(), '/'), 1);
+    $theme_settings = variable_get('theme_' . $theme_enabled . '_settings', 
+        array());
+    $logo_path = $theme_settings['logo_path'];
+
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_logo_block', 
+          array('logo_path' => $logo_path)),
+    );
+  }
+  if ($block_key == 'fw_blog_header') {
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_blog_header'),
+    );
+  }
+  if ($block_key == 'fw_outbrain_block') {
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_custom_outbrain'),
+    );
+  }
+  if ($block_key == 'fw_swoop_block') {
+    if (variable_get('default_swoop', '')) {
+      $block['content'] = array(
+        '#markup' => theme('ti_amg_fw_custom_swoop'),
+      );
+    }
+  }
+  if ($block_key == 'fw_legacy_multiad_300x250_block') {
+      $block['content'] = '<div id="ad_multiad_300x250_wrapper"></div>';
+  }
+  if ($block_key == 'fw_legacy_normalad_300x250_block') {
+      $block['content'] = '<div id="ad_300x250_wrapper"></div>';
+  }
+  if ($block_key == 'fw_legacy_cmtoutad_300x250_block') {
+      $block['content'] = '<div id="ad_cmtoutad_300x250_wrapper"></div>';
+  }
+  if ($block_key == 'fw_legacy_marketplacead_block_1') {
+      $block['content'] = '<section id="block-ti-amg-ads-142x70-1"><div id="market_place_ad_wrapper"></div></section>';
+  }
+  if ($block_key == 'fw_legacy_marketplacead_block_2') {
+      $block['content'] = '<section id="block-ti-amg-ads-142x70-2"><div id="market_place_ad_wrapper"></div></section>';
+  }
+  if ($block_key == 'fw_legacy_marketplacead_block_3') {
+      $block['content'] = '<section id="block-ti-amg-ads-142x70-3"><div id="market_place_ad_wrapper"></div></section>';
+  }
+  if ($block_key == 'fw_legacy_cmtopad_220x100_block') {
+      $block['content'] = '<div id="cmtoutad_220x100_wrapper"></div>';
+  }
+  if ($block_key == 'fw_legacy_leaderboardad_block') {
+      $block['content'] = '<div id="leaderboard_ad_holder"></div>';
+  }
+  if ($block_key == 'fw_mobilead_320x320_block') {
+      $block['content'] = '<div id="mobile_ad_320x320_wrapper"></div>';
+  }
+  if ($block_key == 'fw_legacy_300x100ad_block') {
+      $block['content'] = '<div id="ad_300x100_wrapper"></div>';
+  }  
+  
+
+  if ($block_key == 'fw_recipe_search_block') {
+    $rcp_srch_block = render(module_invoke('search', 'block_view', 'form'));
+    $find_rcp_img = drupal_get_path('module', 'ti_amg_fw_custom') . 
+        '/images/hd_find_a_recipe.png';
+    $browse_rcp_img = drupal_get_path('module', 'ti_amg_fw_custom') . 
+        '/images/hd_browse_our_recipes.png';
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_custom_recipe_search', array(
+          'rcp_srch_form' => $rcp_srch_block,
+          'find_rcp_img' => $find_rcp_img,
+          'browse_rcp_img' => $browse_rcp_img,
+        )
+      ),
+    );
+  }
+  if ($block_key == 'recipe_page_title') {
+    if (arg(0) == 'recipe-finder' && arg(1)) {
+      preg_match('/\d+/', arg(1), $matches);
+      if (!empty($matches[0])) {
+        $block['content'] = '<h1 class="section_title">Serves ' . 
+            get_name_by_label() . '</h1><div class="section-separator"></div>';
+      }
+      else {
+        $block['content'] = '<h1 class="section_title">' . get_name_by_label() .
+            '</h1><div class="section-separator"></div>';
+      }
+    }
+  }
+  if ($block_key == 'video_listing') {
+    $node = menu_get_object();
+    $entity = array();
+    if (isset($node->field_vlp_category[LANGUAGE_NONE])) {
+      foreach ($node->field_vlp_category[LANGUAGE_NONE] as $key 
+          => $collection_item) {
+        $entity[] = entity_load('field_collection_item', 
+            array($collection_item['value']));
+      }
+    }
+    $tag_id = array();
+    $items = field_get_items('node', $node, 'field_vlp_category');
+    $i = 0;
+    foreach ($items as $item) {
+      $fc = field_collection_field_get_entity($item);
+      foreach ($fc->field_vlp_category_tags[LANGUAGE_NONE] as $entityobject) {
+        $tag_id[$i] = $entityobject["tid"];
+        $i++;
+      }
+    }
+    $video_list = '';
+    $terms = taxonomy_term_load_multiple($tag_id);
+    foreach ($tag_id as $tid) {
+      if (!empty($terms[$tid]->field_video_tags_display[LANGUAGE_NONE]
+          [0]['value'])) {
+        $header_tag = $terms[$tid]->field_video_tags_display[LANGUAGE_NONE]
+            [0]['value'];
+      }
+      else {
+        $header_tag = $terms[$tid]->name;
+      }
+      $header = str_replace(" ", "-", $header_tag);
+      $video_list .= "<a name='$header'></a><br><h3>" . $header_tag . "</h3>";
+      $video_list .= views_embed_view('ti_amg_fw_tags_related_videos', 
+          'block', $tid);
+    }
+    $block['content'] = $video_list;
+  }
+  if ($block_key == 'fw_zergnet_block') {
+    $block['content'] = array(
+      '#markup' => theme('ti_amg_fw_custom_zergnet'),
+    );
+  }
+  if ($block_key == 'recipe_finder') {
+    $block['content'] = _ti_amg_fw_custom_recipe_finder_list();
+  }
+  if ($block_key == 'fw_custom_related_videos_block') {
+    $node = menu_get_object();
+    $video_list = '';
+    if (isset($node->field_exclude_relvideo_module[LANGUAGE_NONE]
+        [0]['value'])) {
+      if ($node->field_exclude_relvideo_module[LANGUAGE_NONE]
+            [0]['value'] == 0) {
+        if ($node->type == 'blog') {
+          $video_list = "<h3 class='title_rel_vid title-bar'>"
+              . "Related Videos</h3>";
+        }
+        elseif ($node->type == 'recipe') {
+          $video_list = "<h3 class='title_rcprel_vid title-bar'>"
+              . "Related Videos</h3>";
+        }
+        $video_list .= views_embed_view('ti_amg_fw_related_video_module', 
+            'block');
+        $video_list .= "<h3 class='title_more_vid'>"
+            . "More Videos From Food & Wine</h3>";
+        $video_list .= views_embed_view('ti_amg_fw_related_video_module', 
+            'block_1');
+        $video_list .= "<div class='feature-separator'></div>";
+        $block['content'] = $video_list;
+      }
+      elseif ($node->field_exclude_relvideo_module[LANGUAGE_NONE]
+          [0]['value'] == 1) {
+        $block['content'] = $video_list;
+      }
+    }
+    else {
+      if ($node->type == 'blog') {
+        $video_list = "<h3 class='title_rel_vid title-bar'>Related Videos</h3>";
+      }
+      elseif ($node->type == 'recipe') {
+        $video_list = "<h3 class='title_rcprel_vid title-bar'>"
+            . "Related Videos</h3>";
+      }
+      $video_list .= views_embed_view('ti_amg_fw_related_video_module', 
+          'block');
+      $video_list .= "<h3 class='title_more_vid'>"
+          . "More Videos From Food & Wine</h3>";
+      $video_list .= views_embed_view('ti_amg_fw_related_video_module', 
+          'block_1');
+      $video_list .= "<div class='feature-separator'></div>";
+      $block['content'] = $video_list;
+    }
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fw_custom_theme() {
+  return array(
+    'ti_amg_fw_custom_social_media' => array(
+      'template' => 'ti_amg_fw_custom_social_media',
+    ),
+    'ti_amg_fw_custom_twitter' => array(
+      'template' => 'ti_amg_fw_custom_twitter',
+    ),
+    'ti_amg_fw_custom_newsletter' => array(
+      'template' => 'ti_amg_fw_custom_newsletter',
+    ),
+    'ti_amg_fw_custom_pinterest' => array(
+      'template' => 'ti_amg_fw_custom_pinterest',
+    ),
+    'ti_amg_fw_logo_block' => array(
+      'variables' => array('logo_path' => NULL),
+      'template' => 'ti_amg_fw_logo_block',
+    ),
+    'ti_amg_fw_blog_header' => array(
+      'template' => 'ti_amg_fw_blog_header',
+    ),
+    'ti_amg_fw_custom_outbrain' => array(
+      'template' => 'ti_amg_fw_custom_outbrain',
+    ),
+    'ti_amg_fw_custom_swoop' => array(
+      'template' => 'ti_amg_fw_custom_swoop',
+    ),
+    'ti_amg_fw_custom_recipe_search' => array(
+      'template' => 'ti_amg_fw_custom_recipe_search',
+    ),
+    'ti_amg_fw_custom_zergnet' => array(
+      'template' => 'ti_amg_fw_custom_zergnet',
+    ),
+    'ti_amg_fwrd_custom_zergnet' => array(
+      'template' => 'ti_amg_fwrd_custom_zergnet', 
+    ),
+    'ti_amg_fw_custom_thumb_upload' => array(
+      'render element' => 'element',
+    )
+  );
+}
+
+/**
+ * Implements Recipe Finder
+ */
+function _ti_amg_fw_custom_recipe_finder_list() {
+  if ((arg(0) == 'recipe-finder') && (arg(1) != '')) {
+    $output = '';
+    //To get the term id from term label
+    $tquery = db_query("select entity_id from "
+        . "{field_data_field_complex_theme_label} "
+        . "where field_complex_theme_label_value = :clbl "
+        . "and entity_type = :etype and bundle = :bdl ", 
+        array(":clbl" => arg(1), ":etype" => "taxonomy_term", 
+          ":bdl" => "complex_themes"))->fetchObject();
+    if (isset($tquery->entity_id) && $tquery->entity_id != '') {
+      $tid = $tquery->entity_id;
+    }
+    else {
+      $tid = '';
+    }
+    $output .= '<div class="theme-listing">';
+    $output .= '<h2 class="title">Recipe Themes</h2>';
+    $output .= '<div class="view-content">';
+    //To list the parents and childrens term
+    $query = db_select('taxonomy_term_data', 'ttd');
+    $query->join('taxonomy_term_hierarchy', 'tth', 'tth.tid = ttd.tid');
+    $query->join('taxonomy_vocabulary ', 'tvoc', 'tvoc.vid = ttd.vid');
+    $query->join('field_data_field_complex_theme_label', 'complbl', 
+        'complbl.entity_id = ttd.tid');
+    $query->condition('complbl.entity_type', 'taxonomy_term', '=');
+    $query->condition('complbl.deleted', '0', '=');
+    $query->condition('tvoc.machine_name', 'complex_themes', '=');
+    $query->condition('tth.parent', '0', '=');
+    $query->condition('ttd.name', 'Cuisine Types', 'NOT LIKE');
+    $query->condition('ttd.name', 'Columns', 'NOT LIKE');
+    $query->condition('ttd.name', 'Spirit Category', 'NOT LIKE');
+    $query->condition('ttd.name', 'Cocktail app cocktails', 'NOT LIKE');
+    $query->condition('ttd.name', 'Cocktail App', 'NOT LIKE');
+    $query->condition('ttd.name', 'Cocktail Type', 'NOT LIKE');
+    $query->condition('ttd.name', 'Holidays & Occasions', 'NOT LIKE');
+    $query->condition('ttd.name', 'Meals', 'NOT LIKE');
+    $query->fields('ttd', array('tid', 'name'));
+    $query->fields('complbl', array('field_complex_theme_label_value'));
+    $query->orderBy('ttd.name', 'ASC');
+    $result = $query->execute()->fetchAll();
+    if (count($result) > 0) {
+      foreach ($result as $resrow) {
+        if ($resrow->name) {
+          $termname = $resrow->name;
+        }
+        else {
+          $termname = '';
+        }
+        if ($resrow->field_complex_theme_label_value) {
+          $termlbl = '/recipe-finder/' . 
+              $resrow->field_complex_theme_label_value;
+        }
+        else {
+          $termlbl = '';
+        }
+        if (taxonomy_get_parents($tid)) {
+          $parents = taxonomy_get_parents($tid);
+          if (count($parents) > 0) {
+            foreach ($parents as $parent) {
+              if ($parent->tid != '' && $parent->vid != '') {
+                if ($parent->tid == $resrow->tid) {
+                  $output .= '<div class="recipe-parent-theme">';
+                  $output .= '<h3><a  title="Recipes: ' . 
+                      $termname . '" href="' . $termlbl . 
+                      '"> <h3 title="Recipes: ' . $termname . 
+                      '" class="recipe-parent">' . $termname . '</h3></a></h3>';
+                  $childrens = taxonomy_get_children($parent->tid, 
+                      $vid = $parent->vid);
+                  if (count($childrens) > 0) {
+                    foreach ($childrens as $children) {
+                      if ($children->tid != '') {
+                        if ($children->name) {
+                          $childname = $children->name;
+                        }
+                        else {
+                          $childname = '';
+                        }
+                        if ($children
+                            ->field_complex_theme_label[LANGUAGE_NONE]
+                            [0]['value']) {
+                          $childlbl = '/recipe-finder/' . 
+                              $children->field_complex_theme_label
+                              [LANGUAGE_NONE][0]['value'];
+                        }
+                        else {
+                          $childlbl = '';
+                        }
+                        if ($children->tid == $tid) {
+                          $active_cls = 'class="active"';
+                        }
+                        else {
+                          $active_cls = '';
+                        }
+                        $output .= 
+                            '<div class="views-row" style="display: block;">'
+                            . '<a ' . $active_cls . ' title="Recipes: ' . 
+                            $childname . '" href="' . $childlbl . '">' . 
+                            $childname . '<span class="count">(' . 
+                            ti_amg_fw_custom_get_recipeterm_count(
+                                $children->tid) . ')</span></a></div>';
+                      }
+                    }
+                  }
+                  $output .= '</div>';
+                }
+                else {
+                  $output .= '<div class="recipe-parent-theme">';
+                  $output .= '<h3><a title="Recipes: ' . $termname . 
+                      '" href="' . $termlbl . '"> <h3 title="Recipes: ' . 
+                      $termname . '" class="recipe-parent">' . $termname . 
+                      '</h3></a></h3>';
+                  $output .= '</div>';
+                }
+              }
+            }
+          }
+        }
+        else {
+          $output .= '<div class="recipe-parent-theme">';
+          $output .= '<h3><a title="Recipes: ' . $termname . '" href="' . 
+              $termlbl . '"> <h3 title="Recipes: ' . $termname . 
+              '" class="recipe-parent">' . $termname . '</h3></a></h3>';
+          $output .= '</div>';
+        }
+      }
+    }
+    $output .= '</div></div>';
+    if ($output != '') {
+      return $output;
+    }
+    else {
+      return;
+    }
+  }
+}
+
+// To find the count of the terms which is associated with the recipes
+function ti_amg_fw_custom_get_recipeterm_count($tid) {
+  if ($tid != '') {
+    $query = db_select('node', 'n');
+    $query->join('taxonomy_index', 'ti', 'ti.nid = n.nid');
+    $query->condition('n.type', 'recipe', '=');
+    $query->condition('n.status', '1', '=');
+    $query->condition('ti.tid', $tid, '=');
+    $query->fields('ti', array('nid'));
+    $num_of_results = $query->countQuery()->execute()->fetchField();
+    return number_format($num_of_results, '0', '', ',');
+  }
+}
+
+/**
+ * Implements toc_page_issue_dropdown_form().
+ */
+function toc_page_issue_dropdown_form() {
+  $selected_issue = arg(1);
+  $form['month_dropdown'] = array(
+    '#title' => 'Issues:',
+    '#prefix' => "<a id='toc-features'></a>"
+    . "<span class='selected-issue'></span>",
+    '#type' => 'select',
+    '#options' => toc_page_issue_dropdown(),
+    '#value' => $selected_issue,
+  );
+  return $form;
+}
+
+/**
+ * Implements toc_page_issue_dropdown().
+ */
+function toc_page_issue_dropdown() {
+  $item_name = taxonomy_vocabulary_machine_name_load('issue');
+  $item_list = taxonomy_get_tree($item_name->vid);
+  $issue_month_list = array();
+  foreach ($item_list as $item) {
+    $issue_month_list[] = $item->name;
+  }
+  $issue_sort_list = array();
+  foreach (toc_issue_sorting($issue_month_list) as $issue) {
+    $issue_month_year = explode(" ", $issue);
+    $issue_sort_list[strtolower($issue_month_year[0]) . '-' . 
+      $issue_month_year[1]] = $issue;
+  }
+  return $issue_sort_list;
+}
+
+/**
+ * Implements toc_issue_sorting().
+ */
+function toc_issue_sorting($issue_month_list) {
+  $issue_timestamp_array = array();
+  foreach ($issue_month_list as $issue) {
+    $date = new DateTime($issue);
+    $issue_timestamp_array[$date->getTimestamp()] = $issue;
+  }
+  krsort($issue_timestamp_array);
+  return $issue_timestamp_array;
+}
+
+/**
+ * Returns Label Field value for a given tid
+ *
+ * @param $tid
+ *   The term id (tid) of a txonomy term
+ * @param string $label_field_name
+ *   Machine name of the Label field.
+ *
+ * @return
+ *   Value of the label field
+ */
+function get_label_from_tid($tid, $label_field_name) {
+  $query = db_select('taxonomy_term_data', 'term');
+  $query->join('field_data_' . $label_field_name, 'label', 
+      'term.tid = label.entity_id');
+  $query->fields('label', array($label_field_name . '_value'))
+      ->condition('term.tid', $tid, '=')->range(0, 1);
+
+  $label_field_value = $query->execute()->fetchField();
+  return $label_field_value;
+}
+
+/**
+ * Returns Taxonomy Term ID for given label field value
+ *
+ * @param $label_value
+ *   Array of label field values
+ * @param string $label_field_name
+ *   Machine name of the Label field.
+ *
+ * @return
+ *   Array of Taxonomy term ids.
+ */
+function get_tid_from_label($label_values, $label_field_name) {
+  $query = db_select('taxonomy_term_data', 'term');
+  $query->join('field_data_' . $label_field_name, 'label', 
+      'term.tid = label.entity_id');
+  $query->fields('term', array('tid'))
+      ->condition($label_field_name . '_value', $label_values, 'IN')
+      ->range(0, 1);
+
+  $tids = $query->execute()->fetchCol();
+  return $tids;
+}
+
+/**
+ * Returns Label Field value (cached) for all terms in Topics vocabulary
+ *
+ * @return
+ *   Associative array decribed as follows
+ *     key: Taxonomy Term TID
+ *     value: Label field value of the term
+ */
+function get_label_for_all_topics() {
+  $topics_cache = cache_get('fw_topics_label');
+  if ($topics_cache) {
+    $topics = $topics_cache->data;
+  }
+  if (count($topics) < 1) {
+    $query = db_select('taxonomy_term_data', 'term');
+    $query->join('field_data_field_taxo_topic_label', 'label', 
+        'term.tid = label.entity_id');
+    $query->fields('label', array('entity_id', 'field_taxo_topic_label_value'));
+    $topics = $query->execute()->fetchAllKeyed();
+
+    cache_set('fw_topics_label', $topics);
+  }
+  return $topics;
+}
+
+/**
+ * Returns Taxonomy Term name for given label field value
+ *
+ * @param $tid
+ *   Array of taxonomy term id
+ *
+ * @return
+ *   Array of Taxonomy term name.
+ */
+function get_name_by_label() {
+  if (arg(0) == 'recipe-finder') {
+    if (arg(1)) {
+      $tid = get_tid_from_label(array(arg(1)), 'field_complex_theme_label');
+      if (!empty($tid)) {
+        $term_name = 
+            db_query('SELECT name FROM `taxonomy_term_data` WHERE tid = :tid', 
+                array(':tid' => $tid))->fetchField();
+      }
+    }
+  }
+  if (!empty($term_name)) {
+    return $term_name;
+  }
+  else {
+    return;
+  }
+}
+
+/**
+ * Implements node_form_issue_sorting().
+ * Sorting the issue list by month-year wise,
+ *  Appearing Latest on Top
+ */
+function node_form_issue_sorting($issue_list) {
+  // Taking the First Element of array
+  $issue_first_element = array_slice($issue_list, 0, 1);
+  // preserving the key's
+  unset($issue_list[key($issue_list)]);
+  $sorted_issue_list = array();
+  //storing the time stamp values of each issue string
+  foreach ($issue_list as $key => $issue) {
+    $date = new DateTime($issue);
+    $sorted_issue_list[$date->getTimestamp()][$key] = $issue;
+  }
+  // Sorting in descending order with time stamp
+  krsort($sorted_issue_list);
+  $sorted_issue_final = array();
+  // deleting the timestamp dimension and getting the key-value pair
+  foreach ($sorted_issue_list as $issue) {
+    foreach ($issue as $key => $value) {
+      $sorted_issue_final[$key] = $value;
+    }
+  }
+  return $issue_first_element + $sorted_issue_final;
+}
+
+/**
+ * Implements hook_views_post_execute().
+ *
+ */
+function ti_amg_fw_custom_views_post_execute(&$view) {
+  global $base_url;
+  $query = array();
+  $query_pager = array();
+  // @todo - this solution only works if we can expect one pager per page.
+  if (($view->display[$view->current_display]->handler->use_pager()) && (preg_match('/blogs/', request_uri()) || preg_match('/page([0-9]+)/', arg(1, request_path())))) {
+    $current_page = $view->query->pager->current_page;
+    $items_per_page = $view->query->pager->options['items_per_page'];
+    $last_item_viewed = ($current_page * $items_per_page) + $items_per_page;
+    // Prepare link rel=prev if current page > 0.
+    if ($current_page > 0) {
+      if ($current_page > 1) {
+        $parameters = array(
+          'page' => $current_page - 1,
+        );
+      }
+      else {
+        $parameters = array();
+      }
+      $query = drupal_get_query_parameters($parameters, array());
+      if ($query_pager = pager_get_query_parameters()) {
+        $query = array_merge($query, $query_pager);
+      }
+
+      $head_link = array(
+        'rel' => 'prev',
+        'href' => $base_url . url(
+          request_path(),
+          array(
+            'query' => $query,
+          )
+        ),
+      );
+      drupal_add_html_head_link($head_link);
+    }
+    // Prepare link rel=next if more pages available.
+    if ($view->query->pager->total_items > $last_item_viewed) {
+      $parameters = array(
+        'page' => $current_page + 1,
+      );
+      $query = drupal_get_query_parameters($parameters, array());
+      if ($query_pager = pager_get_query_parameters()) {
+        $query = array_merge($query, $query_pager);
+      }
+      $head_link = array(
+        'rel' => 'next',
+        'href' => $base_url . url(
+          request_path(),
+          array(
+            'query' => $query,
+          )
+        ),
+      );
+      drupal_add_html_head_link($head_link);
+    }
+  }
+}
+
+/**
+ * Implements hook_url_inbound_alter().
+ */
+function ti_amg_fw_custom_url_inbound_alter(&$path, $original_path, $path_language) {
+  if ((preg_match('/blogs/', request_uri()) || preg_match('/page([0-9]+)/', arg(1, request_path()))) && preg_match('/page=/', request_uri()) && !path_is_admin(current_path())) {
+    $requested_url = explode('page=', request_uri());
+    if (!empty($requested_url[1])) {
+      $_GET['page'] = intval($requested_url[1]) - 1;
+    }
+  }
+}
+
+/**
+ * Implements hook_url_outbound_alter().
+ */
+function ti_amg_fw_custom_url_outbound_alter(&$path, &$options, $original_path) {
+  if (isset($options['query']['page']) && !path_is_admin(current_path()) && (preg_match('/blogs/', request_uri()) || preg_match('/page([0-9]+)/', arg(1, request_path()))) ) {
+    $options['query']['page'] += 1;
+  }
+}
+
+/**
+ * Implements recipe_finder_display().
+ * Embedding recipe-finder page for desktop and mobile
+ * Handling through Context
+ */
+function recipe_finder_display() {
+  return '';
+}
+
+/**
+ * Creating pager links for views
+ *
+ * @param $items_per_page_options
+ *   Array of options for items per page
+ *
+ * @return
+ *   Pager Links
+ */
+function fw_get_views_pager_links($items_per_page_options) {
+  $query = $_GET;
+  if (isset($query['q'])) {
+    unset($query['q']);
+  }
+  // Get currently selected option
+  if (isset($_GET['page-items-count'])) {
+    $selected_pager_count = $_GET['page-items-count'];
+  }
+  else {
+    // The lowest value is the default selected option
+    $lowest_value = 10000;
+    foreach ($items_per_page_options as $value) {
+      if ($value < $lowest_value) {
+        $lowest_value = $value;
+      }
+    }
+    $selected_pager_count = $lowest_value;
+  }
+  $items = array();
+  foreach ($items_per_page_options as $value) {
+    $class = array();
+    if (is_numeric($value)) {
+      $query['page-items-count'] = $value;
+    }
+    if ($value == $selected_pager_count) {
+      $class = array('active');
+    }
+    $items[] = array('data' => l($value, $_GET['q'], 
+        array('query' => $query)), 'class' => $class);
+  }
+  $text = theme('html_tag', array(
+      'element' => array(
+        '#tag' => 'div',
+        '#attributes' => array(
+          'class' => 'result-label',
+        ),
+        '#value' => t('Results per page'),
+      ),
+    ));
+  $output = $text . theme('item_list', array('items' => $items));
+  return $output;
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function ti_amg_fw_custom_preprocess_node(&$variables, $hook) {
+  $node = $variables['node'];
+  $language = $node->language;
+  if ($node->type == 'recipe') {
+    // Set the recipe default image conf variable
+    $recipe_default_img = "/sites/all/themes/foodandwine/images/recipe-placeholder.gif";
+    $variables['title'] = $node->title;
+    $variables['recipe_image'] = '';
+    $variables['recipe_image_caption'] = '';
+    $variables['recipe_image_credit'] = '';
+    $variables['recipe_image_alt_text'] = '';
+    if (isset($node->field_images[$language][0]['target_id'])) {
+      $image_id = $node->field_images[$language][0]['target_id'];
+      $image_obj = node_load($image_id);
+      $image_uri = $image_obj->field_image[$language][0]['uri'];
+      $image_path = file_create_url($image_uri);
+      if (isset($node->field_overwrite_image_alt_text[$language][0]['value'])) {
+        $variables['recipe_image_alt_text'] = 
+            $node->field_overwrite_image_alt_text[$language][0]['value'];
+      }
+      elseif (!isset($node->field_overwrite_image_alt_text[$language]
+          [0]['value'])
+        && isset($image_obj->field_alt_text[$language][0]['value'])
+      ) {
+        $variables['recipe_image_alt_text'] = 
+            $image_obj->field_alt_text[$language][0]['value'];
+      }
+      $variables['recipe_image'] = theme("image_style",
+        array('style_name' => '200x250', 'path' => $image_uri,
+          'alt' => $variables['recipe_image_alt_text'],
+        )
+      );
+      if (isset($node->field_overwrite_image_caption[$language][0]['value'])) {
+        $variables['recipe_image_caption'] = 
+            $node->field_overwrite_image_caption[$language][0]['value'];
+      }
+      elseif (!isset($node->field_overwrite_image_caption[$language]
+          [0]['value'])
+        && isset($image_obj->field_caption[$language][0]['value'])
+      ) {
+        $variables['recipe_image_caption'] = 
+            $image_obj->field_caption[$language][0]['value'];
+      }
+      if (isset($node->field_overwrite_image_credit[$language][0]['value'])) {
+        $variables['recipe_image_credit'] = 
+            $node->field_overwrite_image_credit[$language][0]['value'];
+      }
+      elseif (!isset($node->field_overwrite_image_credit[$language][0]['value'])
+        && isset($image_obj->field_credit[$language][0]['value'])
+      ) {
+        $variables['recipe_image_credit'] = $image_obj->field_credit[$language]
+            [0]['value'];
+      }
+    }
+    else {
+      if (isset($node->field_overwrite_image_alt_text[$language][0]['value'])) {
+        $variables['recipe_image_alt_text'] = 
+            $node->field_overwrite_image_alt_text[$language][0]['value'];
+      }
+      $variables['recipe_image'] = theme("image", array(
+          'path' => $recipe_default_img,
+          'alt' => $variables['recipe_image_alt_text'],
+          'attributes' => array('class' => 'recipe-default-img',
+            'width' => 200,
+            'height' => 250,
+          ),
+        ));
+      if (isset($node->field_overwrite_image_caption[$language][0]['value'])) {
+        $variables['recipe_image_caption'] = 
+            $node->field_overwrite_image_caption[$language][0]['value'];
+      }
+      if (isset($node->field_overwrite_image_credit[$language][0]['value'])) {
+        $variables['recipe_image_credit'] = 
+            $node->field_overwrite_image_credit[$language][0]['value'];
+      }
+    }
+    $chef_ids = array();
+    $variables['chef_authors'] = array();
+    if (isset($node->field_chefs_author[$language])) {
+      foreach ($node->field_chefs_author[$language] as $index => $id) {
+        $chef_ids = $id['target_id'];
+        $chef_first_name = db_query('SELECT field_given_name_value FROM ' . 
+            '{field_data_field_given_name} WHERE entity_id = :nid',
+          array(':nid' => $chef_ids)
+        )->fetchField();
+        $chef_last_name = db_query('SELECT field_last_name_value FROM ' . 
+            '{field_data_field_last_name} WHERE entity_id = :nid',
+          array(':nid' => $chef_ids)
+        )->fetchField();
+        if ($chef_first_name != '' && $chef_last_name != '') {
+          $variables['chef_authors'][$chef_ids] = $chef_first_name . " " . 
+              $chef_last_name;
+        }
+        elseif ($chef_first_name == '' && $chef_last_name != '') {
+          $variables['chef_authors'][$chef_ids] = $chef_last_name;
+        }
+        elseif ($chef_first_name != '' && $chef_last_name == '') {
+          $variables['chef_authors'][$chef_ids] = $chef_first_name;
+        }
+        elseif ($chef_first_name == '' && $chef_last_name == '') {
+          $variables['chef_authors'][$chef_ids] = 
+              db_query('SELECT title FROM ' . '{node} WHERE nid = :nid', 
+                  array(':nid' => $chef_ids))->fetchField();
+        }
+      }
+    }
+    $source_ids = array();
+    $variables['source_authors'] = array();
+    if (isset($node->field_source_author[$language])) {
+      foreach ($node->field_source_author[$language] as
+        $source_index => $source_nid
+      ) {
+        $source_ids = $source_nid['target_id'];
+        $variables['source_authors'][$source_ids] = 
+            db_query('SELECT title FROM ' . '{node} WHERE nid = :nid',
+                array(':nid' => $source_ids))->fetchField();
+      }
+    }
+    if (!empty($variables['chef_authors'])) {
+      $count_people = count($variables['chef_authors']);
+      $variables['contrib_name'] = '';
+      foreach ($variables['chef_authors'] as $chef_nid => $chef_title) {
+        if ($variables['contrib_name'] != '') {
+          $variables['contrib_name'] = $variables['contrib_name'] . " and " . 
+              l($chef_title,
+            drupal_get_path_alias("node" . "/" . $chef_nid),
+            array('attributes' => array('class' => array('chef-link'),
+                'title' => 'Chef ' . $chef_title,
+              ))
+          );
+        }
+        else {
+          $variables['contrib_name'] .= l($chef_title,
+            drupal_get_path_alias("node" . "/" . $chef_nid),
+            array('attributes' => array('class' => array('chef-link'),
+                'title' => 'Chef ' . $chef_title,
+              ))
+          );
+        }
+      }
+    }
+    elseif (!empty($variables['source_authors'])) {
+      $count_source = count($variables['source_authors']);
+      $variables['contrib_name'] = '';
+      foreach ($variables['source_authors'] as $source_nid => $source_title) {
+        if ($variables['contrib_name'] != '') {
+          $variables['contrib_name'] = $variables['contrib_name'] . " and " . 
+              $source_title;
+        }
+        else {
+          $variables['contrib_name'] .= $source_title;
+        }
+      }
+    }
+    $variables['tap_badge'] = '';
+    $variables['tap_badge'] = $node->field_tap_badge[$language][0]['value'];
+    //Complex Themes Section
+    $variables['complex_themes'] = array();
+    $complex_themes_arr = array();
+    $complex_themes_arr_p = array();
+    $predfnd_themes = array("fast", "healthy", "make-ahead", 
+      "vegetarian", "staff-favorite", "web-exclusive");
+    if (isset($node->field_complex_theme[$language]) && 
+        count($node->field_complex_theme[$language]) > 0) {
+      foreach ($node->field_complex_theme[$language] as $index => $ctheme) {
+        $complex_themes_arr = $ctheme["taxonomy_term"]
+            ->field_complex_theme_label[$language][0]['value'];
+        if (in_array($complex_themes_arr, $predfnd_themes)) {
+          $complex_themes_arr_p[] = $complex_themes_arr;
+        }
+      }
+    }
+    if (count($complex_themes_arr_p > 0)) {
+      $items = array();
+      foreach ($complex_themes_arr_p as $key => $val) {
+        $items[] = $val;
+      }
+    }
+    $variables['complex_themes'] = theme('item_list', array(
+        'items' => $items,
+        'title' => NULL,
+        'type' => 'ul',
+        'attributes' => array('class' => 'themes link'),
+      )
+    );
+    //Process recipe time field
+    if (isset($node->field_recipe_time[$language])) {
+
+      foreach ($node->field_recipe_time[$language] as $key 
+          => $collection_item) {
+        $entity = entity_load('field_collection_item',
+          array($collection_item['value'])
+        );
+      }
+      foreach ($entity as $entityid => $entityobject) {
+        if (isset($entityobject->field_recipe_time_hour[$language]
+            [0]['value'])) {
+          $recipe_hour = $entityobject->field_recipe_time_hour[$language]
+              [0]['value'];
+        }
+        if (isset($entityobject->field_recipe_time_minute[$language][0]
+            ['value']
+          )) {
+          $recipe_minute = $entityobject->field_recipe_time_minute[$language]
+              [0]['value'];
+        }
+        if (isset($entityobject->field_time_other[$language][0]['value'])) {
+          $time_other = $entityobject->field_time_other[$language][0]['value'];
+        }
+      }
+    }
+    $span = "<span>";
+    $span_end = "</span>";
+    $variables['recipe_time'] = '';
+    $variables['rich_snippet_total_time'] = 'PT';
+    $variables['time_other_text'] = '';
+    if (isset($recipe_hour) && (!isset($recipe_minute) || $recipe_minute == 0)
+      && $recipe_hour != 0
+    ) {
+      $variables['recipe_time'] = $span . $recipe_hour . " HR" . $span_end;
+      $variables['rich_snippet_total_time'] .= $recipe_hour . "H";
+    }
+    elseif (isset($recipe_hour) && isset($recipe_minute) && $recipe_hour != 0
+      && $recipe_minute != 0
+    ) {
+      $variables['recipe_time'] = $span . $recipe_hour . " HR " . 
+          $recipe_minute . " MIN " . $span_end;
+      $variables['rich_snippet_total_time'] .= $recipe_hour . "H" . 
+          $recipe_minute . "M";
+    }
+    elseif (isset($recipe_minute) && (!isset($recipe_hour)
+        || $recipe_hour == 0
+      ) && $recipe_minute != 0) {
+      $variables['recipe_time'] = $span . $recipe_minute . " MIN" . $span_end;
+      $variables['rich_snippet_total_time'] .= $recipe_minute . "M";
+    }
+    if (isset($time_other) && (isset($recipe_hour) || isset($recipe_minute)
+        || ($recipe_hour != 0 && $recipe_minute != 0)
+      )) {
+      $variables['time_other_text'] = " " . $span . $time_other . $span_end;
+    }
+
+    // Process active time field
+    if (isset($node->field_active_time[$language])) {
+      foreach ($node->field_active_time[$language] as $key 
+          => $collection_item) {
+        $entity = entity_load('field_collection_item',
+          array($collection_item['value'])
+        );
+      }
+      foreach ($entity as $entityid => $entityobject) {
+        if (isset($entityobject->field_active_time_hour[$language]
+            [0]['value'])) {
+          $active_hour = $entityobject->field_active_time_hour[$language]
+              [0]['value'];
+        }
+        if (isset($entityobject->field_active_time_minute[$language]
+            [0]['value'])) {
+          $active_minute = $entityobject->field_active_time_minute[$language]
+              [0]['value'];
+        }
+      }
+    }
+    $variables['active_time'] = '';
+    if (isset($active_hour) && (!isset($active_minute) || $active_minute == 0)
+      && $active_hour != 0
+    ) {
+      $variables['active_time'] = $span . $active_hour . " HR" . $span_end;
+    }
+    elseif (isset($active_hour) && isset($active_minute) && $active_hour != 0
+      && $active_minute != 0
+    ) {
+      $variables['active_time'] = $span . $active_hour . " HR " . 
+          $active_minute . " MIN " . $span_end;
+    }
+    elseif (isset($active_minute) && (!isset($active_hour) ||
+        $active_hour == 0
+      ) && $active_minute != 0) {
+
+      $variables['active_time'] = $span . $active_minute . " MIN" . $span_end;
+    }
+    // yield and deck section
+    $variables['servings_yield'] = '';
+    $variables['deck'] = '';
+    if (isset($node->field_yield[$language][0]['value'])) {
+      $variables['servings_yield'] = strip_tags($node->field_yield[$language]
+        [0]['value']
+      );
+    }
+    if (isset($node->field_deck[$language][0]['value'])) {
+      $variables['deck'] = $node->field_deck[$language][0]['value'];
+    }
+    /* Related Videos Section */
+    //Retrive the related video view result
+    $variables['chkempty_relvideos'] = views_get_view_result(
+        'ti_amg_fw_recipes_related_videos', 'block');
+    //Retrive the related video views
+    $variables['related_videos'] = views_embed_view(
+        'ti_amg_fw_recipes_related_videos', 'block');
+
+    //Recipes Related Links Section
+    if (isset($node->field_related_cnt_links[$language])) {
+      $variables['related_cnt_links'] = '';
+      $variables['related_cnt_links'] = views_embed_view(
+          'ti_amg_fw_related_links', 'block');
+    }
+    //Related Recipes Section
+    if (isset($node->field_related_links[$language])) {
+      $variables['related_link'] = '';
+      $para = "<p>";
+      $para_end = "</p>";
+      global $base_url;
+      $related_links_count = count($node->field_related_links[$language]);
+      foreach ($node->field_related_links[$language] as $key => $related_data) {
+        if ($key < 2) {
+          if (stripos($related_data['url'], 
+              "http://www.foodandwine.com") !== FALSE
+            || stripos($related_data['url'], "http://foodandwine.com") !== FALSE
+            || stripos($related_data['url'], $base_url) !== FALSE
+          ) {
+            $variables['related_link'] .= $para . l($related_data['title'],
+              $related_data['url'], array('attributes' => array('class' =>
+                  array('related-link'), 'title' => $related_data['title'],
+                ))
+            ) . $para_end;
+          }
+          else {
+            $variables['related_link'] .= $para . l($related_data['title'],
+              $related_data['url'], array('attributes' => array('class' =>
+                  array('related-link'), 'target' => array('_blank'),
+                ),
+                'title' => $related_data['title'],
+              )
+            ) . $para_end;
+          }
+        }
+        else {
+          if (stripos($related_data['url'], 
+              "http://www.foodandwine.com") !== FALSE
+            || stripos($related_data['url'], "http://foodandwine.com") !== FALSE
+            || stripos($related_data['url'], $base_url) !== FALSE
+          ) {
+
+            $variables['related_link'] .= $para . l($related_data['title'],
+              $related_data['url'], array('attributes' => array('class' =>
+                  array('related-link', 'hidden-links'), 'title' =>
+                  $related_data['title'],
+                ))
+            ) . $para_end;
+          }
+          else {
+            $variables['related_link'] .= $para . l($related_data['title'],
+              $related_data['url'], array('attributes' => array('class' =>
+                  array('related-link', 'hidden-links'), 'target' =>
+                  array('_blank'), 'title' => $related_data['title'],
+                ))
+            ) . $para_end;
+          }
+        }
+      }
+      $variables['more_link'] = '';
+      if ($related_links_count > 2) {
+        $variables['more_link'] = l("More ∨", "#", array('attributes' =>
+            array('class' => array('more-content-link'), 'title' =>
+              'Show more related recipes',
+            ),
+          ));
+      }
+    }
+    //Ingredients section
+    if (isset($node->field_ingredients[$language])) {
+      foreach ($node->field_ingredients[$language] as $key => 
+          $collection_item) {
+        $ing_entity[] = entity_load('field_collection_item',
+          array($collection_item['value'])
+        );
+      }
+      $ing_qty = '';
+      $ing_whole_str = '';
+      $ing_fraction = '';
+      $ing_unit_str = '';
+      $ing_meas_notes_str = '';
+      $ing_prep_notes_str = '';
+      $ing_name_str = '';
+      $ing_title = '';
+      $previous_title = '';
+      $preparation = array();
+      foreach ($ing_entity as $ing_index => $ingid) {
+        foreach ($ingid as $ing_entityid => $ing_entityobject) {
+          if (isset($ing_entityobject->field_ingredient_quantity[$language]
+              [0]['value']
+            ) && $ing_entityobject->field_ingredient_quantity
+            [$language][0]['value'] != 0
+          ) {
+            $ing_qty = $ing_entityobject->field_ingredient_quantity[$language]
+                [0]['value'];
+            $ing_qty_str = $ing_qty . " ";
+          }
+          else {
+            $ing_qty_str = '';
+          }
+          if (isset($ing_entityobject->field_ingredient_whole[$language]
+              [0]['value']
+            ) && $ing_entityobject->field_ingredient_whole
+            [$language][0]['value'] != 0
+          ) {
+            $ing_whole = $ing_entityobject->field_ingredient_whole[$language]
+                [0]['value'];
+            $ing_whole_str = $ing_whole . " ";
+          }
+          else {
+            $ing_whole_str = '';
+          }
+          if (isset($ing_entityobject->field_ingredient_fraction[$language]
+              [0]['tid']
+            )) {
+            $ing_fraction_tid = $ing_entityobject->field_ingredient_fraction
+                [$language][0]['tid'];
+            $ing_fraction = db_query('SELECT name FROM {taxonomy_term_data} ' .
+                'WHERE ' . 'tid = :tid', array(':tid' => $ing_fraction_tid)
+            )->fetchField();
+            if ($ing_fraction != 0) {
+              $ing_fraction_str = $ing_fraction . " ";
+            }
+            else {
+              $ing_fraction_str = '';
+            }
+          }
+          else {
+            $ing_fraction_str = '';
+          }
+          if (isset($ing_entityobject->field_ingredient_unit[$language]
+              [0]['tid']
+            )) {
+            $ing_unit_tid = $ing_entityobject->field_ingredient_unit[$language]
+                [0]['tid'];
+            $ing_unit = db_query('SELECT name FROM {taxonomy_term_data} WHERE ' 
+                . 'tid = :tid', array(':tid' => $ing_unit_tid))
+                ->fetchField();
+            $ing_unit_str = $ing_unit . " ";
+          }
+          else {
+            $ing_unit_str = '';
+          }
+          if (isset($ing_entityobject->field_ingredient_mea_notes[$language]
+              [0]['value']
+            )) {
+            $ing_meas_notes = $ing_entityobject->field_ingredient_mea_notes
+                [$language][0]['value'];
+            $ing_meas_notes_str = $ing_meas_notes . " ";
+          }
+          else {
+            $ing_meas_notes_str = '';
+          }
+          if (isset($ing_entityobject->field_prep_notes[$language]
+              [0]['value']
+            )) {
+            $ing_prep_notes = $ing_entityobject->field_prep_notes[$language]
+                [0]['value'];
+            $ing_prep_notes_str = ", " . $ing_prep_notes;
+          }
+          else {
+            $ing_prep_notes_str = '';
+          }
+          if (isset($ing_entityobject->field_ingredient_primary[$language]
+              [0]['tid']
+            ) && !isset($ing_entityobject->field_ingredient_name
+              [$language][0]['value']
+            )) {
+            $ing_name_tid = $ing_entityobject->field_ingredient_primary
+                [$language][0]['tid'];
+            $ing_name = db_query('SELECT name FROM {taxonomy_term_data} WHERE ' 
+                . 'tid = :tid', array(':tid' => $ing_name_tid))
+                ->fetchField();
+          }
+          elseif (!isset($ing_entityobject->field_ingredient_primary[$language]
+              [0]['tid']
+            ) && isset($ing_entityobject->field_ingredient_name
+              [$language][0]['value']
+            )) {
+            $ing_name = $ing_entityobject->field_ingredient_name[$language]
+                [0]['value'];
+          }
+          elseif (isset($ing_entityobject->field_ingredient_primary[$language]
+              [0]['tid']
+            ) && isset($ing_entityobject->field_ingredient_name
+              [$language][0]['value']
+            )) {
+            $ing_name = $ing_entityobject->field_ingredient_name[$language]
+                [0]['value'];
+          }
+          else {
+            $ing_name = '';
+          }
+          if (isset($ing_entityobject->field_ingredient_list_title[$language]
+              [0]['value']
+            )) {
+            $ing_title = $ing_entityobject
+                ->field_ingredient_list_title[$language][0]['value'];
+          }
+          if ($ing_title != '') {
+            $previous_title = $ing_title;
+            if (isset($ing_entityobject->field_ingredient_display_text
+                [$language][0]['value']
+              )) {
+              $preparation[$ing_title][] = $ing_entityobject
+                  ->field_ingredient_display_text[$language][0]['value'];
+            }
+            else {
+              $preparation[$ing_title][] = $ing_qty_str . $ing_whole_str . 
+                  $ing_fraction_str . $ing_unit_str . $ing_meas_notes_str . 
+                  $ing_name . $ing_prep_notes_str;
+            }
+          }
+          else {
+            if (isset($ing_entityobject->field_ingredient_display_text
+                [$language][0]['value']
+              )) {
+              $preparation[$previous_title][] = $ing_entityobject
+                  ->field_ingredient_display_text[$language][0]['value'];
+            }
+            else {
+              $preparation[$previous_title][] = $ing_qty_str . 
+                  $ing_whole_str . $ing_fraction_str . $ing_unit_str . 
+                  $ing_meas_notes_str . $ing_name . $ing_prep_notes_str;
+            }
+          }
+        }
+      }
+      $variables['ing_content'] = '';
+      $variables['ing_list_title'] = '';
+      $variables['ing_list_emp_title'] = '';
+      foreach ($preparation as $name => $value1) {
+        $variables['ing_list_title'] = '';
+        if ($name) {
+          $variables['heading'] = '<h2>' . $name . '</h2>';
+          if (count($value1) > 1) {
+            foreach ($value1 as $sub) {
+              $variables['ing_list_title'] .= '<li>'
+                  . '<span>' . $sub . '</span></li>';
+            }
+          }
+          else {
+            $variables['ing_list_title'] = '<li><span>' .
+                $value1[0] . '</span></li>';
+          }
+          $variables['ing_content'] .= $variables['heading'] . '<ol>' . 
+              $variables['ing_list_title'] . '</ol>';
+        }
+        else {
+          if (count($value1) > 1) {
+            foreach ($value1 as $sub) {
+              $variables['ing_list_emp_title'] .= '<li>'
+                  . '<span>' . $sub . '</span></li>';
+            }
+          }
+          else {
+            $variables['ing_list_emp_title'] = '<li>'
+                . '<span>' . $value1[0] . '</span></li>';
+          }
+          $variables['ing_content'] .= '<ol>' . 
+              $variables['ing_list_emp_title'] . '</ol>';
+        }
+      }
+    }
+
+    //Directions section
+    $variables['step_content'] = '';
+    $entity = array();
+    if (isset($node->field_directions[$language])) {
+      foreach ($node->field_directions[$language] as $key => $collection_item) {
+        $entity[] = entity_load('field_collection_item',
+          array($collection_item['value'])
+        );
+      }
+      $step_content = array();
+      foreach ($entity as $index => $id) {
+        foreach ($id as $entityid => $entityobject) {
+          if (isset($entityobject->field_direction_list_title[$language]
+              [0]['value']
+            )) {
+            $step_title = $entityobject->field_direction_list_title[$language]
+                [0]['value'];
+          }
+          $count = 0;
+          if (isset($entityobject->field_direction_steps[$language])) {
+            foreach ($entityobject->field_direction_steps[$language] as
+              $step_key => $steps
+            ) {
+              if ($count == 0 && isset($step_title)) {
+                $step_title_tag = theme('html_tag', array(
+                    'element' => array(
+                      '#tag' => 'span',
+                      '#value' => $step_title,
+                      '#attributes' => array(
+                        'class' => 'step-title',
+                      ),
+                    ),
+                  ));
+                if (isset($steps['value'])) {
+                  $step_value = $step_title_tag . $steps['value'];
+                }
+              }
+              else {
+                if (isset($steps['value'])) {
+                  $step_value = $steps['value'];
+                }
+              }
+              $step_content[] = theme('html_tag', array(
+                  'element' => array(
+                    '#tag' => 'span',
+                    '#value' => $step_value,
+                  ),
+                ));
+              $count++;
+            }
+          }
+        }
+      }
+    }
+    if (isset($step_content)) {
+      $variables['step_content'] = theme('item_list', array(
+          'items' => $step_content,
+          'type' => 'ol',
+        ));
+    }
+    $variables['serve_with'] = '';
+    $variables['serve_notes'] = '';
+    if (isset($node->field_serve_with[$language][0]['value'])) {
+      $variables['serve_with'] = $node->field_serve_with[$language][0]['value'];
+    }
+    if (isset($node->field_serve_notes[$language][0]['value'])) {
+      $variables['serve_notes'] = $node->field_serve_notes[$language]
+          [0]['value'];
+    }
+    $variables['make_ahead'] = '';
+    $variables['issue_name'] = '';
+    $variables['pairing_notes'] = '';
+    if (isset($node->field_make_ahead[$language][0]['value'])) {
+      $variables['make_ahead'] = $node->field_make_ahead[$language][0]['value'];
+    }
+    if (isset($node->field_pairing_notes['und'][0]['value'])) {
+      $variables['pairing_notes'] = $node->field_pairing_notes['und']
+          [0]['value'];
+    }
+    if (isset($node->field_issue[$language][0]['tid'])) {
+      $tid = $node->field_issue[$language][0]['tid'];
+      $issue_obj = taxonomy_term_load($tid);
+      $issue = $issue_obj->name;
+      if (isset($issue_obj->field_taxo_issue_label[$language][0]['value'])) {
+        $issue_label = $issue_obj->field_taxo_issue_label[$language]
+            [0]['value'];
+        $issue_url = "monthly" . "/" . $issue_label;
+        $variables['issue_name'] = l($issue, $issue_url, array(
+            'attributes' => array(
+              'class' => array('issue-link'),
+              'title' => "Food and Wine's " . $issue . " Issue",
+            ),
+          ));
+      }
+    }
+
+    //Getting the Rating Value of Recipe
+    $variables['recipe_rating'] = 0;
+    if (isset($node->field_rating[LANGUAGE_NONE])) {
+      $rating_value = $node->field_rating[LANGUAGE_NONE][0]['value'];
+      preg_match('/\d/', $rating_value, $matches);
+      if (!empty($matches) && $rating_value <= 5) {
+        $variables['recipe_rating'] = $rating_value;
+      }
+      else {
+        $variables['recipe_rating'] = 0;
+      }
+    }
+    // To select node template for print page
+    if (arg(2) == 'print') {
+      $variables['theme_hook_suggestions'][0] = 'node__print';
+    }
+  }
+}
+
+/**
+ * Implements template_preprocess_views_view_field().
+ */
+function ti_amg_fw_custom_preprocess_views_view_field(&$vars) {
+  if (($vars['view']->name == 'ti_amg_fw_recipe_finder_child' && 
+      $vars['view']->current_display == 'page')
+    || $vars['view']->name == 'ti_amg_fw_mobile_recipe_finder_results'
+  ) {
+    if ($vars['field']->options['id'] == 'field_complex_theme') {
+      if (!empty($vars['output'])) {
+        $recipe_type = get_recipe_type_terms();
+        $node_terms = explode(',', $vars['output']);
+        $items = array();
+        foreach ($recipe_type as $label => $name) {          
+          if (in_array($name, $node_terms)) {
+
+            $items[] = array('data' => $name, 'class' => array($label));
+          }
+        }
+        $vars['output'] = theme('item_list', array('items' => $items));
+      }
+    }
+  }
+}
+
+/**
+ * Get terms under parent Recipe Types for Complex Theme
+ *
+ *
+ * @return
+ *   Associative array decribed as follows
+ *     key: Label field value of the term
+ *     value: Term Name
+ */
+function get_recipe_type_terms() {
+  //Get recipe type terms from cache
+  $recipe_type_cache = cache_get('fw_recipe_types');
+  if ($recipe_type_cache) {
+    $recipe_type = $recipe_type_cache->data;
+  }
+  if (count($recipe_type) < 1) {
+    $recipe_type = '';
+    $recipe_type_tid = get_tid_from_label(array('recipe-types'), 
+        'field_complex_theme_label');
+    if ($recipe_type_tid) {
+      $query = db_select('taxonomy_term_data', 'term');
+      $query->join('taxonomy_term_hierarchy', 'hierarchy', 
+          'term.tid = hierarchy.tid');
+      $query->join('field_data_field_complex_theme_label', 
+          'label', 'term.tid = label.entity_id');
+      $query->fields('term', array('name'))
+          ->fields('label', array('field_complex_theme_label_value'))
+          ->condition('hierarchy.parent', $recipe_type_tid, 'IN');
+      $recipe_type = $query->execute()->fetchAllKeyed(1, 0);
+    }
+    cache_set('fw_recipe_types', $recipe_type, 'cache', time() + 60 * 60);
+  }
+  return $recipe_type;
+}
+
+/**
+ * Implementing hook_node_submit
+ * Making the URL from FirstName  & Last Name
+ * Changing the URL When first name and last name updated
+ */
+function ti_amg_fw_custom_node_submit($node, $form, &$form_state) {
+  if (isset($node) && $node->type == 'person' && 
+      $node->field_person_type[LANGUAGE_NONE][0]['value'] == 'p') {
+    $first_name = $form_state['values']['field_given_name']
+        [LANGUAGE_NONE][0]['value'];
+    $last_name = $form_state['values']['field_last_name']
+        [LANGUAGE_NONE][0]['value'];
+    if (isset($node->nid) && $node->nid != NULL && $node->nid != '') {
+
+      $existed_node = node_load($node->nid);
+      $existed_first_name = $existed_node
+          ->field_given_name[LANGUAGE_NONE][0]['value'];
+      $existed_last_name = $existed_node
+          ->field_last_name[LANGUAGE_NONE][0]['value'];
+
+      if ($first_name != $existed_first_name || 
+          $last_name != $existed_last_name) {
+        $node->title = $first_name . ' ' . $last_name;
+        $url = pathauto_cleanstring($node->title);
+        $node->path['pathauto'] = 0;
+        $node->path['alias'] = 'contributors/' . $url;
+      }
+    }
+    else {
+      // Assigning the first-name and last-name to title
+      $node->title = $first_name . ' ' . $last_name;
+    }
+  }
+  elseif (isset($node) && $node->type == 'person' && 
+      $node->field_person_type[LANGUAGE_NONE][0]['value'] == 's') {
+    // Assigning the source name to title
+    $source_name = $form_state['values']['field_source_name']
+        [LANGUAGE_NONE][0]['value'];
+    $node->title = $source_name;
+  }
+}
+
+/**
+ * Implements hook_taxonomy_term_presave().
+ * 
+ * For all terms, make the weight equal to the term name. 
+ * We can then use weight for numerical sorting to fix the bug 
+ * where numeric term names sort in character code order.
+ */
+function ti_amg_fw_custom_taxonomy_term_presave($term) {
+
+  $vocab_name = 'complex_themes';
+  $vocab = taxonomy_vocabulary_machine_name_load($vocab_name);
+  if ($term->vid == $vocab->vid) {
+    $term->weight = intval($term->name);
+  }
+  //Updating Accented Characters from Label and Path Alias
+  if (isset($term->vid)) {
+    $vocb = taxonomy_vocabulary_load($term->vid);
+    $vocb_name = $vocb->name;
+  }
+  //Updating Path Alias Field
+  if (isset($term->path['pathauto']) && $term->path['pathauto'] == 1) {
+    $term->path['alias'] = trim(pathauto_cleanstring($vocb_name)) . '/' . 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->name)));
+  }
+  //Updating Label Field Starts
+  if (isset($term->field_taxo_topic_label['und'][0]['value'])) {
+    $term->field_taxo_topic_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_topic_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_category_label['und'][0]['value'])) {
+    $term->field_taxo_category_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_category_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_bnc_year_label['und'][0]['value'])) {
+    $term->field_taxo_bnc_year_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_bnc_year_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_complex_theme_label['und'][0]['value'])) {
+    $term->field_complex_theme_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_complex_theme_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_ets_rights_label['und'][0]['value'])) {
+    $term->field_taxo_ets_rights_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_ets_rights_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_flavors_label['und'][0]['value'])) {
+    $term->field_taxo_flavors_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_flavors_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_gallery_type_label['und'][0]['value'])) {
+    $term->field_taxo_gallery_type_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_gallery_type_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_group_tag_label['und'][0]['value'])) {
+    $term->field_taxo_group_tag_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_group_tag_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_image_rights_label['und'][0]['value'])) {
+    $term->field_taxo_image_rights_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_image_rights_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_ingr_category_label['und'][0]['value'])) {
+    $term->field_taxo_ingr_category_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_ingr_category_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_ingr_exclusions_label['und'][0]['value'])) {
+    $term->field_taxo_ingr_exclusions_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_ingr_exclusions_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_ingr_fraction_label['und'][0]['value'])) {
+    $term->field_taxo_ingr_fraction_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_ingr_fraction_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_ingr_unit_label['und'][0]['value'])) {
+    $term->field_taxo_ingr_unit_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_ingr_unit_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_issue_label['und'][0]['value'])) {
+    $term->field_taxo_issue_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_issue_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_person_type_label['und'][0]['value'])) {
+    $term->field_taxo_person_type_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_person_type_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_rebelmouse_tag_label['und'][0]['value'])) {
+    $term->field_taxo_rebelmouse_tag_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_rebelmouse_tag_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_simple_theme_label['und'][0]['value'])) {
+    $term->field_simple_theme_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_simple_theme_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_slug_label['und'][0]['value'])) {
+    $term->field_taxo_slug_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_slug_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_taxo_tags_label['und'][0]['value'])) {
+    $term->field_taxo_tags_label['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_taxo_tags_label['und'][0]['value'])));
+  }
+  elseif (isset($term->field_video_tags_display['und'][0]['value'])) {
+    $term->field_video_tags_display['und'][0]['value'] = 
+        trim(pathauto_cleanstring(ti_amg_fw_custom_remove_accents(
+            $term->field_video_tags_display['und'][0]['value'])));
+  }
+}
+
+/**
+ * Update existing taxonomy term weights.
+ */
+function resave_numeric_term_weights() {
+  // Get vid from machine_name
+  $vocab_name = 'complex_themes';
+  $vocab = taxonomy_vocabulary_machine_name_load($vocab_name);
+  $result = db_select('taxonomy_term_data', 't')
+      ->fields('t', array('tid', 'name'))
+      ->condition('t.vid', $vocab->vid)->execute();
+  $terms = $result->fetchAll();
+  foreach ($terms as $term) {
+    // Make the weight equal to the intval() of the term name.
+    db_update('taxonomy_term_data')
+        ->fields(array('weight' => intval($term->name)))
+        ->condition('tid', $term->tid)->execute();
+  }
+}
+
+/**
+ * Redirect to 404 page instead of recipe page if recipe is not found
+ */
+function ti_amg_fw_custom_context_node_condition_alter(&$node, $op) {
+  $arg_0 = arg(0);
+  $arg_1 = arg(1);
+  $arg_2 = arg(2);
+  // Apply redirect condition only for anonymous user.
+  if (user_is_anonymous()) {
+    switch ($node->type) {
+      case 'blog':
+      case 'article':
+        // Excempting pronto-json from blog content type.
+        if (!empty($arg_2) && $arg_2 != 'pronto-json') {
+          fast_404_error_return(TRUE);
+        }
+        break;
+      case 'recipe':
+        // Excempting print page from recipe content type.
+        if (!empty($arg_2) && $arg_2 != 'print') {
+          fast_404_error_return(TRUE);
+        }
+        break;
+      case 'gallery':
+        // Excempting slide numbers and interstitial Ads URLs from gallery content type.
+        if (!empty($arg_2)) {
+          if (!ctype_digit($arg_2) && 'end' != $arg_2) {
+            $ad_id = substr($arg_2, 3);
+            $ad_hypen = substr($arg_2, 0, 3);
+            if ($ad_hypen != 'ad-' || !ctype_digit($ad_id)) {
+              fast_404_error_return(TRUE);
+            }
+          }
+        }
+        break;
+      case 'video':
+        if (!empty($arg_2)) {
+          fast_404_error_return(TRUE);
+        }
+        break;
+      case 'article':
+        if (!empty($arg_2)) {
+          fast_404_error_return(TRUE);
+        }
+        break;
+      case 'category':
+        // Excempting pagination pages for category content type.
+        if (!empty($arg_2)) {
+          $pg_id = substr($arg_2, 4);
+          $pg_hypen = substr($arg_2, 0, 4);
+          if ($pg_hypen != 'page' || !ctype_digit($pg_id)) {
+            fast_404_error_return(TRUE);
+          }
+        }
+        break;
+      case 'home_page_responsive':
+        if (!empty($arg_2)) {
+          fast_404_error_return(TRUE);
+        }
+        break;
+      case 'page':
+        if (!empty($arg_2)) {
+          fast_404_error_return(TRUE);
+        }
+        break;
+      case 'channel_landing_page':
+        if (!empty($arg_2)) {
+          fast_404_error_return(TRUE);
+        }
+        break;
+      case 'channel_landing_page_responsive':
+        if (!empty($arg_2)) {
+          fast_404_error_return(TRUE);
+        }
+        break;
+      case 'person':
+        // Excempting pagination pages for person content type.
+        if (!empty($arg_2)) {
+          $pg_id = substr($arg_2, 4);
+          $pg_hypen = substr($arg_2, 0, 4);
+          if ($pg_hypen != 'page' || !ctype_digit($pg_id)) {
+            fast_404_error_return(TRUE);
+          }
+        }
+        break;
+      case 'video_landing_page':
+        if (!empty($arg_2)) {
+          fast_404_error_return(TRUE);
+        }
+        break;
+      case 'partner_feed':
+        if (!empty($arg_2)) {
+          fast_404_error_return(TRUE);
+        }
+        break;
+    }
+  }
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function ti_amg_fw_custom_node_insert($node) {
+  global $base_url;
+  //Updating slideshow info to the corresponding recipe
+  if ($node->type == 'gallery') {
+    if ($node->is_new) {
+      $slide_lnk_arr = array();
+      $ss_title = '';
+      $ss_link = '';
+      $optr = 'add';
+      if (isset($node->title)) {
+        $ss_title = $node->title;
+      }
+      //Updating the accented or special characters to english characters
+      $node->title = ti_amg_fw_custom_remove_accents($node->title);
+      if (isset($node->path['pathauto']) && $node->path['pathauto'] == 1) {
+        if ($node->path['alias'] != '') {
+          $ss_link = $base_url . '/' . $node->path['alias'];
+        }
+        else {
+          $ss_link = $base_url . '/slideshows/' . 
+              trim(pathauto_cleanstring($node->title));
+        }
+      }
+      else {
+        if ($node->path['alias'] != '') {
+          $ss_link = $base_url . '/' . $node->path['alias'];
+        }
+        else {
+          $ss_link = $base_url . '/' . 
+              drupal_get_path_alias('node/' . $node->nid);
+        }
+      }
+      if (count($node->field_slide_info[LANGUAGE_NONE]) > 0) {
+        foreach ($node->field_slide_info[LANGUAGE_NONE] as $slide) {
+          //Load the default slide link id to the array
+          $slide_entity = entity_load('field_collection_item', 
+              array($slide['value']));
+          $slide_entity_id = $slide['value'];
+          if (isset($slide_entity[$slide_entity_id]
+              ->field_slide_link_url[LANGUAGE_NONE][0]['url'])) {
+            $slide_rcp_links = $slide_entity[$slide_entity_id]
+                ->field_slide_link_url[LANGUAGE_NONE][0]['url'];
+            //Checking whether the url having the recipes pattern
+            if (preg_match("/recipes/i", $slide_rcp_links)) {
+              $alias = get_url_part($slide_rcp_links);
+              $path = drupal_lookup_path("source", $alias);
+              $rnode = menu_get_object("node", 1, $path);
+              if (isset($rnode->nid)) {
+                update_recipe_by_slideshow($optr, $rnode->nid, 
+                    $ss_title, $ss_link);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  else {
+    //Updating the accented or special characters to english characters
+    $node->title = ti_amg_fw_custom_remove_accents($node->title);
+  }
+  // Flush cache for home page and landing pages on node update
+  $home_cid = $base_url . '/';
+  switch ($node->type) {
+    case 'blog':
+    case 'article':
+      flush_cache_bin($home_cid, 'cache_page');
+      flush_cache_bin($home_cid . 'blogs', 'cache_page');
+      flush_cache_bin($home_cid . 'blogs?page=', 'cache_page', TRUE);
+      break;
+    case 'recipe':
+      flush_cache_bin($home_cid, 'cache_page');
+      flush_cache_bin($home_cid . 'recipes', 'cache_page');
+      break;
+    case 'gallery':
+      flush_cache_bin($home_cid, 'cache_page');
+      break;
+  }
+}
+
+/**
+ * Implements hook_state_flow_event_fired().
+ */
+function ti_amg_fw_custom_state_flow_event_fired($node, $event_key, $uid, $log) {
+  if (($event_key == 'publish' || $event_key == 'direct_publish') && (!empty($node) && $node->type == 'home_page_responsive' && $node->status == 1)) {
+    $alias = 'fwrd-home';
+    $path = drupal_lookup_path("source", $alias);
+    if (!empty($path)) {
+      $existing_homepage_node = menu_get_object("node", 1, $path);
+      if (!empty($existing_homepage_node) && $existing_homepage_node->nid != $node->nid) {
+        // Delete the path alias.
+        $criteria = array('source' => 'node/' . $existing_homepage_node->nid);
+        path_delete($criteria);
+        $state_flow = state_flow_load_state_machine($existing_homepage_node);
+        $state_flow->fire_event('unpublish', 1, 'unpublish existing homepage content');
+        entity_get_controller('node')->resetCache(array($existing_homepage_node->nid));
+        // Update the same path alias into newly publishing node.
+        $node->path['alias'] = $alias;
+        path_save($node->path);
+        $node->published_at = REQUEST_TIME;
+        node_save($node);
+        variable_set('site_frontpage', 'node/' . $node->nid);
+        entity_get_controller('node')->resetCache(array($node->nid));
+      }
+    }
+    else {
+      watchdog('Publishing Homepage', 'Expected path alias is not already exist', WATCHDOG_INFO);
+    }
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function ti_amg_fw_custom_node_update($node) {
+  global $base_url;
+  //Updating slideshow info to the corresponding recipes
+  if ($node->type == 'gallery') {
+    $slide_default_arr = array();
+    $slide_upd_array = array();
+    $del_links = array();
+    $add_links = array();
+    $slide_lnk_arr = array();
+    $ss_title = '';
+    $ss_link = '';
+    $optr = '';
+    $slide_default_val = '';
+    $slide_default_arr = variable_get($slide_default_val);
+    if (isset($node->title)) {
+      $ss_title = $node->title;
+    }
+    if (isset($node->path['pathauto']) && $node->path['pathauto'] == 1) {
+      if ($node->path['alias'] != '') {
+        $ss_link = $base_url . '/' . $node->path['alias'];
+      }
+      else {
+        $ss_link = $base_url . '/slideshows/' . 
+            trim(pathauto_cleanstring($node->title));
+      }
+    }
+    else {
+      if ($node->path['alias'] != '') {
+        $ss_link = $base_url . '/' . $node->path['alias'];
+      }
+      else {
+        $ss_link = $base_url . '/' . 
+            drupal_get_path_alias('node/' . $node->nid);
+      }
+    }
+    if (count($node->field_slide_info[LANGUAGE_NONE]) > 0) {
+      foreach ($node->field_slide_info[LANGUAGE_NONE] as $slide) {
+        //Load the slide link value to the array
+        $slide_entity = entity_load('field_collection_item', 
+            array($slide['value']));
+        $slide_entity_id = $slide['value'];
+        if (isset($slide_entity[$slide_entity_id]
+            ->field_slide_link_url[LANGUAGE_NONE][0]['url'])) {
+          $slide_rcp_links = 
+              $slide_entity[$slide_entity_id]
+              ->field_slide_link_url[LANGUAGE_NONE][0]['url'];
+          //Checking whether the url having the recipes pattern
+          if (preg_match("/recipes/i", $slide_rcp_links)) {
+            $slide_upd_array[] = get_url_part($slide_rcp_links);
+          }
+        }
+      }
+    }
+    //Construct the rmove links array
+    $del_links = array_diff($slide_default_arr, $slide_upd_array);
+    if (count($del_links) > 0) {
+      $optr = 'remove';
+      foreach ($del_links as $dellinks) {
+        if ($dellinks != '') {
+          $path = drupal_lookup_path("source", $dellinks);
+          $rnode = menu_get_object("node", 1, $path);
+          if (isset($rnode->nid)) {
+            update_recipe_by_slideshow($optr, $rnode->nid, $ss_title, $ss_link);
+          }
+        }
+      }
+    }
+    //Construct the add links array
+    $add_links = array_diff($slide_upd_array, $slide_default_arr);
+    if (count($add_links) > 0) {
+      $optr = 'add';
+      foreach ($add_links as $addlinks) {
+        if ($addlinks != '') {
+          $path = drupal_lookup_path("source", $addlinks);
+          $rnode = menu_get_object("node", 1, $path);
+          if (isset($rnode->nid)) {
+            update_recipe_by_slideshow($optr, $rnode->nid, $ss_title, $ss_link);
+          }
+        }
+      }
+    }
+  }
+  // Flush cache for home page and landing pages on node update
+  $home_cid = $base_url . '/';
+  switch ($node->type) {
+    case 'blog':
+    case 'article':
+      flush_cache_bin($home_cid, 'cache_page');
+      flush_cache_bin($home_cid . 'blogs', 'cache_page');
+      flush_cache_bin($home_cid . 'blogs?page=', 'cache_page', TRUE);
+      break;
+    case 'recipe':
+      flush_cache_bin($home_cid, 'cache_page');
+      flush_cache_bin($home_cid . 'recipes', 'cache_page');
+      break;
+    case 'gallery':
+      flush_cache_bin($home_cid, 'cache_page');
+      break;
+  }
+  // Flush cache for the node which is getting updated
+  $page_cid = $base_url . '/' . $node->path['alias'];
+  flush_cache_bin($page_cid, 'cache_page');
+}
+
+/**
+ * Implements hook_views_query_alter().
+ *
+ * Disables distinct and turns LEFT joins into INNER joins. This drammatically
+ * speeds up performance.
+ */
+function ti_amg_fw_custom_views_query_alter(&$view, &$query) {
+  if ($view->name == "ti_amg_fw_blogs_topics_navigator") {
+    //Changing for every field in query
+    foreach ($query->table_queue as $query_field) {
+      if (isset($query_field['join']->type)) {
+        $query_field['join']->type = 'INNER';
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_taxonomy_term_update().
+ *
+ * Delete cache bin on updating Topics taxonomy label
+ */
+function ti_amg_fw_custom_taxonomy_term_update($term) {
+  if ($term->vocabulary_machine_name == 'topic') {
+    $original_label = '';
+    if (isset($term->original->field_taxo_topic_label['und'])) {
+      $original_label = 
+          $term->original->field_taxo_topic_label['und'][0]['value'];
+    }
+    if ($term->field_taxo_topic_label['und'][0]['value'] != $original_label) {
+      cache_set('fw_topics_label', NULL);
+    }
+  }
+}
+
+/**
+ * Implements hook_taxonomy_term_insert().
+ *
+ * Delete cache bin on inserting new Topics taxonomy term
+ */
+function ti_amg_fw_custom_taxonomy_term_insert($term) {
+  if ($term->vocabulary_machine_name == 'topic') {
+    cache_set('fw_topics_label', NULL);
+  }
+}
+
+/**
+ * Implements hook_field_widget_text_textfield_form_alter().
+ *
+ * Alters the existing Video Content Creation Form
+ */
+function ti_amg_fw_custom_field_widget_text_textfield_form_alter(&$element, 
+    &$form_state, $context) {
+  ctools_include('ajax');
+  $node = $form_state['node'];
+  if ($form_state['build_info']['form_id'] == 'video_node_form'
+    && (!isset($node->nid) || isset($node->is_new))
+  ) {
+    if ($element['#bundle'] == 'video' && 
+        $element['#field_name'] == 'field_video_id') {
+      $element['get_metadata'] = array(
+        '#type' => 'submit',
+        '#value' => t('Get Metadata'),
+        '#attributes' => array('class' => array('ctools-use-ajax')),
+        '#id' => 'get_matadata',
+        '#name' => 'field_get_metadata',
+        '#ajax' => array(
+          'callback' => 'ti_amg_fw_custom_video_get_metadata',
+        ),
+        '#limit_validation_errors' => array(),
+        '#executes_submit_callback' => FALSE,
+        '#weight' => 1000,
+      );
+    }
+  }
+}
+
+function ti_amg_fw_custom_video_get_metadata($form, &$form_state) {
+  // To Get the Video ID entered by the Editor or User
+  $video_content_lang = $form['language']['#value'];
+  $video_id = 
+      $form_state['values']['field_video_id'][$video_content_lang][0]['value'];
+  if ($video_id > 0 && is_numeric($video_id)) {
+    $response = drupal_http_request("http://api.brightcove.com/services/library"
+        . "?command=find_video_by_id&video_id=" . 
+        $video_id . "&video_fields=id,name," . 
+        "shortDescription,longDescription,creationDate,publishedDate," . 
+        "lastModifiedDate,linkURL,linkText,tags,videoStillURL,thumbnailURL," . 
+        "captioning,adKeys,itemState&media_delivery=default" . 
+        "&callback=BCL.onSearchResponse&"
+        . "token=G0WAHddcP6XZOG9rNsyKkIyiDCGh9C7gfIxjRADssc0."
+    );
+
+    $response_json_data = $response->data;
+    $response_json_data = (string) $response_json_data;
+    $response_json_data = 
+        str_replace('BCL.onSearchResponse(', '', $response_json_data);
+    $response_json_data = str_replace(');', '', $response_json_data);
+    $response_json_data = json_decode($response_json_data);
+
+
+    $command_arr = array();
+    if (!empty($response_json_data->id)) {
+      $command_arr[] = ajax_command_invoke('#edit-field-video-id-und-0-value',
+        'val', array($response_json_data->id)
+      );
+      $command_arr[] = ajax_command_invoke('#edit-field-legacy-id-und-0-value',
+        'val', array($response_json_data->id)
+      );
+    }
+    else {
+      $command_arr[] = ajax_command_invoke('#edit-field-video-id-und-0-value',
+        'val', array("")
+      );
+      $command_arr[] = ajax_command_invoke('#edit-field-legacy-id-und-0-value',
+        'val', array("")
+      );
+    }
+    if (!empty($response_json_data->name)) {
+      $command_arr[] = ajax_command_invoke('#edit-title',
+        'val', array($response_json_data->name)
+      );
+    }
+    else {
+      $command_arr[] = ajax_command_invoke('#edit-title', 'val', array(""));
+    }
+    if (!empty($response_json_data->linkText)) {
+      $command_arr[] = 
+          ajax_command_invoke('#edit-field-related-link-text-und-0-value',
+              'val', array($response_json_data->linkText)
+      );
+    }
+    else {
+      $command_arr[] = 
+          ajax_command_invoke('#edit-field-related-link-text-und-0-value', 
+              'val', array("")
+      );
+    }
+    if (!empty($response_json_data->linkURL)) {
+      $command_arr[] = 
+          ajax_command_invoke('#edit-field-related-link-url-und-0-value',
+              'val', array($response_json_data->linkURL)
+      );
+    }
+    else {
+      $command_arr[] = 
+          ajax_command_invoke('#edit-field-related-link-url-und-0-value',
+              'val', array("")
+      );
+    }
+    if (!empty($response_json_data->adKeys)) {
+      $command_arr[] = ajax_command_invoke('#edit-field-ad-keys-und-0-value',
+        'val', array($response_json_data->adKeys)
+      );
+    }
+    else {
+      $command_arr[] = ajax_command_invoke('#edit-field-ad-keys-und-0-value',
+        'val', array("")
+      );
+    }
+    // Set the Video State based on itemState
+    $video_item_state = 6;
+    if (isset($response_json_data->itemState)
+      && $response_json_data->itemState == 'ACTIVE'
+    ) {
+      $video_item_state = 6;
+    }
+    elseif (isset($response_json_data->itemState)
+      && $response_json_data->itemState == 'iNACTIVE'
+    ) {
+      $video_item_state = 3;
+    }
+    elseif (isset($response_json_data->itemState)
+      && $response_json_data->itemState == 'PENDING'
+    ) {
+      $video_item_state = 1;
+    }
+    elseif (isset($response_json_data->itemState)
+      && $response_json_data->itemState == 'DELETED'
+    ) {
+      $video_item_state = 3;
+    }
+    else {
+      // Since the default value is complete
+      $video_item_state = 6;
+    }
+    // To set the Item State
+    $command_arr[] = ajax_command_invoke('#edit-field-brightcove-status-und',
+      'val', array($video_item_state)
+    );
+    // Create the term names and attach it
+    if (isset($response_json_data->tags) && 
+        count($response_json_data->tags) > 0) {
+      // To get the vocabulary ID
+      $vocb_machine_name = 'video_tags';
+      $query = db_select('taxonomy_vocabulary', 'tv');
+      $query->fields('tv', array('vid'));
+      $query->condition('tv.machine_name', $vocb_machine_name, '=');
+      $result = $query->execute();
+      $data = $result->fetchAssoc();
+      $vid = $data['vid'];
+      // Create the Terms and attach it with the node.
+      $term_count = 0;
+      $term_array = array();
+      foreach ($response_json_data->tags as $tag) {
+        // Check if the term is already available, If so attach it
+        $taxo_term_name = $tag;
+        $query_term = db_select('taxonomy_term_data', 'ttd');
+        $query_term->fields('ttd', array('tid', 'name'));
+        $query_term->condition('ttd.name', $taxo_term_name, '=');
+        $query_term->condition('ttd.vid', $vid, '=');
+        $result_term = $query_term->execute();
+        $existing_term_data = $result_term->fetchAssoc();
+        $term_name = $existing_term_data['name'];
+        if ($term_tid > 0) {
+          $term_array[] = $term_name;
+        }
+        else {
+          // Create the term if it is not available
+          $term_name = $tag;
+          $term = new stdClass();
+          $term->name = t($term_name);
+          $term->vid = $vid;
+          taxonomy_term_save($term);
+          $term_array[] = $term->name;
+        }
+        $term_count++;
+      }
+    }
+    // Set the tags
+    if (count($term_array) > 0) {
+      $command_arr[] = ajax_command_invoke('#edit-field-video-tags-und',
+        'val', array($term_array)
+      );
+    }
+    else {
+      $command_arr[] = ajax_command_invoke('#edit-field-video-tags-und',
+        'val', array("")
+      );
+    }
+    drupal_add_js(array('ti_amg_fw_video_node' =>
+        array('shortDescription' => $response_json_data->shortDescription),
+      ),
+      array('type' => 'setting')
+    );
+    drupal_add_js(array('ti_amg_fw_video_node' =>
+        array('longDescription' => $response_json_data->longDescription),
+      ),
+      array('type' => 'setting')
+    );
+  }
+  else {
+    $command_arr = array();
+    $command_arr[] = ajax_command_invoke('#edit-field-video-id-und-0-value',
+      'val', array("")
+    );
+    $command_arr[] = ajax_command_invoke('#edit-field-legacy-id-und-0-value',
+      'val', array("")
+    );
+    $command_arr[] = ajax_command_invoke('#edit-title', 'val', array(""));
+    $command_arr[] = 
+        ajax_command_invoke('#edit-field-related-link-text-und-0-value',
+            'val', array("")
+    );
+    $command_arr[] = 
+        ajax_command_invoke('#edit-field-related-link-url-und-0-value',
+            'val', array("")
+    );
+    $command_arr[] = ajax_command_invoke('#edit-field-ad-keys-und-0-value',
+      'val', array("")
+    );
+    $command_arr[] = ajax_command_invoke('#edit-field-video-tags-und',
+      'val', array("")
+    );
+    $command_arr[] = ajax_command_invoke('#edit-field-brightcove-status-und',
+      'val', array(6)
+    );
+    drupal_add_js(
+        array('ti_amg_fw_video_node' => array('shortDescription' => '')),
+        array('type' => 'setting')
+    );
+    drupal_add_js(
+        array('ti_amg_fw_video_node' => array('longDescription' => '')),
+        array('type' => 'setting')
+    );
+    $command_arr[] = ajax_command_alert("Video ID is either blank or not an "
+        . "valid integer");
+  }
+
+  return array(
+    '#type' => 'ajax',
+    '#commands' => $command_arr,
+  );
+}
+
+/**
+ * Implements update_slideinfo_tiudo().
+ * Assigning the gallery slide info to the tealium UDO variables
+ */
+function update_slideinfo_tiudo() {
+  $output = '';
+  //Setting the page_number and slide_title variables to tealium UDO
+  if (arg(1) != '' && arg(2) != '') {
+    ti_udo_set("page_number", arg(1));
+    ti_udo_set("slide_title", arg(2));
+  }
+}
+
+/**
+ * Replace accented characters with non accented
+ *
+ * @param $str
+ **/
+function ti_amg_fw_custom_remove_accents($str) {
+  $a = array('À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'Æ', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 
+    'Í', 'Î', 'Ï', 'Ð', 'Ñ', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ø', 'Ù', 'Ú', 'Û', 'Ü', 
+    'Ý', 'ß', 'à', 'á', 'â', 'ã', 'ä', 'å', 'æ', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 
+    'í', 'î', 'ï', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', 'ø', 'ù', 'ú', 'û', 'ü', 'ý', 
+    'ÿ', 'Ā', 'ā', 'Ă', 'ă', 'Ą', 'ą', 'Ć', 'ć', 'Ĉ', 'ĉ', 'Ċ', 'ċ', 'Č', 'č', 
+    'Ď', 'ď', 'Đ', 'đ', 'Ē', 'ē', 'Ĕ', 'ĕ', 'Ė', 'ė', 'Ę', 'ę', 'Ě', 'ě', 'Ĝ', 
+    'ĝ', 'Ğ', 'ğ', 'Ġ', 'ġ', 'Ģ', 'ģ', 'Ĥ', 'ĥ', 'Ħ', 'ħ', 'Ĩ', 'ĩ', 'Ī', 'ī', 
+    'Ĭ', 'ĭ', 'Į', 'į', 'İ', 'ı', 'Ĳ', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'Ĺ', 'ĺ', 'Ļ', 
+    'ļ', 'Ľ', 'ľ', 'Ŀ', 'ŀ', 'Ł', 'ł', 'Ń', 'ń', 'Ņ', 'ņ', 'Ň', 'ň', 'ŉ', 'Ō', 
+    'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'Œ', 'œ', 'Ŕ', 'ŕ', 'Ŗ', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 
+    'Ŝ', 'ŝ', 'Ş', 'ş', 'Š', 'š', 'Ţ', 'ţ', 'Ť', 'ť', 'Ŧ', 'ŧ', 'Ũ', 'ũ', 'Ū', 
+    'ū', 'Ŭ', 'ŭ', 'Ů', 'ů', 'Ű', 'ű', 'Ų', 'ų', 'Ŵ', 'ŵ', 'Ŷ', 'ŷ', 'Ÿ', 'Ź', 
+    'ź', 'Ż', 'ż', 'Ž', 'ž', 'ſ', 'ƒ', 'Ơ', 'ơ', 'Ư', 'ư', 'Ǎ', 'ǎ', 'Ǐ', 'ǐ', 
+    'Ǒ', 'ǒ', 'Ǔ', 'ǔ', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'Ǜ', 'ǜ', 'Ǻ', 'ǻ', 'Ǽ', 
+    'ǽ', 'Ǿ', 'ǿ', 'Ά', 'ά', 'Έ', 'έ', 'Ό', 'ό', 'Ώ', 'ώ', 'Ί', 'ί', 'ϊ', 'ΐ', 
+    'Ύ', 'ύ', 'ϋ', 'ΰ', 'Ή', 'ή');
+  $b = array('A', 'A', 'A', 'A', 'A', 'A', 'AE', 'C', 'E', 'E', 'E', 'E', 'I', 
+    'I', 'I', 'I', 'D', 'N', 'O', 'O', 'O', 'O', 'O', 'O', 'U', 'U', 'U', 'U', 
+    'Y', 's', 'a', 'a', 'a', 'a', 'a', 'a', 'ae', 'c', 'e', 'e', 'e', 'e', 'i', 
+    'i', 'i', 'i', 'n', 'o', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 
+    'y', 'A', 'a', 'A', 'a', 'A', 'a', 'C', 'c', 'C', 'c', 'C', 'c', 'C', 'c', 
+    'D', 'd', 'D', 'd', 'E', 'e', 'E', 'e', 'E', 'e', 'E', 'e', 'E', 'e', 'G', 
+    'g', 'G', 'g', 'G', 'g', 'G', 'g', 'H', 'h', 'H', 'h', 'I', 'i', 'I', 'i', 
+    'I', 'i', 'I', 'i', 'I', 'i', 'IJ', 'ij', 'J', 'j', 'K', 'k', 'L', 'l', 'L',
+    'l', 'L', 'l', 'L', 'l', 'l', 'l', 'N', 'n', 'N', 'n', 'N', 'n', 'n', 'O', 
+    'o', 'O', 'o', 'O', 'o', 'OE', 'oe', 'R', 'r', 'R', 'r', 'R', 'r', 'S', 's',
+    'S', 's', 'S', 's', 'S', 's', 'T', 't', 'T', 't', 'T', 't', 'U', 'u', 'U', 
+    'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'W', 'w', 'Y', 'y', 'Y', 'Z', 
+    'z', 'Z', 'z', 'Z', 'z', 's', 'f', 'O', 'o', 'U', 'u', 'A', 'a', 'I', 'i', 
+    'O', 'o', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'A', 'a', 'AE',
+    'ae', 'O', 'o', 'Α', 'α', 'Ε', 'ε', 'Ο', 'ο', 'Ω', 'ω', 'Ι', 'ι', 'ι', 'ι', 
+    'Υ', 'υ', 'υ', 'υ', 'Η', 'η');
+  return str_replace($a, $b, $str);
+}
+
+/**
+ * Flush page cache based on provided cid
+ */
+function flush_cache_bin($cid = NULL, $bin = NULL, $wildcard = FALSE) {
+  $editor = array(
+    "https://dev-editor.foodandwine.com/",
+    "https://qa-editor.foodandwine.com/",
+    "https://editor.foodandwine.com/",
+  );
+  $ext_domain = array(
+    "http://dev.foodandwine.com/",
+    "http://qa.foodandwine.com/",
+    "http://www.foodandwine.com/",
+  );
+  $cid_flush = str_replace($editor, $ext_domain, $cid);
+  $mclear = new MemCacheDrupal($bin);
+  $mclear->clear($cid_flush, $wildcard);
+  cache_clear_all($cid_flush, $bin, $wildcard);
+  watchdog('Memcache', 'Cache flushed for %url ,All URLs = %all_pages', 
+      array('%url' => $cid_flush, '%all_pages' => $wildcard), 
+      WATCHDOG_INFO, $cid_flush);
+}
+
+/**
+ * Removing unclosed html tags
+ */
+function ti_amg_fw_custom_remove_unclosed_tags($html) {
+  preg_match_all('#<(?!meta|img|br|hr|input\b)\b([a-z]+)(?: .*)?(?<![/|/ ])>#iU', 
+      $html, $result);
+  $openedtags = $result[1];
+  preg_match_all('#</([a-z]+)>#iU', $html, $result);
+  $closedtags = $result[1];
+  $len_opened = count($openedtags);
+  if (count($closedtags) == $len_opened) {
+    return $html;
+  }
+  $openedtags = array_reverse($openedtags);
+  for ($i = 0; $i < $len_opened; $i++) {
+    if (!in_array($openedtags[$i], $closedtags)) {
+      $html .= '</' . $openedtags[$i] . '>';
+    }
+    else {
+      unset($closedtags[array_search($openedtags[$i], $closedtags)]);
+    }
+  }
+  return preg_replace('/<([^<\/>]*)>([\s]*?|(?R))<\/\1>/imsU', '', $html);
+}
+
+/**
+ * Getting video URL from video-id for flipboard
+ */
+function ti_amg_fw_custom_get_feedvideo_url($blog_video_id) {
+  $video_url = "http://admin.brightcove.com/viewer/us20150514.1307/" . 
+      "BrightcoveBootloader.swf?playerID=3866761842001&domain=embed&isUI=1" . 
+      "&isVid=1&videoId=" . $blog_video_id;
+  return $video_url;
+}
+
+/**
+ * Getting Image Style for Blog Body Images
+ */
+function ti_amg_fw_custom_get_image_style($nid, $style, $link = FALSE) {
+  $blog_multi_image = array('link' => $link);
+  if ($nid != '') {
+    //Load the image node by using given nid
+    $image_node = node_load($nid);    
+    $blog_multi_image['image_id'] = $nid;
+    //Load the image_uri
+    if (!empty($image_node->field_large_image)) {
+      $image_file = $image_node->field_large_image[LANGUAGE_NONE][0];
+      $blog_multi_image['image_uri'] = image_style_url($image_style, $image_file['uri']);
+      $blog_multi_image['image_native_uri'] = $image_file['uri'];
+      $blog_multi_image['original_url'] = file_create_url($blog_multi_image['image_native_uri']);
+    }
+    elseif (!empty($image_node->field_image)) {
+      $image_file = $image_node->field_image[LANGUAGE_NONE][0];
+      $blog_multi_image['image_uri'] = image_style_url($style, $image_file['uri']);
+      $blog_multi_image['image_native_uri'] = $image_file['uri'];
+      $blog_multi_image['original_url'] = file_create_url($blog_multi_image['image_native_uri']);
+    }
+    else {
+      $blog_multi_image['image_uri'] = '';
+      $blog_multi_image['image_native_uri'] = '';
+      $blog_multi_image['original_url'] = '';
+    }
+    //Load the image_caption
+    if (!empty($image_node->field_caption)) {
+      $blog_multi_image['image_caption'] = mb_convert_encoding(strip_tags($image_node->field_caption[LANGUAGE_NONE][0]['value']), 'UTF-8', 'auto');
+    }
+    else {
+      $blog_multi_image['image_caption'] = '';
+    }
+    //Load the image_credit
+    if (!empty($image_node->field_credit)) {
+      $blog_multi_image['image_credit'] = mb_convert_encoding(strip_tags($image_node->field_credit[LANGUAGE_NONE][0]['value']), 'UTF-8', 'auto');
+    }
+    else {
+      $blog_multi_image['image_credit'] = '';
+    }
+    //Load the image_alt
+    if (!empty($image_node->field_alt_text)) {
+      $blog_multi_image['image_alt'] = mb_convert_encoding(strip_tags($image_node->field_alt_text[LANGUAGE_NONE][0]['value']), 'UTF-8', 'auto');
+    }
+    else {
+      $blog_multi_image['image_alt'] = '';
+    }
+  }
+  return $blog_multi_image;
+}
+
+/**
+ * Replacing Multiple Image tokens with correspoinding images
+ */
+function ti_amg_fw_custom_replace_multi_img_tokens($multi_imgs = array(), 
+    $body_cnt = '', $view_info = '') {
+  if ($view_info == 'msn_blogs_feed') {
+    foreach ($multi_imgs as $kkey => $multi_img) {
+      
+      $img_credit = $multi_img['image_credit'] != '' ? $multi_img['image_credit'] : 'Food & Wine';
+      
+      $multi_img_arr = array(
+        'path' => $multi_img['image_native_uri'],
+        'alt' => $multi_img['image_alt'],
+        'title' => $multi_img['image_alt'],
+        'attributes' => array(
+          'class' => 'multimg blog-bdy-img' . ($kkey + 1),
+          'data-portal-copyright' => $img_credit,
+        ),
+      );
+      
+      $cnstructed_img = theme_image($multi_img_arr);
+      $search = '<p>[%image' . ($kkey + 1) . ']</p>';
+      $body_cnt = str_replace($search, $cnstructed_img, $body_cnt);
+    }
+  }
+  else {
+    foreach ($multi_imgs as $kkey => $multi_img) {
+      $multi_img_arr = array(
+        'path' => $multi_img['image_native_uri'],
+        'alt' => $multi_img['image_alt'],
+        'title' => $multi_img['image_alt'],
+        'attributes' => array('class' => 'multimg blog-bdy-img' . 
+          ($kkey + 1)),
+      );
+      if ($multi_img['image_credit'] != '') {
+          $img_credit = '<div class="image-credit">' . 
+              $multi_img['image_credit'] . '</div>';
+      }
+      else {
+          $img_credit = '';
+      }
+      if ($multi_img['image_caption'] != '') {
+          $img_caption = '<div class="image-caption">' . 
+              $multi_img['image_caption'] . '</div>';
+      }
+      else {
+          $img_caption = '';
+      }
+      $cnstructed_img = theme_image($multi_img_arr) . $img_caption . '' . 
+          $img_credit;
+      $search = '<p>[%image' . ($kkey + 1) . ']</p>';
+      $body_cnt = str_replace($search, $cnstructed_img, $body_cnt);
+    }
+  }
+
+  return $body_cnt;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function ti_amg_fw_custom_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && !empty($plugin_type)) {
+    return 'plugins/' . $plugin_type;
+  }
+}

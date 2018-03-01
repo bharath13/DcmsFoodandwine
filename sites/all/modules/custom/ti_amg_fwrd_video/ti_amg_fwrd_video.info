@@ -1,0 +1,6 @@
+name = FW Video Single Page module for responsive design
+description = Create Video Single Page functionalities for responsive design template.
+package = Foodandwine
+core = 7.x
+
+

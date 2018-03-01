@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Tag Page Ads feature.
+ */
+
+include_once 'ti_amg_fw_tag_page_ads.features.inc';

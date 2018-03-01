@@ -1,0 +1,5 @@
+name = TI AMG F&W MM Configuration
+description = Configuration settings for incorporating MM fallback module with F&W
+package = MM
+core = 7.x
+dependencies[] = ti_mm_fallthrough_components

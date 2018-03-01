@@ -1,0 +1,7 @@
+name = TI AMG FW Search
+description =  Site Search for Foodandwine
+core = 7.x
+package = Foodandwine
+files[] = search.inc
+files[] = item_active.inc
+dependencies[] = "current_search"

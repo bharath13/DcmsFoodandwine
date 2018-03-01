@@ -1,0 +1,4 @@
+name = Omniture Analytics
+description = Module used for enabling omniture analytics script
+core = 7.x
+package = Food and Wine

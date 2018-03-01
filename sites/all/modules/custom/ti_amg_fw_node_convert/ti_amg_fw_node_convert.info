@@ -1,0 +1,12 @@
+name = Ti AMG FW Node Convert
+description = Node converting from one content type to another content type
+core = 7.x
+package = Foodandwine
+version = 7.x-1.0
+dependencies[] = ctools
+dependencies[] = node_convert
+dependencies[] = strongarm
+features[ctools][] = node_convert:node_convert:1
+features[features_api][] = api:2
+features[node_convert_templates][] = migrate_article_to_blog
+features[node_convert_templates][] = migrate_blog_to_article

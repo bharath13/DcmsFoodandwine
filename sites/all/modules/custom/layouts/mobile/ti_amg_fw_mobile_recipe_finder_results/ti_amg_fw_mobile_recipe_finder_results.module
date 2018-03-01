@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Mobile Recipe Finder Results feature.
+ */
+
+include_once 'ti_amg_fw_mobile_recipe_finder_results.features.inc';

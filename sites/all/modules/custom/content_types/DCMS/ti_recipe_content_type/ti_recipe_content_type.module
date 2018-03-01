@@ -1,0 +1,14 @@
+<?php
+/**
+ * @file
+ * Code for the ti_recipe_content_type feature.
+ */
+
+include_once 'ti_recipe_content_type.features.inc';
+
+
+function ti_recipe_content_type_form_alter(&$form, $form_state){
+    if ($form['#id'] == 'recipe-node-form') {
+        drupal_add_js(drupal_get_path('module', 'ti_recipe_content_type') . '/js/recipe_page.js');
+  }
+}

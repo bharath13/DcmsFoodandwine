@@ -1,0 +1,11 @@
+name = FoodandWine DCMS Place Taxonomy
+core = 7.x
+package = FoodandWine DCMS
+version = 7.x-1.0
+dependencies[] = features
+dependencies[] = strongarm
+dependencies[] = taxonomy
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[taxonomy][] = country
+features[taxonomy][] = place_type

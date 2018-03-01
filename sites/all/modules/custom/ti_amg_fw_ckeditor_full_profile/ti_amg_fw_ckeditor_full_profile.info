@@ -1,0 +1,16 @@
+name = TI AMG FW CKEDITOR FULL PROFILE
+description = TI AMG FW CKEDITOR FULL PROFILE FEATURE
+core = 7.x
+package = FoodandWine DCMS
+version = 7.x-1.1
+project = ti_amg_fw_ckeditor_full_profile
+dependencies[] = ckeditor
+dependencies[] = ctools
+dependencies[] = entity_embed
+dependencies[] = features
+dependencies[] = ti_editorial_ckeditor_plugins
+dependencies[] = ti_editorial_ckeditor_profiles
+features[ckeditor_profile][] = Full
+features[ctools][] = entity_embed:default_entity_embed_configurations:1
+features[features_api][] = api:2
+project path = sites/all/modules/custom

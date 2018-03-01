@@ -1,0 +1,81 @@
+name = Food & Wine
+description = A responsive theme.
+core = 7.x
+base theme = bootstrap
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Regions
+;;;;;;;;;;;;;;;;;;;;;
+regions[hat]               = 'Food & Wine Hat'
+regions[navigation]        = 'Navigation'
+regions[page_top_ad]   	   = 'Page Top Ad'
+regions[page_header_left]  = 'Page Header Left'
+regions[page_logo]         = 'F&W Logo'
+regions[page_header_right] = 'Page Header Right'
+regions[header]            = 'Main menu'
+regions[page_title]        = 'Page Title'
+regions[content]           = 'Content'
+regions[sidebar_first]     = 'Primary'
+regions[sidebar_second]    = 'Secondary'
+regions[highlighted]       = 'Highlighted'
+regions[help]              = 'Help'
+regions[content_bottom]    = 'Content bottom'
+regions[footer]        	   = 'Footer'
+regions[page_top]          = 'Page top'
+regions[page_bottom]       = 'Page bottom'
+
+regions[fwrd_special_event]    = 'FWRD Special Event'
+regions[fwrd_header]		= 'FWRD Header'
+regions[fwrd_hat]            	= 'FWRD Food & Wine Hat'
+regions[fwrd_navigation]     	= 'FWRD Navigation'
+regions[fwrd_page_top_ad]    	= 'FWRD Page Top Ad'
+regions[fwrd_page_header_left]  = 'FWRD Page Header Left'
+regions[fwrd_page_logo]      	= 'FWRD F&W Logo'
+regions[fwrd_page_header_right] = 'FWRD Page Header Right'
+regions[fwrd_menu_header]       = 'FWRD Main menu'
+regions[fwrd_hero_carousel]     = 'FWRD Hero Carousel'
+regions[fwrd_page_title]        = 'FWRD Page Title'
+regions[fwrd_content]        	= 'FWRD Content'
+regions[fwrd_sidebar_left]   	= 'FWRD Sidebar Left'
+regions[fwrd_sidebar_right]  	= 'FWRD Sidebar Right'
+regions[fwrd_highlighted]  	= 'FWRD Highlighted'
+regions[fwrd_help]           	= 'FWRD Help'
+regions[fwrd_content_bottom] 	= 'FWRD Content bottom'
+regions[fwrd_footer]         	= 'FWRD Footer'
+regions[fwrd_page_top]       	= 'FWRD Page top'
+regions[fwrd_page_bottom]    	= 'FWRD Page bottom'
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Stylesheets
+;;;;;;;;;;;;;;;;;;;;;
+stylesheets[all][] = css/search.css
+stylesheets[all][] = css/general-page.css
+stylesheets[all][] = css/style.css
+stylesheets[all][] = css/mobile.css
+
+
+; For information on choosing the desired method, please read the Drupal
+; Bootstrap sub-theme "how-to" documentation:
+; https://drupal.org/node/1978010
+
+; ;----------------------------------
+; ; METHOD 1: Bootstrap Source Files
+; ;----------------------------------
+;
+; ;;;;;;;;;;;;;;;;;;;;;
+; ;; Scripts
+; ;;;;;;;;;;;;;;;;;;;;;
+;
+
+; ; Disable BootstrapCDN if using Bootstrap source files in your sub-theme.
+; settings[bootstrap_cdn] = ''
+
+
+; ;-------------------------
+; ; METHOD 2: Bootstrap CDN
+; ;-------------------------
+;
+; Method 2 uses BootstrapCDN, the only thing you might need to provide here
+; is overrides to Bootstrap theme settings. Copy them here from the base theme
+; to override.

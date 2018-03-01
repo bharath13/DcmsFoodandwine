@@ -1,0 +1,264 @@
+$block: opt-in;
+$newsletter: #{$block}--newsletter;
+$subscribe: #{$block}--subscribe;
+
+.#{$block} {
+    position: relative;
+    background: $color-off-white;
+    border: 1px solid $color-light-grey;
+
+    @include respond-to('medium and up') {
+        height: 270px;
+    }
+}
+
+.#{$newsletter} {
+    padding: 20px;
+
+    @include respond-to('large and up') {
+        padding: 20px 40px;
+    }
+
+    &__title {
+        text-align: center;
+        @include font-droid-sans-bold();
+        font-size: rem(18);
+        line-height: 1;
+        text-transform: uppercase;
+        margin: 0 0 15px 0;
+
+        @include respond-to('medium and up') {
+            margin: 0 0 25px 0;
+        }
+    }
+
+    &-form {
+
+        &__info {
+            @include clearfix;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid $color-light-grey;
+            padding-bottom: 15px;
+
+            @include respond-to('medium and up') {
+                text-align: left;
+                margin-bottom: 10px;
+                padding-bottom: 0px;
+                border-bottom: 0;
+
+                &-wrap {
+                    float: left;    
+                }
+
+                &--image {
+                    width: 40%;
+                    margin-right: 5%;
+                }
+
+                &--text {
+                    width: 55%;
+                }
+            }
+
+            p {
+                margin: 0;
+                font-size: rem(14);
+                line-height: 1.125;
+            }
+        }
+
+        &__wrap {
+            @include clearfix;
+            width: 100%;
+            margin-bottom: 25px;
+
+            @include respond-to('medium and up') {
+                width: 48%;
+                float: left;
+                margin-bottom: 25px;
+
+                &--left {
+                    margin-right: 2%;
+                    margin-bottom: 0;
+                }
+
+                &:last-child {
+                    margin: 0;
+                }
+            }
+        }
+
+        &__field {
+            clear: both;
+            width: 100%;
+            
+            &:not(:last-child) {
+                margin-bottom: 25px;
+            }
+
+            label {
+                font-size: rem(14);
+                line-height: 1.25;
+            }
+
+            .red {
+                color: $color-red;
+                font-weight: bold;
+            }
+
+            &--checkbox {
+                @include clearfix;
+
+                input {
+                    float: left;
+                    width: 15px;
+                    height: 15px;
+                    margin-right: 10px;
+                    display: block;
+                    cursor: pointer;
+                }
+                
+                input[type="checkbox"] {
+                    -webkit-appearance: checkbox;
+                    -moz-appearance: checkbox;
+                    appearance: checkbox;
+                }
+
+                label {
+                    float: left;
+                    width: calc(100% - 25px);
+                }
+            }
+
+            &--email {
+                @include clearfix;
+                text-align: center;
+
+                input {
+                    margin: 0;
+                    display: inline-block;
+                    
+                    &[type="text"] {
+                        background: white;
+                        border: 1px solid black;
+                        box-sizing: border-box;
+                        width: 300px;
+                        margin-right: -5px;
+                    }
+
+                    &[type="submit"] {
+                        color: white;
+                        background: black;
+                        border: 1px solid black;
+                        box-sizing: border-box;
+                    }
+                }
+            }
+        }
+
+        &__top {
+            @include clearfix;
+            margin-bottom: 10px;
+            
+            @include respond-to('medium and up') {
+                margin-bottom: 15px;
+            }
+
+            @include respond-to('large and up') {
+                margin-bottom: 25px;
+            }
+        }
+    }
+    
+    #flash-error {
+        font-size: 14px;
+        color: #e71f3d;
+    }
+    
+    label {
+        font-weight: normal;
+    }
+}
+
+.#{$subscribe} {
+
+    &__image {
+        display: none;
+        max-width: percentage(260px / 620px);
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+
+        @include respond-to('medium and up') {
+            display: block;
+        }
+
+        @include respond-to('large and up') {
+            left: 30px;
+            bottom: 0px;
+        }
+    }
+
+    &__content {
+        float: none;
+        text-align: center;
+        width: 60%;
+        margin: 0 auto;
+        padding: 20px;
+
+        @include respond-to('medium and up') {
+            float: right;
+            width: percentage(275px / 620px);
+            position: relative;
+            top: 50%;
+            @include transform(translateY(-50%));
+            margin: 0 20px 0 0;
+            padding: 0;
+        }
+
+        @include respond-to('large and up') {
+            margin: 0 40px 0 0;
+        }
+    }
+
+    &__cta-text {
+        display: inline-block;
+        @include font-droid-sans();
+        color: $color-black;
+        font-size: rem(28);
+        line-height: 1;
+        text-transform: uppercase;
+        margin: 15px 0;
+
+        &-strong {
+            @include font-droid-sans-bold();
+            font-style: italic;
+            font-size: rem(30);
+        }
+
+        @include respond-to('large and up') {
+            margin: 25px 0;
+            font-size: rem(30);
+
+             &-strong {
+                font-size: rem(34);
+            }
+        }
+    }
+
+    &__logo {
+        line-height: 1;
+        max-height: 40px;
+
+        svg {
+            max-width: 100%;           
+        }
+        @media screen and (min-width:0\0) and (min-resolution: +72dpi) {
+          // IE9+ CSS
+          svg {
+            height: 36px;
+          }
+        }
+    }
+}

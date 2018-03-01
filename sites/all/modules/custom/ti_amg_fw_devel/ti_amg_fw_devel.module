@@ -1,0 +1,985 @@
+<?php
+
+/**
+ * @file
+ * TI AMG FW Devel helper module.
+ *
+ * \addtogroup ti_amg_fw_devel FoodandWine Devel
+ * \ingroup Modules
+ * \brief Provide helpers during development without access to site installs.
+ * \authors Ray Stuart <rstuart@phase2technology.com>
+ *
+ * @{
+ */
+
+// Define constants for TI AMG FW Devel module.
+/*define("TI_amg_fw_DEVEL_NAT_CONFIG", serialize(array(
+  'types' => array(
+    'article' => array(),
+    'blog_tout' => array(),
+    'calendar' => array(),
+    'campaign' => array(),
+    'channel' => array(),
+    'franchise' => array(),
+    'gallery' => array(),
+    'homepage' => array(),
+    'image' => array(),
+    'index' => array(),
+    'list_tout' => array(),
+    'package' => array(),
+    'package_hub' => array(),
+    'page' => array(),
+    'foodandwine' => array(),
+    'foodandwine_tout' => array(),
+    'webform' => array(),
+    'subchannel' => array(),
+    'tout' => array(),
+    'video' => array(),
+    'weekly_newsletter' => array(),
+  ),
+  'delete' => array(),
+  'associations' => array(),
+)));
+*/
+/**
+ * Define user accounts to be created or updated for the site.
+ *
+ * Users specified here will be created and kept up-to-date by the ti_amg_devel
+ * module.
+ *
+ * @return array
+ *   An associative array. For each item, the key is the username. The value is
+ *   an associative array with a password key and a roles key. The value of the
+ *   password will be used for the account password. The value of the roles key
+ *   is an array of role names to give to the user account.
+ *
+ * @TODO: This will not provide a useful account in the SPC LDAP infrastructure.
+ * It might be useful if we added real usernames however, and managed to create
+ * them with the correct LDAP connectivity.
+ */
+function ti_amg_fw_devel_accounts_to_create() {
+  $accounts = array();
+  return $accounts;
+}
+
+/**
+ * Define modules to be uninstalled.
+ *
+ * Modules specified here will be uninstalled by the ti_amg_devel module.
+ *
+ * @return array
+ *   An array of module names.
+ *
+ * @TODO: We could add the playbook definition of which modules to disable.
+ */
+function ti_amg_fw_devel_modules_to_uninstall() {
+  $modules = array(
+    'overlay',
+    'toolbar',
+    'ti_amg_workflow',
+    'ti_editorial_notifications',
+    'ti_amg_fw_ads',
+    'taxonomy_manager',
+    'ti_amg_fw_slideshow',
+    'ti_editorial_brightcove',
+    'ti_amg_fw_migrate',
+    'ti_amg_fw_rss_feeds',
+    'ti_amg_fw_ga',
+    'ti_amg_fwrd_article',
+    'ti_content_api_brand_classes',
+  );
+  return $modules;
+}
+
+/**
+ * Define modules to be enabled.
+ *
+ * Modules specified here will be enabled by the ti_amg_devel module.
+ *
+ * @return array
+ *   An array of module names.
+ */
+function ti_amg_fw_devel_modules_to_enable() {
+  $modules = array();
+  return $modules;
+}
+
+/**
+ * Define themes to be enabled.
+ *
+ * Themes specified here will be enabled by the ti_amg_devel module.
+ *
+ * @return array
+ *   An array of themes names.
+ */
+function ti_amg_fw_devel_themes_to_enable() {
+  $themes = array(
+    'foodandwine',
+    'fwresponsive',
+    'fw_newsletter',
+  );
+  return $themes;
+}
+
+/**
+ * Define variables to be set.
+ *
+ * Variables specified here will be set by the ti_amg_devel module.
+ *
+ * @return array
+ *   An associative array. The keys are the variable names, and the values are
+ *   the variable values.
+ */
+function ti_amg_fw_devel_variables_to_set() {
+  $vars = array(
+    // Only administrators can create accounts.
+    'user_register' => USER_REGISTER_ADMINISTRATORS_ONLY,
+    // Set the default and admin themes.
+    'theme_default' => 'foodandwine',
+    'node_admin_theme' => 1,
+    // Enable Clean URLs.
+    'clean_url' => 1,
+    // Feeds.
+    'feeds_process_limit' => 300,
+    // Set token_tweaks variable to help with token recursion.
+    'token_tree_recursion_limit' => '2',
+    // Enable the node/%node page manager plugin.
+    //'page_manager_node_view_disabled' => FALSE,
+    // Set webform variables for COOK.
+    'webform_default_from_address' => 'admin@foodandwine.com',
+    'webform_default_from_name' => 'FoodandWine.com',
+    'webform_node_types' => array(
+      0 => 'campaign',
+      1 => 'webform',
+    ),
+    // Set date and time variables. Setting this correctly will allow the State
+    // Machine Scheduler date popup to make sense.
+    'date_default_timezone' => 'America/New_York',
+    'configurable_timezones' => 1,
+    'user_default_timezone' => 'America/New_York',
+    'site_default_country' => 'US',
+    'site_name' => 'Food & Wine',
+    // ThemeKey compatibility settings.
+    'themekey_compat_modules_enabled' => array(),
+    // Photocrop tool settings.
+    'timeinc_photocrop_crop_main_image' => 'field_image',
+    // todo: make module respect image settings.
+    'timeinc_photocrop_date_format' => 'Ymd',
+    'timeinc_photocrop_files_path' => 'sites/default/files',
+    'timeinc_photocrop_image_quality' => '90',
+    'timeinc_photocrop_level_setting' => '-15,-10,-5,0,5,10,15',
+    'timeinc_photocrop_map' => 'field_image_thumb:75x75,field_image_300x300:300x300,field_image_400xvariable:400x400,field_image_500xvariable:500x500,field_image_620x300:620x300,field_image_273x200:273x200,field_image_620x350:620x350,field_image_150x205:150x205,field_image_150x150:150x150',
+    'timeinc_photocrop_maxsize' => '5000',
+    'timeinc_photocrop_sharpen_setting' => '85,0.5,3',
+
+    // Outbrain.
+    /*'outbrain_integration_data_ob_template' => 'foodandwine',
+    'ti_amg_outbrain_config_web' => array(
+      'gallery' => 'SB_1',
+      'calendar' => 'SB_2',
+      'foodandwine' => 'AR_1',
+      'article' => 'AR_3',
+      'video' => 'AR_7',
+    ),
+    'ti_amg_outbrain_config_mobile' => array(
+      'article' => 'MB_1',
+      'foodandwine' => 'MB_2',
+      'gallery' => 'MB_2',
+    ),
+    'ti_amg_outbrain_config_right_rail' => array(
+      'article' => 'AR_2',
+      'gallery' => 'AR_4',
+      'calendar' => 'AR_5',
+      'foodandwine' => 'AR_6',
+    ),*/
+
+    // Secure Pages.
+    'securepages_debug' => 0,
+    'securepages_forms' => 'user_login
+user_login_block',
+    'securepages_ignore' => '',
+    'securepages_pages' => 'node/add*
+node/*/edit
+node/*/delete
+node/*/webform
+node/*/webform/emails
+node/*/webform/configure
+node/*/workflow
+node/*/workflow/*
+user
+user/*
+admin
+admin/*',
+    'securepages_secure' => '1',
+    'securepages_switch' => TRUE,
+    'securepages_roles' => array(
+      // Get the editor and administrator roles below.
+      2 => 0,
+    ),
+    'securepages_enable' => 1,
+
+    // DCMS Workflow settings
+    /*'state_flow_article' => "ti_state_flow",
+    'state_flow_gallery' => "ti_state_flow",
+    'state_flow_homepage' => "ti_state_flow",
+    'state_flow_package' => "ti_state_flow",
+    'state_flow_page' => "ti_state_flow",
+    'state_flow_recipe' => "ti_state_flow",*/
+  );
+
+  // Add the administrator role to securepages_roles variable.
+  $admin_role = db_select('role', 'r')
+    ->fields('r', array('rid'))
+    ->condition('name', 'administrator', '=')
+    ->execute()
+    ->fetchField();
+  $vars['securepages_roles'][$admin_role] = 0;
+
+  // Add the editor role to the securepages_roles variable.
+  $editor_role = db_select('role', 'r')
+    ->fields('r', array('rid'))
+    ->condition('name', 'editor', '=')
+    ->execute()
+    ->fetchField();
+  $vars['securepages_roles'][$editor_role] = (string) $editor_role;
+
+  // Get the nat_config variable settings for this site.
+  //$vars['nat_config'] = _ti_amg_fw_devel_get_nat_config();
+
+  // Reset the feeds. Increase the integer as necessary.
+  $vars['ti_amg_devel_reset_feeds'] = 1;
+
+  return $vars;
+}
+
+/**
+ * Define variables to be deleted.
+ *
+ * Variables specified here will be set by the ti_amg_devel module.
+ *
+ * @return array
+ *   An associative array. The keys are the variable names, and the values are
+ *   the variable values.
+ */
+function ti_amg_fw_devel_delete_variables() {
+    $vars = array(
+        'state_flow_article',
+        'state_flow_gallery',
+        'state_flow_blog',
+        'state_flow_page',
+        'state_flow_recipe',
+        'state_flow_person',
+       );
+    return $vars;
+}
+
+/**
+ * Return the nat_config variable for this site.
+ *
+ * @return array
+ *   An associative array in the format needed by Node Auto Term (NAT) module.
+ */
+function _ti_amg_fw_devel_get_nat_config() {
+  //$nat_config = unserialize(TI_amg_fw_DEVEL_NAT_CONFIG);
+
+  // if ($channel_vocab = taxonomy_vocabulary_machine_name_load('channel')) {
+  //   $channel_vid = $channel_vocab->vid;
+  // }
+  // else {
+  //   $channel_vid = 6;
+  // }
+
+  // $associations = array(
+  //   'name' => 'field_navigational_taxonomy_term',
+  //   'field_seo_path' => 'field_seo_path',
+  // );
+
+  // // Enable nat on channel and subchannel.
+  // $nat_config['types']['channel'][$channel_vid] = (string) $channel_vid;
+  // $nat_config['types']['subchannel'][$channel_vid] = (string) $channel_vid;
+
+  // // Set the option to delete associated term when a node is deleted.
+  // $nat_config['delete']['channel'] = 1;
+  // $nat_config['delete']['subchannel'] = 1;
+
+  // // Set the associations.
+  // $nat_config['associations']['channel'][$channel_vid] = $associations;
+  // $nat_config['associations']['subchannel'][$channel_vid] = $associations;
+
+  return $nat_config;
+}
+
+/**
+ * Define roles to be created or updated for the site.
+ *
+ * Roles specified here will be created and kept up-to-date by the ti_amg_devel
+ * module.
+ *
+ * @return array
+ *   An associative array. For each item, the key is the role names. The value
+ * is TRUE of FALSE whether the role should be created or deleted.
+ */
+function ti_amg_fw_devel_roles_to_create() {
+  $roles = array(
+    'editor' => TRUE,
+  );
+  return $roles;
+}
+
+/**
+ * Define the permissions to be assigned to roles on the site.
+ *
+ * Permissions specified here will be assigned to roles by the ti_amg_devel
+ * module.
+ *
+ * @return array
+ *   An associative array. For each item, the key is the role name. The value is
+ *   an associative array with the permission as the key and TRUE or FALSE as
+ *   the value indicating whether the role should be granted or not.
+ */
+function ti_amg_fw_devel_permissions_to_grant() {
+  $permissions = array();
+
+  // Administrator role.
+  $permissions['administrator'] = array_fill_keys(array_keys(module_invoke_all('permission')), TRUE);
+  // Remove 'customize ckeditor' permission to avoid UI confusion.
+  $permissions['administrator']['customize ckeditor'] = FALSE;
+
+  // Anonymous role.
+  $permissions['anonymous user'] = array(
+    'access content' => TRUE,
+    'access comments' => FALSE,
+    'post comments' => FALSE,
+    'skip comment approval' => TRUE,
+    'search content' => TRUE,
+  );
+
+  // Authenticated role.
+  $permissions['authenticated user'] = array(
+    'access content' => TRUE,
+    'access comments' => FALSE,
+    'post comments' => FALSE,
+    'skip comment approval' => TRUE,
+    'search content' => TRUE,
+    'use text format wysiwyg' => TRUE,
+  );
+
+  // Editor role.
+  $permissions['editor'] = array(
+    // filter.
+    'use text format full_html' => TRUE,
+    // admin_menu.
+    'access administration menu' => TRUE,
+    // brightcove.
+    'administer brightcove playlists' => TRUE,
+    'administer brightcove settings' => FALSE,
+    'browse playlists' => TRUE,
+    'browse videos' => TRUE,
+    'upload videos' => TRUE,
+    // contextual.
+    'access contextual links' => TRUE,
+    // comment.
+    'access comments' => FALSE,
+    'skip comment approval' => TRUE,
+    'administer comments' => FALSE,
+    'edit own comments' => FALSE,
+    // dashboard.
+    'access dashboard' => TRUE,
+    // menu.
+    'administer menu' => TRUE,
+    // metatag.
+    'edit meta tags' => TRUE,
+    // pathauto.
+    'notify of path changes' => TRUE,
+    // webform.
+    'access all webform results' => TRUE,
+    'delete all webform submissions' => TRUE,
+    'access own webform results' => TRUE,
+    'access own webform submissions' => TRUE,
+    'delete own webform submissions' => TRUE,
+    'edit all webform submissions' => TRUE,
+    'edit own webform submissions' => TRUE,
+    // webform_scheduler.
+    'schedule webforms' => TRUE,
+    // system.
+    'access administration pages' => TRUE,
+    'view the administration theme' => TRUE,
+    'access site in maintenance mode' => TRUE,
+    // node.
+    'access content' => TRUE,
+    'access content overview' => TRUE,
+    'administer nodes' => TRUE,
+    'bypass node access' => TRUE,
+    'view revisions' => TRUE,
+    'revert revisions' => FALSE,
+    'view own unpublished content' => TRUE,
+    'delete revisions' => FALSE,
+    // taxonomy.
+    'administer taxonomy' => TRUE,
+    'delete terms in 2' => TRUE,
+    'delete terms in 3' => TRUE,
+    'edit terms in 2' => TRUE,
+    'edit terms in 3' => TRUE,
+    // state_flow.
+    'administer content revisions' => FALSE,
+    'manage content workflow' => TRUE,
+    'schedule content workflow' => TRUE,
+    'schedule (un)publishing of nodes' => TRUE,
+    'state flow: scheduling' => TRUE,
+    // workflow.
+    'transition content to the published or unpublished state' => TRUE,
+    // most_popular.
+    'administer most popular' => TRUE,
+    // comments.
+    'feature comments' => TRUE,
+    // ER Preview.
+    'use er preview' => TRUE,
+
+    // CoE modules.
+    // better_formats.
+    'show format selection for comment' => TRUE,
+    'show format selection for field_collection_item' => TRUE,
+    'show format selection for node' => TRUE,
+    'show format selection for rules_config' => TRUE,
+    'show format selection for taxonomy_term' => TRUE,
+    'show format selection for user' => TRUE,
+    'show format tips' => TRUE,
+    'show more format tips link' => TRUE,
+    'view collection' => TRUE,
+
+    //Published fields
+    'set blog published on date' => TRUE,
+    'set channel_landing_page published on date' => TRUE,
+    'set featured_directory published on date' => TRUE,
+    'set home_page published on date' => TRUE,
+    'set video_landing_page published on date' => TRUE,
+    'set article published on date' => TRUE,
+    'set basic_page published on date' => TRUE,
+    'set gallery published on date' => TRUE,
+    'set image published on date' => TRUE,
+    'set person published on date' => TRUE,
+    'set recipe published on date' => TRUE,
+    'set tout published on date' => TRUE,
+    'set video published on date' => TRUE,
+    'set page published on date' => TRUE,
+  );
+
+  foreach (node_type_get_names() as $type => $name) {
+    $permissions['editor']['create ' . $type . ' content'] = TRUE;
+    $permissions['editor']['edit any ' . $type . ' content'] = TRUE;
+    $permissions['editor']['delete any ' . $type . ' content'] = TRUE;
+    $permissions['editor']['edit own ' . $type . ' content'] = TRUE;
+    $permissions['editor']['delete own ' . $type . ' content'] = TRUE;
+  }
+
+  return $permissions;
+}
+
+/**
+ * Define date formats to be set.
+ *
+ * Date formats specified here will be set by the ti_amg_devel module.
+ *
+ * @return array
+ *   An associative array. The keys are the date format names, and the values
+ *   are associative arrays, including the title and format.
+ */
+function ti_amg_fw_devel_date_formats_to_set() {
+  $formats = array(
+    'day_of_month' => array(
+      'title' => 'Day of Month',
+      'format' => 'j',
+    ),
+    'day_of_week' => array(
+      'title' => 'Day of Week',
+      'format' => 'l',
+    ),
+    'ay_full_short' => array(
+      'title' => 'AY Full Short',
+      'format' => 'Y-m-d, D',
+    ),
+    'month_name_full_year' => array(
+      'title' => 'Month Name and Full Year',
+      'format' => 'F Y',
+    ),
+  );
+  //return $formats;
+}
+
+/**
+ * Define content types for State Machine to ignore.
+ *
+ * Content types specified here will be ignored by State Machine.
+ *
+ * @return array
+ *   An array of content type machine names.
+ */
+function ti_amg_fw_devel_workflow_node_types_to_ignore() {
+  $types = array(
+    'gallery',
+    'image',
+    'tout',
+    'person',
+    'recipe',
+    'article',
+    'blog',
+    'page',
+    'channel_landing_page',
+    'featured_directory',
+    'home_page',
+    'video',
+    'video_landing_page',
+  );
+  return $types;
+}
+
+/**
+ * Define fields to be deleted.
+ *
+ * Fields specified here will be deleted by the ti_amg_devel module.
+ *
+ * @return array
+ *   An associative array. The keys are the content type names, and the values
+ *   are an array of field names to remove on that content type.
+ */
+
+function ti_amg_fw_devel_fields_to_delete() {
+  $fields = array();
+    /*
+    $fields = array(
+
+    'blog' => array(
+        'field_tags'
+    ),
+    'person' => array(
+        'field_restaurants',
+        'field_descripition',
+    ),
+    'video' => array(
+        'field_category',
+        'group_options',
+        'field_source',
+        'field_franchise',
+        'field_convenience_spec_consid',
+        'field_courses',
+        'field_cuisines',
+        'field_dietary_considerations',
+        'field_excluded_ingredients',
+        'field_main_ingredient',
+        'field_prep_and_equipment',
+        'field_season_occasion',
+        'field_tout_headline',
+        'field_tout_deck',
+        'field_tout_image',
+        'field_topic',
+        'field_seo_path',
+        'field_edit_date',
+        'field_not_searchable',
+        'field_channel_newsletter',
+        'field_legacy_url',
+        'field_short_url',
+        'field_internal_notes'
+    )
+   );
+
+    $fields = array(
+    'article' => array(
+    'field_overwrite_image_alt_text',
+    'field_overwrite_image_caption',
+    'field_overwrite_image_credit'
+    ),
+    'blog' => array(
+    'field_overwrite_image_alt_text',
+    'field_overwrite_image_caption',
+    'field_overwrite_image_credit',
+    'field_tags',
+    ),
+    'person' => array(
+    'field_overwrite_image_alt_text',
+    'field_overwrite_image_caption',
+    'field_overwrite_image_credit',
+    'field_bnc_year'
+    ),
+    'recipe' => array(
+    'field_ingredient_display_text',
+    'field_overwrite_image_alt_text',
+    'field_overwrite_image_caption',
+    'field_overwrite_image_credit'
+    ),
+    'gallery' => array(
+    'field_overwrite_image_alt_text',
+    'field_overwrite_image_caption',
+    'field_overwrite_image_credit'
+    ),
+    );
+
+
+
+    $fields = array(
+    'article' => array(
+    'field_advertiser_logo',
+    'field_simple_themes'
+    ),
+    'blog' => array(
+    'field_category'
+    ),
+    'person' => array(
+    'field_person_simple_themes'
+    ),
+    'video' => array(
+    'field_video_image_url',
+    'field_category',
+    'group_options',
+    'field_source',
+    'field_franchise',
+    'field_convenience_spec_consid',
+    'field_courses',
+    'field_cuisines',
+    'field_dietary_considerations',
+    'field_excluded_ingredients',
+    'field_main_ingredient',
+    'field_prep_and_equipment',
+    'field_season_occasion',
+    'field_tout_headline',
+    'field_tout_deck',
+    'field_tout_image',
+    'field_topic',
+    'field_seo_path',
+    'field_edit_date',
+    'field_not_searchable',
+    'field_channel_newsletter',
+    'field_legacy_url',
+    'field_short_url',
+    'field_internal_notes'
+    ),
+    'gallery' => array(
+    'field_gallery_slides_grid',
+    'field_tout_headline',
+    'field_tout_deck',
+    'field_tout_image',
+    'field_index_first_only',
+    'field_not_searchable',
+    'field_seo_path',
+    'field_edit_date',
+    'field_last_slide_related_header',
+    'field_last_slide_related_links',
+    'field_next_slideshow',
+    'field_topic',
+    'field_ad_keys',
+    'field_channel_newsletter',
+    'field_legacy_url',
+    'field_internal_notes',
+    'field_short_url',
+    'field_source',
+    'field_franchise',
+    'field_convenience_spec_consid',
+    'field_courses',
+    'field_cuisines',
+    'field_dietary_considerations',
+    'field_excluded_ingredients',
+    'field_main_ingredient',
+    'field_prep_and_equipment',
+    'field_season_occasion',
+    'field_gallery_complex_theme',
+    ),
+    'recipe' => array(
+    'field_other_time',
+    'field_related_urls',
+    'group_recipe_time',
+    'field_not_searchable',
+    ),
+    'tout' => array(
+    'field_tout_headline',
+    'field_tout_image',
+    'field_tout_item',
+    'body',
+    'field_override_see_more',
+    'field_bottom_link',
+    'field_source',
+    'field_headline_clickable',
+    'field_show_image',
+    'field_no_follow',
+    'field_internal_notes',
+    'field_seo_path',
+    'field_tout_deck',
+    ),
+    'image' => array(
+    'field_image_150x150',
+    'field_image_300x300',
+    'field_image_420x420',
+    'field_image_500xvariable',
+    'field_image_768x768',
+    'field_field_image_path',
+    'field_seo_path',
+    'field_edit_date',
+    ),
+    );
+*/
+
+  /* $fields = array(
+    'home_page_responsive' => array(
+      'group_special_event',
+      'field_event_title',
+      'field_event_deck',
+      'field_hero_image',
+      'field_event_article',
+      'group_pull_quote',
+      'field_pull_quote',
+      'group_featured_section',
+      'field_featured_image',
+      'field_featured_headline',
+      'field_featured_content',
+    ),
+    'recipe' => array(
+      'field_large_images',
+    ),
+    'blog' => array(
+      'field_blog_breadcrumb_links',
+    ),
+    'newsletter' => array(
+      'field_newsletter_subtype',
+      'field_newsletter_logo',
+    ),
+    'article' => array(
+      'field_issue',
+      'field_simple_theme',
+      'field_related_people',
+      'field_related_links',
+      'field_featured_in_toc',
+      'field_native_advertising',
+      'field_ad_logo',
+      'field_ad_url',
+      'field_legacy_id',
+      'field_tags',
+      'field_description',
+      'field_eyebrow',
+      'field_contributors',
+      'field_subcategory',
+      'field_language',
+      'field_image',
+    ),
+  );
+  */
+  return $fields;
+}
+
+
+/**
+* Define fields to be deleted if still has old settings.
+*
+* Fields specified here will be deleted by the ti_amg_devel module. All
+* instances of the field will be deleted if it has the settings specified. It
+* will be left alone otherwise.
+*
+* @return array
+* An associative array. The keys are the field names and the value is an
+* associative array of settings to check.
+*/
+
+function ti_amg_fw_devel_fields_to_delete_by_settings() {
+
+  /*
+    $fields = array(
+    'field_external_link' => array(
+    'type' => 'text_long',
+    ),
+    'field_tout_headline' => array(
+    'type' => 'text',
+    ),
+    'field_yield' => array(
+    'type' => 'text',
+    ),
+    'field_cookbook_source' => array(
+    'type' => 'text',
+    ),
+    'field_restaurant_source' => array(
+    'type' => 'text',
+    ),
+    'field_caption' => array(
+    'type' => 'text',
+    ),
+    'field_planner_item_deck_override' => array(
+    'type' => 'text',
+    ),
+    'field_slide_title' => array(
+    'type' => 'text',
+    ),
+    'field_left_nav_headline' => array(
+    'type' => 'text',
+    ),
+    'field_list_touts_headline' => array(
+    'type' => 'text',
+    ),
+    'field_list_touts_deck' => array(
+    'type' => 'text',
+    ),
+    'field_foodandwine_touts_headline' => array(
+    'type' => 'text',
+    ),
+    'field_editorial_touts_header' => array(
+    'type' => 'text',
+    ),
+    'field_last_slide_related_header' => array(
+    'type' => 'text',
+    ),
+    'field_credit' => array(
+    'type' => 'text',
+    ),
+    'field_author' => array(
+    'type' => 'text',
+    ),
+    'field_chef_author' => array(
+    'type' => 'text',
+    ),
+    );
+
+    $fields = array(
+    'field_css_include' => array(
+    'type' => 'text_long',
+    ),
+    'field_js_include' => array(
+    'type' => 'text_long',
+    ),
+    );
+
+
+
+    $fields = array(
+    'field_ingredient_display_text' => array(
+    'type' => 'text',
+    ),
+    'field_overwrite_image_alt_text' => array(
+    'type' => 'text',
+    ),
+    'field_overwrite_image_caption' => array(
+    'type' => 'text',
+    ),
+    'field_overwrite_image_credit' => array(
+    'type' => 'text',
+    ),
+    'field_bnc_year' => array(
+    'type' => 'taxonomy_term_reference',
+    ),
+    );
+ */
+
+    $fields = array(
+    	'field_pull_quote_article' => array(
+           'type' => 'entityreference',
+      ),
+      'field_slideshow_image' => array(
+           'type' => 'entityreference',
+      ),
+      'field_large_images' => array(
+           'type' => 'entityreference',
+       ),
+    );
+    return $fields;
+}
+
+
+/**
+ * Define content types to be deleted.
+ *
+ * Content types specified here will be deleted by the ti_amg_devel module.
+ *
+ * @return array
+ *   An array of content types.
+ */
+/*function ti_amg_fw_devel_content_types_to_delete() {
+  $content_types = array(
+      'genericpage',
+  );
+      'tip_of_the_day',
+    'dfs',
+    'page',
+    'package',
+    'package_hub',
+    'index',
+    'blog_tout',
+    'campaign',
+    'franchise',
+    'magazine',
+    'foodandwine_tout',
+    'webform',
+  return $content_types;
+}*/
+
+/**
+ * Define functions and parameters to reset feeds.
+ *
+ * Functions specified here will be run by the ti_amg_devel module.
+ *
+ * @return array
+ *   An associative array. The keys are the function names, and the values are
+ *   an array of the parameters to pass.
+ */
+function ti_amg_fw_devel_reset_feeds_functions() {
+  $functions = array(
+    'ti_amg_fw_devel_delete_feeds_nodes' => array(
+      'node_types' => array(
+        'blog_tout',
+        'foodandwine_tout',
+      ),
+    ),
+    'ti_amg_fw_feeds_initialize_feeds' => array(),
+  );
+  return $functions;
+}
+
+/**
+ * Delete feeds nodes.
+ */
+/*function ti_amg_fw_devel_delete_feeds_nodes($node_types) {
+  // Disable the feeds importers.
+  variable_set('default_feeds_importer', array(
+    'spc_blog' => TRUE,
+    'spc_blog_archive' => TRUE,
+    'foodandwine' => TRUE,
+    'foodandwine' => TRUE,
+  ));
+
+  // Get the list of nodes.
+  $results = db_select('node', 'n')
+    ->fields('n', array('nid'))
+    ->condition('type', $node_types, 'IN')
+    ->execute();
+
+  // Delete each node.
+  foreach ($results as $result) {
+    $nids[] = $result->nid;
+    node_delete($result->nid);
+    drupal_set_message(t('Deleted node id %nid.', array('%nid' => $result->nid)));
+  }
+  if (!empty($nids)) {
+    drupal_set_message(t('Deleted %count nodes of types: %types', array(
+      '%count' => count($nids),
+      '%types' => implode(', ', $node_types),
+    )));
+  }
+
+  // Re-enable the feeds importers. Just remove the variable.
+  variable_del('default_feeds_importer');
+
+  // Delete the control variables for the foodandwine and
+  // spc_blog_archive feeds to get those to restart.
+  variable_del('ti_amg_fw_feeds_foodandwine_archive_page');
+  variable_del('ti_amg_fw_feeds_blog_archive_page');
+
+  // Remove feed sources with cook-specific ids.
+  $sources = db_select('feeds_source', 'fs')
+    ->fields('fs', array('id'))
+    ->execute();
+  foreach ($sources as $source) {
+    if (strpos($source->id, 'cook') !== FALSE) {
+      db_delete('feeds_source')
+        ->condition('id', $source->id)
+        ->execute();
+      drupal_set_message(t('Deleted feeds_source id %id.', array('%id' => $source->id)));
+    }
+  }
+}*/
+
+/**
+ * @} End of "addtogroup ti_amg_fw_devel".
+ */

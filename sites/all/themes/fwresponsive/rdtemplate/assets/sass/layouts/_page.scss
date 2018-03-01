@@ -1,0 +1,45 @@
+/*-----------------------------------------------------------------------------
+ *-----------------------------------------------------------------------------
+ *
+ * PAGE
+ *
+ * This file is imported by main.scss. The .page-container class can be applied
+ * to the outer most container of the site. It will be constrained to whatever
+ * width values are set in base/_settings.scss
+ *
+ *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------- */
+
+/**
+ * Apply to the element that will be the outmost container of site content to
+ * contain the width to $page-container-width
+ */
+.page-container {
+  @if $is-responsive {
+    max-width: $page-container-width;
+  } @else {
+    width: $page-container-width;
+  }
+  padding-right: $mobile-page-container-padding;
+  padding-left: $mobile-page-container-padding;
+  margin: 0 auto;
+  background: $page-container-bg-color;
+  
+  @include respond-to('small and up') {
+    padding-right: $page-container-padding;
+    padding-left: $page-container-padding;
+  }
+
+  &__bottom {
+    margin-top: 60px;
+  }
+}
+
+.section-container {
+  margin-bottom: 50px;
+  clear: both;
+}
+
+.section-container.filmstrip-section {
+  margin-bottom: 0px;
+}

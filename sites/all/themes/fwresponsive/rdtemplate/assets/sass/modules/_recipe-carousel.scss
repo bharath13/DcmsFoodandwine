@@ -1,0 +1,429 @@
+/**
+ * Block: recipe-carousel
+ * Element: recipe-carousel__element
+ * Modifier: recipe-carousel--modifier
+ */
+
+$block: recipe-carousel;
+$max-width: 1760px;
+
+.#{$block} {
+
+  @include respond-to('small and up') {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 980px;
+    height: 100%;
+    margin: 0 auto;
+    @include transform( translateX(-50%) );
+  }
+
+  @include respond-to('medium and up') {
+    width: $max-width;
+  }
+  
+  /*-------------------------------------------- */
+  /** Recipe Element */
+  /*-------------------------------------------- */
+
+  &__recipe  {
+    position: relative;
+    background-color: #efefef;
+    overflow: hidden;
+    
+    // for the fallback
+    .#{$block}:not(.slick-slider) & {
+      float: left;
+      margin-left: 0 !important;
+
+      &:nth-child(2) {
+        &:after {
+          opacity: 0;
+        }
+      }
+    }
+
+    @include respond-to('recipe image width') {
+      margin-right: 5px;
+      margin-left: 5px;    
+    }
+
+    @include respond-to('small and up') {
+      width: 550px;
+      height: 550px;
+    }
+
+    @include respond-to('medium and up') {
+      margin-right: 27.5px;
+      margin-left: 27.5px;
+    }
+    
+    &:after {
+      content: '';
+      display: block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: $z-3;
+      background-color: rgba(#ffffff, .75);
+      opacity: 1;
+      transition: opacity .25s ease-out,
+                  background-color .1s ease-out;
+    }
+  
+    &--hovered:after {
+      background-color: rgba(#777777, .4);
+    }
+    
+    &__img {
+      @include respond-to('small and up') {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: $z-2;
+        @include transform( translateX(-50%) translateY(-50%) );
+      }
+    }
+
+    // hide the image when it is a legacy image since we will be tiling the
+    // image in the background
+    &--legacy &__img {
+      display: none;
+    }
+  
+    // when the recipe has a legacy image a div is created with 
+    // the legacy image inlined as the bg of this element
+    &__bg {
+      height: 0;
+      padding-top: 100%;
+      background-size: 36%;
+      background-position: center center;
+    }
+    
+    &__loader {
+      
+      $size: 50px;
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      z-index: $z-5;
+      width: $size;
+      height: $size;
+      margin-left: -($size / 2);
+      background: rgba(#ffffff, .8) url('#{$img-base-path}/loader.svg') no-repeat center center;
+      background-size: 80%;
+      border-radius: 50%;
+      opacity: 0;
+      @include transform( scale(0.7, 0.7) );
+      transition: .25s common-ease();
+    }
+
+    .loading &.slick-center &__loader {
+      opacity: 1;
+      @include transform( scale(1.0, 1.0) );
+    }
+
+    &.slick-center:after {
+      opacity: 0;
+    }
+  }
+  
+  /*-------------------------------------------- */
+  /** Pagination Btn Elements */
+  /*-------------------------------------------- */
+
+  &__pagination__btn {
+    position: absolute;
+    top: 50%;
+    @include transform( translateY(-50%) );
+    cursor: pointer;
+    
+    @include respond-to('small and up') {
+      @include calc('width', '(100% - 550px - 20px) * .5');
+      height: 550px;
+    }
+
+    @include respond-to('medium and up') {
+      @include calc('width', '550px - (#{$max-width} - 100%) * .5');
+    }
+
+    &--next {
+      right: 0;
+
+      .#{$block}__pagination__btn {
+        
+        &__inner {
+          right: 5px;
+          @include respond-to('small and up') {
+            left: 20px;
+          }
+        }
+
+        &__title {
+          left: 0;
+          text-align: right;
+        }
+        
+        &__arrow {
+          float: right;
+        }
+      }
+    }
+    
+    &--prev {
+      left: 0;
+
+      .#{$block}__pagination__btn {
+        
+        &__inner {
+          left: 5px;
+          @include respond-to('small and up') {
+            right: 20px;
+          }
+        }
+
+        &__title {
+          right: 0;
+          text-align: left;
+        }
+        
+        &__arrow {
+          float: left;
+          .pagination-arrow-icon {
+            @include transform( rotateZ(-180deg) translateY(50%) translateX(50%) );
+          }
+        }
+      }
+    }
+    
+    &__inner {
+      @include clearfix;
+      position: absolute;
+      top: 50%;
+      @include transform( translateY(-50%) );
+    }
+
+    &__title {
+      position: absolute;
+      top: 50%;      
+      @include transform( translateY(-50%) );
+      display: none;
+      // 100% of parent minus the width of the arrow + some margin
+      @include calc('width', '100% - 73px');
+      color: #ffffff;
+      @include font-droid-serif-bold;
+      font-size: rem(25);
+      opacity: 0;
+      transition: .1s ease-out;
+
+      // hide the title up until large width
+      @include respond-to('large and up') {
+        display: block;
+      }
+    }
+    
+    &:hover &__title {
+      opacity: 1;
+    }
+
+    &__arrow {
+      position: relative;
+      @include size(58px);
+      border-radius: 50%;
+      background-color: rgba(#ffffff, .8);
+      box-shadow: 2px 2px 2px rgba(#000000, .4);
+      text-align: center;
+
+      .pagination-arrow-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        @include transform( translateY(-50%) translateX(-50%) );
+        @include size(40px);
+        color: $brand-primary;
+      }
+    }
+  }
+}
+
+
+.#{$block}-container {
+  position: relative;
+  max-width: $max-width;
+  max-height: 550px;
+  margin: 0 auto 20px auto;
+  overflow: hidden;
+
+  @include respond-to('small and up') {
+    height: 550px;
+  }
+}
+
+// Simple Recipe Carousel
+$simple-block: #{$block}-container--simple;
+
+.#{$simple-block} {
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+  margin-bottom: 20px;
+
+  .pagination-btn {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    margin-top: -29px;
+    z-index: $z-2;
+
+    &--next {
+      left: auto;
+      right: 20px;
+    }
+  }
+
+  .#{$block}__recipe {
+
+    &.slick-slide {
+      
+      .#{$block}__recipe__content {
+        opacity: 0;
+      }
+    }
+
+    &.slick-active {
+      .#{$block}__recipe__content {
+        opacity: 1;
+      }
+    }
+  }
+
+  .#{$block}__recipe__content {
+    position: absolute;
+    bottom: 15px;
+    left: 0;
+    z-index: $z-4;
+    width: 100%;
+    padding: 15px 0;
+    margin: 0 auto;
+    box-sizing: border-box;
+    background-color: rgba(#ffffff, .9);
+    text-align: center;
+    transition: opacity .15s;
+    
+    @include respond-to('small and up') {
+      $max-width: 480px;
+      @include calc('left', '50% - #{$max-width / 2}');
+      padding: 25px 20px;
+      max-width: $max-width;
+    }
+
+    .#{$block}__recipe__title {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: rem(24);
+      @include font-droid-serif-bold;
+      line-height: 1.2;
+      color:#333;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      @include respond-to('small and up') {
+        font-size: rem(30);
+      }
+    }
+  }
+}
+
+.node-type-video-landing-page, .node-type-channel-landing-page-responsive, .node-type-home-page-responsive {
+  .mobile-player {
+       background: #000;
+       text-align: center;
+       max-width: 100%;
+       height: 250px;
+       @include respond-to('small and up') {
+        height: 400px;
+      }
+      @include respond-to('large and up') {
+        height: 517px;
+      }
+      .BrightcoveExperience {
+        height: 250px;
+         @include respond-to('small and up') {
+          height: 400px;
+        }
+        @include respond-to('large and up') {
+          height: 517px;
+        }
+      }
+    }
+    
+    .mobile-player iframe {
+        @extend .mobile-player;
+        width: 100%;
+        display: inline-block;
+    }
+}
+
+.node-type-channel-landing-page-responsive {
+  .video_player{
+       max-width: 100%;
+       height: 250px;
+       margin-bottom: 10%;
+       @include respond-to('small and up') {
+        height: 400px;
+      }
+      @include respond-to('large and up') {
+        height: 517px;
+      }
+      .BrightcoveExperience {
+        height: 250px;
+         @include respond-to('small and up') {
+          height: 400px;
+        }
+        @include respond-to('large and up') {
+          height: 517px;
+        }
+      }
+    }
+    
+    .video_player iframe {
+        @extend .video_player;
+        width: 100%;
+    }
+    
+  .recipe-carousel__recipe {
+    &.slick-center .hero-feature__link:after {
+      opacity: 0;
+    }
+    &--hovered:after {
+      background-color: rgba(#777777, .4);
+    }
+    .hero-feature__link {
+      display: block; 
+      cursor: pointer; 
+      position: relative; 
+      z-index: 99;
+      height: 100%;
+      width: 100%;
+      &:after {
+        content: '';
+        display: block;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: $z-3;
+        background-color: rgba(#ffffff, .75);
+        opacity: 1;
+        transition: opacity .25s ease-out,
+        background-color .1s ease-out;
+      }
+    }
+  }
+}

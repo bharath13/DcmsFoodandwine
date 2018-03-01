@@ -1,0 +1,14 @@
+name = TI AMG FW Homepage Views
+description = TI AMG FW Homepage Views
+core = 7.x
+package = FoodandWine DCMS
+version = 7.x-1.77
+project = ti_amg_fw_homepage_views
+dependencies[] = ctools
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = ti_amg_fw_homepage_blocks
+features[views_view][] = ti_amg_fw_new_recipes_section
+features[views_view][] = ti_amg_fw_new_slideshows_section
+mtime = 1419944769

@@ -1,0 +1,12 @@
+name = TI AMG FW Category Ads
+description = A Feature module for Category Page Ads
+core = 7.x
+package = FW Advertisements
+version = 7.x-1.0
+dependencies[] = ctools
+dependencies[] = page_manager
+dependencies[] = strongarm
+features[ctools][] = page_manager:pages_default:1
+features[features_api][] = api:2
+features[page_manager_handlers][] = node_view__category
+project path = sites/all/modules/custom/advertisements

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FWRD VIdeo Landing Contexts feature.
+ */
+
+include_once 'ti_amg_fwrd_video_landing_contexts.features.inc';

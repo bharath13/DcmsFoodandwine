@@ -1,0 +1,46 @@
+<?php
+/**
+ * @file
+ * Install / Update functions for the TI LSG Article feature.
+ *
+ * \defgroup ti_lsg_mr_article MyRecipes.com Article Feature
+ * \ingroup Features
+ * \brief Sets up all the configuration needed to run Articles.
+ *
+ * @{
+ */
+
+/**
+ * Helper function, sets the pagination configuration variables.
+ */
+function ti_lsg_mr_article_set_pagination_config() {
+  if (!module_exists('ti_lsg_pagination')) {
+    return FALSE;
+  }
+
+  // Make sure we are not showing all pages.
+  variable_set('pagination_showall', FALSE);
+
+  // Insert or update the pagination settings for Articles.
+  db_merge('pagination')
+  ->key(array('type' => 'article'))
+  ->fields(array('type' => 'article', 'paginate' => 1, 'style' => 0))
+  ->execute();
+
+  return TRUE;
+}
+
+/**
+ * Implements hook_install().
+ */
+function ti_lsg_mr_article_install() {
+  // On install, set all the variables needed for pagination.
+  ti_lsg_mr_article_set_pagination_config();
+}
+
+/**
+ * Sets all the necessary variables required for pagination.
+ */
+function ti_lsg_mr_article_update_7000() {
+  ti_lsg_mr_article_set_pagination_config();
+}

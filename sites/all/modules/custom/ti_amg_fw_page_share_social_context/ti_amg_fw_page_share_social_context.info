@@ -1,0 +1,13 @@
+name = ti_amg_fw_page_share_social_context
+description = TI AMG FW Page Share Social Context
+core = 7.x
+package = Foodandwine
+version = 7.x-1.4
+project = ti_amg_fw_page_share_social_context
+dependencies[] = context
+dependencies[] = ctools
+dependencies[] = ti_amg_fw_page_sharing_social
+features[context][] = ti_amg_fw_social_share_context
+features[ctools][] = context:context:3
+features[features_api][] = api:2
+mtime = 1419446977

@@ -1,0 +1,6 @@
+name = FW Article Page module for responsive design
+description = Create Article Page functionalities for responsive design template.
+package = Foodandwine
+core = 7.x
+
+

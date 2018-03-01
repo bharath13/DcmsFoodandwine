@@ -1,0 +1,128 @@
+$block: article;
+
+.#{$block}__wrapper {
+  .feature__image.image-insert {
+    margin-bottom: 5px;
+    .image-insert__wrap {
+      text-align: center;
+      width: 100%;
+       @include respond-to('small and up') {
+        text-align: left;
+        width: auto;
+      }
+    
+      @include respond-to('medium and up') {
+        text-align: left;
+        width: auto;
+      }
+      img {
+       margin: 0;
+       display: inline-block;
+      }
+    } 
+  }
+  .image-insert__caption {
+    margin-top: 5px;
+    width: 100%;
+    text-align: center;
+    @include respond-to('small and up') {
+      width: auto;
+      text-align: left;
+    }
+  
+    @include respond-to('medium and up') {
+      width: auto;
+      text-align: left;
+    }
+  }
+   .feature__info-top__author {
+     width: 100% !important;
+     margin-bottom: 5px;
+     text-align: center;
+      @include respond-to('small and up') {
+        text-align: left;
+      }
+    
+      @include respond-to('medium and up') {
+       text-align: left;
+      }
+   }
+   .feature__info-top {
+     margin-bottom: 0px;
+   }
+   .social-wrapper {
+     float: left;
+     width: 100% !important;
+     text-align: center;
+   }
+   .feature__info {
+     clear: none;
+   }
+   .feature__info-top__author {
+     width: auto;
+   }
+   .feature__content.divider {
+      margin-top: 0px;
+      
+      h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
+        font-weight: normal;
+      }
+   }
+   .article-social {
+     position: relative;
+     text-align: center;
+     margin-top: 0px;
+     padding-bottom: 0px;
+     border: none;
+     .page-heading--desc {
+       text-align: left;
+     }
+     @include respond-to('small and up') {
+        border-bottom: none;
+        position: relative;
+        margin: 0 auto;
+        width: auto;
+        text-align: left;
+      }
+    
+      @include respond-to('medium and up') {
+        box-sizing: border-box;
+        border-bottom: none;
+        margin: 0;
+        width: auto;
+        text-align: left;
+      }
+    
+    ul {
+       list-style: none;
+       display: inline-block;
+       -webkit-padding-start: 0px;
+       -webkit-margin-after: 0px;
+       -webkit-margin-before: 0em;
+       padding-left:0px;
+       margin: 0px;
+       li {
+         margin: 0px;       
+         padding: 0px;
+         a {
+           margin-right: 10px;
+         }
+       } 
+    }
+  
+    @include respond-to('small and up') {
+      border-bottom: none;
+      position: relative;
+      margin: 0 auto;
+      width: auto;
+    }
+  
+    @include respond-to('medium and up') {
+      box-sizing: border-box;
+      border-bottom: none;
+      margin: 0;
+      width: auto;
+    }
+  }
+}
+

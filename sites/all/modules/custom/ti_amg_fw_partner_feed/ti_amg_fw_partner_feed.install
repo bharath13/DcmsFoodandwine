@@ -1,0 +1,52 @@
+<?php
+// partner_feed.install
+/**
+ * Implementation of hook_schema().
+ */
+function ti_amg_fw_partner_feed_schema() {
+  $schema['feed'] = array(
+    'description' => t('Stores information about partner_feeds.'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('The primary identifier for a partner_feed.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('The user that created the partner_feed.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => t('The timestamp for when the partner_feed was created.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'modified' => array(
+        'description' => t('The timestamp for when the partner_feed was modified.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'subject' => array(
+        'description' => t('The subject of the partner_feed'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'feed' => array(
+        'description' => t('The partner feed'),
+        'type' => 'text',
+        'size' => 'medium',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}

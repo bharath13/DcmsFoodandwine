@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * Code for the Ti AMG FW Node Convert feature.
+ */
+include_once 'ti_amg_fw_node_convert.features.inc';
+
+/**
+ * Implements hook_menu().
+ */
+function ti_amg_fw_node_convert_menu() {
+  $items = array();
+
+  $items['admin/config/fw_settings/fw_migration'] = array(
+    'title' => t('Food&Wine Migration'),
+    'description' => 'Settings for Food&Wine content migration.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ti_amg_fw_node_convert_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+  );
+  return $items;
+}
+
+/**
+ * Callback function for Food&Wine Migration node convert form.
+ */
+function ti_amg_fw_node_convert_settings() {
+  $form['migration_settings'] = array(
+    '#title' => 'Food&Wine Migration Settings',
+    '#type' => 'fieldset',
+  );
+  $form['migration_settings']['blog_to_article_nodeconvert_template_name'] = array(
+    '#title' => t('Blog-to-Article Node Convert Template Name'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('blog_to_article_nodeconvert_template_name', ''),
+    '#maxlength' => 1024,
+  );
+
+  $form['migration_settings']['article_to_blog_nodeconvert_template_name'] = array(
+    '#title' => t('Article-to-Blog Node Convert Template Name'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('article_to_blog_nodeconvert_template_name', ''),
+    '#maxlength' => 1024,
+  );
+
+  return system_settings_form($form);
+}

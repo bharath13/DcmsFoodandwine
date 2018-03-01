@@ -1,0 +1,58 @@
+/**
+ * Block: ingredients-list
+ * Element: ingredients-list__element
+ * Modifier: ingredients-list--modifier
+ */
+
+$block: ingredients-list;
+.#{$block} {
+  @include ui-list;
+
+  &__title {
+    @include font-droid-sans();
+    font-weight: 400;
+    font-size: rem(16);
+    line-height: 1.125;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  &__item {
+    font-size: rem(18);
+
+    &:not(:last-child) {
+      margin-bottom: 15px;
+    }
+
+    p {
+      font-size: rem(18) !important;
+      @include font-droid-sans-bold;
+      line-height: 1.5 !important;
+    }
+  }
+  
+  &--has-parent {
+    padding: 0 0 0 10px;
+  }
+
+  &:not(:last-child) {
+    margin-bottom: 17px;
+  }
+}
+
+/* Chicory styling */
+.chicory-order-ingredients {
+  #chicory-button {
+    background: #FFF !important;
+    color: #000 !important;
+    border: 2px solid #000 !important;
+    text-transform: uppercase;
+    padding: 5px 40px !important;
+    font-size: 16px !important;
+    letter-spacing: 0px !important;
+    font-weight: bold !important;
+    &:hover {
+      background: #DDD !important;
+    }
+  }
+}

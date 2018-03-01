@@ -1,0 +1,79 @@
+/*-----------------------------------------------------------------------------
+ *-----------------------------------------------------------------------------
+ *
+ * BASE SETTINGS
+ *
+ * The settings defined in this file should be updated per project. Any
+ * custom global variables needed for the project should be defined in 
+ * utils/variables.scss
+ *
+ *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------- */
+
+
+/*-------------------------------------------- */
+/** File Path Settings */
+/*-------------------------------------------- */
+
+$img-base-path: '../img';
+$font-base-path: 'sites/all/themes/fwresponsive/rdtemplate/assets/font';
+
+
+/*-------------------------------------------- */
+/** Layout Settings */
+/*-------------------------------------------- */
+
+$is-responsive: true;
+$page-container-width: 1260px;
+$page-container-padding: 20px;
+$mobile-page-container-padding: 10px;
+
+
+/*-------------------------------------------- */
+/** Typography Settings */
+/*-------------------------------------------- */
+
+$em-base: 18px;
+$base-font-size: $em-base;
+$base-line-height: 1.5;
+
+$light-font-weight: 200;
+$base-font-weight: 400;
+$bold-font-weight: 700;
+
+$paragraph-margin: 20px;
+
+$h1-font-size: 40;
+$h2-font-size: 32;
+$h3-font-size: 24;
+$h4-font-size: 20;
+$h5-font-size: 16;
+$h6-font-size: 16;
+
+
+/*-------------------------------------------- */
+/** Color Settings */
+/*-------------------------------------------- */
+
+$body-bg-color: #ffffff;
+$body-font-color: #333333;
+$page-container-bg-color: #ffffff;
+
+$link-color: $color-teal;
+$link-color-hover: darken($link-color, 10%);
+$link-color-active: $link-color-hover;
+
+$h1-font-color: $body-font-color;
+$h2-font-color: $body-font-color;
+$h3-font-color: $body-font-color;
+$h4-font-color: $body-font-color;
+$h5-font-color: $body-font-color;
+$h6-font-color: $body-font-color;
+
+
+/*-------------------------------------------- */
+/** Common Library variables */
+/*-------------------------------------------- */
+
+$primary-btn-bg: limegreen;
+$secondary-btn-bg: limegreen;

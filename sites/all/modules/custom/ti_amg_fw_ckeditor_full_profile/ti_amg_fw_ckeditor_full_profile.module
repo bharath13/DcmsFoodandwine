@@ -1,0 +1,8 @@
+<?php
+/**
+ * @file
+ * Code for the DCMS CKEditor Profiles feature.
+ */
+
+include_once 'ti_amg_fw_ckeditor_full_profile.features.inc';
+

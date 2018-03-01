@@ -1,0 +1,189 @@
+.btn {
+  display: inline-block;
+  $color: #222222;
+  padding: 9px 14px;
+  border: 2px solid $color;
+  &, &:hover { color: $color; }
+  @include font-droid-sans-bold;
+  font-size: rem(18);
+  line-height: 1;
+  text-transform: uppercase;
+
+  &:hover {
+    color: $color;
+    background-color: #f8f8f8;
+  }
+  
+  &--full-width {
+    display: block;
+    text-align: center;
+  }
+
+  &--arrow {
+    &:after {
+      @extend %button-arrow;
+      position: relative;
+      left: 0;
+      content: '';
+      display: inline-block;
+      margin-left: 5px;
+      transition: left .15s common-ease();
+    }
+
+    &:hover:after {
+      left: 3px;
+    }
+  }
+
+  &--plus-sign {
+    &:after {
+      @extend %plus-sign;
+      position: relative;
+      left: 0;
+      content: '';
+      display: inline-block;
+      margin-left: 5px;
+    }
+  }
+
+  &--muted {
+    color: $color-dark-grey;
+    border: 2px solid $color-mid-grey;
+
+    &:hover {
+      color: $color-dark-grey;
+      border: 2px solid $color-mid-grey;
+      background: transparent;
+    }
+
+    &:before {
+      @extend %share-hallow-arrow;
+      position: relative;
+      left: 0;
+      content: '';
+      display: inline-block;
+      margin-right: 5px;
+    }
+  }
+}
+
+.link-arrow {
+  cursor: pointer;
+  @include font-droid-sans-bold;
+  display: inline-block;
+  $color: #222222;
+  line-height: 1;
+  text-transform: uppercase;
+  &, &:hover { color: $color; }
+  font-size: rem(16);
+
+  &:after {
+    @extend %button-arrow;
+    position: relative;
+    left: 0;
+    content: '';
+    display: inline-block;
+    margin-left: 5px;
+    transition: left .15s common-ease();
+  }
+
+  &:hover:after {
+    left: 3px;
+  }
+
+  &--blue {
+    @include font-droid-sans;
+    font-weight: 400;
+    color: $color-teal;
+    font-size: rem(15);
+
+    &:hover {
+      color: $color-teal;
+    }
+
+    &:after {
+      color: $color-teal !important;
+      fill: $color-teal !important;
+    }
+  }
+}
+
+/*-------------------------------------------- */
+/** HP Social Module Buttons */
+/*-------------------------------------------- */
+
+.btn-instagram,
+.btn-pinterest,
+.btn-twitter {
+  span {
+    display: inline-block;
+    height: 10px;
+  }
+}
+
+.btn-pinterest {
+  svg {
+    height: 20px;
+    vertical-align: bottom;
+  }
+}
+
+.btn-instagram {
+  padding-top: 10px;
+  padding-bottom: 8px;
+
+  svg {
+    height: 22px;
+    vertical-align: top;
+  }
+}
+
+.btn-twitter {
+  margin-top: 4.4155844156%;
+  
+  span {
+    position: relative;
+    top: -4px;
+  } 
+
+  svg {
+    fill: $color-twitter;
+    height: 25px;
+    vertical-align: top;
+  }
+}
+
+/*-------------------------------------------- */
+/** Pagination Buttons */
+/*-------------------------------------------- */
+
+.pagination-btn {
+  @include naked-btn;
+  @include size(58px);
+  position: relative;
+  border-radius: 50%;
+  background-color: rgba(#ffffff, .8);
+  box-shadow: 2px 2px 2px rgba(#000000, .4);
+  text-align: center;
+  cursor: pointer;
+
+  .pagination-arrow-icon {
+    position: absolute;
+    top: 50%;
+    left: 54%;
+    @include transform( translateY(-50%) translateX(-50%) );
+    @include size(40px);
+    color: $brand-primary;
+  }
+
+  &--prev {
+    .pagination-arrow-icon {
+      left: 46%;
+      @include transform( rotateZ(-180deg) translateY(50%) translateX(50%) );
+    }
+  }
+
+  &:hover {
+    background-color: #ffffff;
+  }
+}

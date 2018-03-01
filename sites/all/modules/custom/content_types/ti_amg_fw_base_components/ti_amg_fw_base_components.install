@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * @ingroup ti_amg_fw_base_components
+ * @brief Provides install, update, and uninstall functions for AMG Base
+ * Components module
+ *
+ * @{
+ */
+
+/**
+ * Implements hook_update_N().
+ *
+ * Update field_edit_date to include the minute place.
+ */
+function ti_amg_fw_base_components_update_7001() {
+  $field_name = 'field_edit_date';
+
+  // Get the current settings.
+  $result = db_query('SELECT data FROM {field_config} WHERE field_name = :name', array(':name' => $field_name))->fetchField();
+
+  // Change the settings.
+  $data = unserialize($result);
+  $data['settings']['granularity']['minute'] = 'minute';
+
+  // Write settings back to the database.
+  db_update('field_config')
+    ->fields(array('data' => serialize($data)))
+    ->condition('field_name', $field_name)
+    ->execute();
+
+  // Flush the caches.
+  drupal_flush_all_caches();
+}
+
+/**@}*/

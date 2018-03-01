@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Build Tools tasks for FoodandWine.com -->
+
+<project name="foodandwine.com" default="build" basedir="." description="Build tasks for FoodandWine">
+  <target name="build-post-compile" depends="build-make">
+    <if>
+      <isset property="env.TI_ENV"/>
+      <then>
+        <property name="ti_env" value="${env.TI_ENV}"/>
+      </then>
+      <else>
+        <property name="ti_env" value="local"/>
+      </else>
+    </if>
+    <if>
+      <and>
+        <available file="src/sites/all/modules/custom"/>
+        <equals arg1="${ti_env}" arg2="local" />
+      </and>
+      <then>
+        <echo>Environment is ${ti_env} so we symlink src/sites/all/modules/custom</echo>
+        <mkdir dir="site/sites/all/modules/custom"/>
+        <echo>Symlinking src/sites/all/modules/custom</echo>
+        <symlink link="site/sites/all/modules/custom">
+          <fileset dir="src/sites/all/modules/custom">
+            <include name="*" />
+          </fileset>
+        </symlink>
+        <echo>Environment is ${ti_env} so we symlink src/sites/all/themes</echo>
+        <mkdir dir="site/sites/all/themes"/>
+        <echo>Symlinking src/sites/all/themes</echo>
+        <symlink link="site/sites/all/themes">
+            <fileset dir="src/sites/all/themes">
+                <include name="*" />
+            </fileset>
+        </symlink>
+      </then>
+      <else>
+        <echo>Environment is ${ti_env} so we sync (not symlink) src/sites/all/modules/custom and src/sites/all/themes</echo>
+        <exec command="cat reference/sync.exclude src/sync-non-local.exclude > sync-non-local.exclude" error="/dev/null"/>
+        <sync sourcedir="src/sites/all/modules/custom/" destinationdir="site/sites/all/modules/custom" excludefile="sync-non-local.exclude"/>
+        <sync sourcedir="src/sites/all/themes/" destinationdir="site/sites/all/themes" excludefile="sync-non-local.exclude"/>
+      </else>
+    </if>
+    <echo>Finished Symlinking Custom Modules</echo>
+
+    <!-- .gitignore cleanup -->
+    <if>
+      <and>
+        <available file="${html}/sites/all/themes/foodandwine"/>
+        <not>
+          <equals arg1="${ti_env}" arg2="local" />
+        </not>
+      </and>
+      <then>
+        <echo msg="Removing themes' .gitignore files so compiled CSS will make it into build artifact."/>
+        <!-- remove .gitignore files in themes -->
+        <exec command="rm .gitignore" logoutput="true" passthru="true" dir="${html}/sites/all/themes/foodandwine" />
+      </then>
+    </if>
+
+    <!-- Compass Compilation -->
+    <if>
+      <available file="${html}/sites/all/themes/foodandwine"/>
+      <then>
+        <echo msg="Compiling CSS using Compass."/>
+        <!-- run compass clean && compass compile on themes and custom modules.
+TODO: remove when a better way to do this is come up with -->
+        <exec command="compass clean" logoutput="true" passthru="true" dir="${html}/sites/all/themes/foodandwine" />
+        <exec command="compass compile" logoutput="true" passthru="true" dir="${html}/sites/all/themes/foodandwine" />
+        <exec command="rm -rf .sass-cache" logoutput="true" passthru="true" dir="${html}/sites/all/themes/foodandwine" />
+
+        </then>
+    </if>
+    <echo>Moving segmentio.</echo>
+    <move file="site/sites/all/modules/custom/segmentio" tofile="site/sites/all/modules/custom/external_integration_ti/segmentio"/>
+  </target>
+  <target name="post-deploy-master-site-required" depends="post-deploy-master-platform-optional">
+   <echo msg="drush updatedb ${drush_opts_deploy} -y"/>
+   <exec command="drush updatedb ${drush_opts_deploy} -y" passthru="True" checkreturn="true"/>
+   <echo msg="drush cache-clear ${drush_opts_deploy} all"/>
+   <exec command="drush cache-clear ${drush_opts_deploy} all" passthru="True" checkreturn="true"/>
+  </target>
+</project>

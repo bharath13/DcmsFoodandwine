@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Blog Ads feature.
+ */
+
+include_once 'ti_amg_fw_blog_ads.features.inc';

@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for TI AMG FW SEARCH module.
+ */
+
+/**
+ * Implements hook_update_n().
+ */
+function ti_amg_fw_search_update_7001() {
+  db_insert('block_current_search')->fields(array(
+    'delta' => 'fw_search_active_facets',
+    'searcher' => 'search_api@foodandwine_search',
+  ))->execute();
+}

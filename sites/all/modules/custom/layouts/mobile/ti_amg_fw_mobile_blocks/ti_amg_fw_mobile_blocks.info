@@ -1,0 +1,4 @@
+name = TI AMG FW Mobile Blocks
+description = Various blocks used for the mobile site
+package = AMG
+core = 7.x

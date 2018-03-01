@@ -1,0 +1,659 @@
+<?php
+
+/**
+ * @file
+ * Module used for FoodAndWine Slideshow.
+ */
+
+/**
+ * Implements hook_node_view().
+ * Add scripts & style sheets for slideshow details page
+ */
+function ti_amg_fw_slideshow_node_view($node, $view_mode, $langcode) {
+  $language = $node->language;
+
+}
+
+/**
+ * Implements hook_preprocess_node();
+ * Makes custom variables available in gallery node theme.
+ * Pass slideshow data to Javascript.
+ */
+function ti_amg_fw_slideshow_preprocess_node(&$variables, $hook) {   
+  global $base_url,$slideshow_smrt_info,$conf;
+  $slideshow_smrt_info = array();
+  $slide_ogimg_url = $conf['social_share_default_img'];
+  $node = $variables['node'];
+  $language = $node->language;
+
+  if ($node->type == 'gallery') {
+    $variables['hd_layout'] = FALSE;
+    $variables['std_layout'] = FALSE;
+    $gallery_layout = $node->field_gallery_layout[$language][0]['value'];
+    if ($gallery_layout == 'HD') {
+      $variables['hd_layout'] = TRUE;
+    }
+    elseif ($gallery_layout == 'STD') {
+      $variables['std_layout'] = TRUE;
+    }
+
+    //Retrive the right rail outbrain block
+    $ob_block = module_invoke('ti_amg_fw_custom', 'block_view', 'fw_outbrain_block');
+    $variables['slds_rr_outbrain'] = render($ob_block['content']);
+
+    //Retrive the right rail top chef view
+    $variables['slds_rr_top_chef'] = views_embed_view('ti_amg_fw_right_rail_top_chef', $display_id = 'default');
+
+    if ($gallery_layout == 'HD') {
+        
+      $disabled_slide_count = 0;
+      $slide_url = array();
+      $slideshow_info = array();
+      $carousel_items = array();
+      if (isset($node->field_deck[$language])) {
+        $slideshow_info['dek'] = $node->field_deck[$language][0]['value'];
+      }
+      else {
+        $slideshow_info['dek'] = '';
+      }
+      if (isset($node->field_gallery_type[$language])) {
+        $gallery_type_tid = $node->field_gallery_type[$language][0]['tid'];
+        $gallery_type_label = get_label_from_tid($gallery_type_tid, 'field_taxo_gallery_type_label');
+        if ($gallery_type_label == 'recipes') {
+          $slideshow_info['content_type'] = 'recipes';
+        }
+        else {
+          $slideshow_info['content_type'] = 'other';
+        }
+      }
+      // Creating new variable for slideshow native advertisement flag
+      $slideshow_native_adv_flag = 0;
+
+      $count = 0;
+      foreach ($node->field_slide_info[$language] as $slide) {
+        $slide_info = array();
+        $slide_ad = '';
+        $slide_img_alt_text = '';
+        $slide_img_uri = '';
+        $slide_title = '';
+        $first_slide_url = '';
+        $first_slide_title = '';
+
+
+
+        $slide_entity = entity_load('field_collection_item', array($slide['value']));
+        $slide_entity_id = $slide['value'];
+        $slide_info['image']['image']['alt_text'] = "";
+        $slide_info['image']['image']['credit'] = "";
+        if ($count == 0) {
+          $first_slide_entity_id = $slide_entity_id;
+        }
+
+        $slide_info = array();
+        if (isset($slide_entity[$slide_entity_id]->field_ad_slide[$language])) {
+          $slide_ad = $slide_entity[$slide_entity_id]->field_ad_slide[$language][0]['value'];
+        }
+        $slide_ad = ($slide_ad) ? 'true' : 'false';
+        $slide_info['ad_slide'] = $slide_ad;
+        $slide_info['dek'] = '';
+        if (isset($slide_entity[$slide_entity_id]->field_slide_deck[$language])) {
+          $slide_info['dek'] = $slide_entity[$slide_entity_id]->field_slide_deck[$language][0]['value'];          
+        }
+        if (isset($slide_entity[$slide_entity_id]->field_slide_link_url[$language])) {
+          $slide_info['slide_link'] = $slide_entity[$slide_entity_id]->field_slide_link_url[$language][0]['url'];
+        }
+        if (isset($slide_entity[$slide_entity_id]->field_slide_image[$language])) {
+          if (isset($slide_entity[$slide_entity_id]->field_overwrite_image_alt_text[$language][0]['value'])) {
+            $slide_img_alt_text = $slide_entity[$slide_entity_id]->field_overwrite_image_alt_text[$language][0]['value'];
+            $slide_info['image']['image']['alt_text'] = $slide_img_alt_text;
+          }
+          elseif (isset($slide_entity[$slide_entity_id]->field_slide_image[$language][0]['entity']->field_alt_text[$language])) {
+            $slide_img_alt_text = $slide_entity[$slide_entity_id]->field_slide_image[$language][0]['entity']->field_alt_text[$language][0]['value'];
+            $slide_info['image']['image']['alt_text'] = $slide_img_alt_text;
+          }
+        }
+        if (isset($slide_entity[$slide_entity_id]->field_slide_image[$language])) {
+          if (isset($slide_entity[$slide_entity_id]->field_overwrite_image_credit[$language][0]['value'])) {
+            $slide_info['image']['image']['credit'] = $slide_entity[$slide_entity_id]->field_overwrite_image_credit[$language][0]['value'];
+          }
+          elseif (isset($slide_entity[$slide_entity_id]->field_slide_image[$language][0]['entity']->field_credit[$language])) {
+            if (isset($slide_entity[$slide_entity_id]->field_slide_image[$language][0]['entity']->field_credit[$language][0]['value'])) {
+              $slide_info['image']['image']['credit'] = $slide_entity[$slide_entity_id]->field_slide_image[$language][0]['entity']->field_credit[$language][0]['value'];
+            }
+          }
+        }
+        $slide_img_uri = '';
+        if (isset($slide_entity[$slide_entity_id]->field_slide_image[$language])) {
+          if (isset($slide_entity[$slide_entity_id]->field_slide_image[$language][0]['entity']->field_image[$language])) {
+            $slide_img_uri = $slide_entity[$slide_entity_id]->field_slide_image[$language][0]['entity']->field_image[$language][0]['uri'];
+            //$slide_info['image']['image']['url'] = file_create_url($slide_img_uri);
+            $slide_info['image']['image']['url'] = image_style_url('550x550', $slide_img_uri);
+            if ($count == 0) {
+              $slide_ogimg_url = file_create_url($slide_img_uri);
+              $slide_ogimg_title = $node->title;
+              
+            }
+          }
+        }
+        if (isset($slide_entity[$slide_entity_id]->field_slide_title[$language])) {
+          $slide_title = $slide_entity[$slide_entity_id]->field_slide_title[$language][0]['safe_value'];
+          $slide_info['title'] = $slide_title;
+        }
+        
+        //Adding no-index and no-follow if it is enabled to slide
+        $slide_info['no_index'] = 0;
+        if (isset($slide_entity[$slide_entity_id]->field_slide_no_index[$language])) {
+          $slide_info['no_index'] = $slide_entity[$slide_entity_id]->field_slide_no_index[$language][0]['value'];
+        }
+        $slide_info['no_follow'] = 0;
+        if (isset($slide_entity[$slide_entity_id]->field_slide_no_follow[$language])) {
+          $slide_info['no_follow'] = $slide_entity[$slide_entity_id]->field_slide_no_follow[$language][0]['value'];
+        }
+
+        if (isset($slide_entity[$slide_entity_id]->field_slide_related_link[$language])) {
+          foreach ($slide_entity[$slide_entity_id]->field_slide_related_link[$language] as $link_count => $more_link) {
+            $slide_info['more_links'][$link_count]['more_link']['display'] = $more_link['title'];
+            $slide_info['more_links'][$link_count]['more_link']['url'] = $more_link['url'];
+          }
+        }
+        if ($slide_img_uri) {
+          $slideshow_info['slides'][$count]['slide'] = $slide_info;
+          $count++;
+        }
+        else {
+          $disabled_slide_count += 1;
+        }
+        // In order to have slideshow first slide /1 and slideshow landing page without number as a single page rendering
+        if ($count == 1) {
+          $count_in_slide = "";
+        }
+        else { $count_in_slide = $count; }
+        $current_slide_url = $base_url . '/' . drupal_get_path_alias('node/' . $node->nid) . '/' . $count_in_slide; 
+        $slide_url[] = $current_slide_url;
+
+        if ($slide_img_uri) {
+          //Rendering Carousel
+          $image = array(
+              'style_name' => '90x90',
+              'path' => $slide_img_uri,
+              'alt' => strip_tags($slide_img_alt_text),
+              'attributes' => array('nopin' => 'nopin'),
+          );
+          $image_thumb = theme('image_style', $image);
+          $link = l($image_thumb, $current_slide_url, array('attributes' => array('title' => $slide_title), 'html' => TRUE));
+
+          $carousel_items[] = array(
+              'data' => $link,
+              'id' => 'slide_thumb_' . $count,
+              'position' => $count,
+          );
+        }
+      }
+      //Adding robots tags to particular slide page
+      $current_page_num = 1;
+      if (is_numeric(arg(2))) {
+        $current_page_num = arg(2);
+      }
+      $slide_no_index = $slideshow_info['slides'][$current_page_num - 1]['slide']['no_index'];
+      $slide_no_follow = $slideshow_info['slides'][$current_page_num - 1]['slide']['no_follow'];      
+      if ($slide_no_index == 1 && $slide_no_follow == 0) {
+        $robot_tag_data = 'noindex';
+      }
+      elseif ($slide_no_follow == 1 && $slide_no_index == 0) {
+        $robot_tag_data = 'nofollow';
+      }
+      elseif ($slide_no_follow == 1 && $slide_no_index == 1) {
+        $robot_tag_data = 'nofollow, noindex';
+      }      
+      if (isset($robot_tag_data)) {
+        $meta_element = array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'name' => 'robots',
+            'content' => $robot_tag_data,
+          )
+        );
+        drupal_add_html_head($meta_element, 'robots');
+      }
+      
+      $next_slideshow_path = '';
+      $next_slideshow_title = '';
+      $next_slideshow_slide_id = '';
+      $next_slideshow_slide_img_id = '';
+      $next_slideshow_title = '';
+      $next_slideshow_slide_img_url = '';
+
+
+      if (isset($node->field_related_gallery[$language])) {
+        if (isset($node->field_related_gallery[$language][0]['entity']->field_slide_info[$language])) {
+          $next_slideshow_path = '/' . drupal_get_path_alias('node/' . $node->field_related_gallery[$language][0]['target_id']);
+          $next_slideshow_title = $node->field_related_gallery[$language][0]['entity']->title;
+          $next_slideshow_slide_id = $node->field_related_gallery[$language][0]['entity']->field_slide_info[$language][0]['value'];
+          $next_slideshow_slide_entity = entity_load('field_collection_item', array($next_slideshow_slide_id));
+          $next_slideshow_slide_img_id = $next_slideshow_slide_entity[$next_slideshow_slide_id]->field_slide_image[$language][0]['target_id'];
+
+
+          $query = db_select('node', 'n');
+          $query->join('field_data_field_image', 'image', 'n.nid = image.entity_id');
+          $query->fields('image', array('field_image_fid'))->condition('n.nid', $next_slideshow_slide_img_id, '=');
+          $fid = $query->execute()->fetchField();
+          $next_slideshow_slide_img = file_load($fid);
+          $next_slideshow_slide_img_url = file_create_url($next_slideshow_slide_img->uri);
+        }
+      }
+
+      $li_attributes = array(
+        'id' => 'slide_thumb_' . $count,
+        'position' => $count,
+      );
+
+
+      $slideshow_info = json_encode(array('slideshow' => $slideshow_info));
+      $slide_url = json_encode($slide_url);
+      drupal_add_js(array('ti_amg_fw_slideshow' => array('slideshowInfo' => $slideshow_info)), array('type' => 'setting'));
+      drupal_add_js(array('ti_amg_fw_slideshow' => array('slidePermaLinks' => $slide_url)), array('type' => 'setting'));
+      drupal_add_js(array('ti_amg_fw_slideshow' => array('nextSlideshow' => $next_slideshow_path)), array('type' => 'setting'));
+      drupal_add_js(array('ti_amg_fw_slideshow' => array('slideshow_native_adv' => $slideshow_native_adv_flag)), array('type' => 'setting'));
+
+
+      //Makes custom variables available in gallery node theme
+      $variables['carousel_list'] = '';
+      $variables['total_slide_count'] = 0;
+      $variables['deck'] = t('');
+      $variables['first_slide_img_url'] = '';
+      $variables['first_slide_img_alt'] = t('');
+      $variables['slideshow_type'] = '';
+      $variables['first_slide_link_button'] = '';
+      $variables['first_slide_link_title'] = '';
+      $variables['first_slide_deck'] = t('');
+      $variables['next_slideshow_title'] = t('');
+      $variables['next_slideshow_slide_img_url'] = '';
+      $variables['you_might_like_text'] = t('You might also like the <br>next slideshow:');
+      $variables['leading_text'] = t('Click the next arrow to view');
+      $variables['left_position_pixels'] = '0px';
+      $variables['carousel_width_pixels'] = '0px';
+
+
+      $variables['carousel_list'] = theme('item_list', array('items' => $carousel_items));
+      $variables['total_slide_count'] = count($node->field_slide_info[$language]) + 1;
+      $variables['total_slide_count'] = $variables['total_slide_count'] - $disabled_slide_count;
+      
+      $carousel_width = 150 * $variables['total_slide_count'];
+      $variables['carousel_width_pixels'] = $carousel_width . 'px'; 
+
+      $index = 0;
+      if (is_numeric(arg(2)) && arg(2) <= $variables['total_slide_count']) {
+        $index = arg(2) - 1;
+        $pixels = $index * 500;
+        $variables['left_position_pixels'] = '-' . $pixels . 'px';
+      }
+      //Setting OG meta tag from deck field
+      $og_desc = $conf['ti_amg_fw_default_meta_desc'];
+
+      $variables['current_slide_count'] = $index + 1;
+
+      if (isset($node->field_deck[$language])) {
+        $variables['deck'] = $node->field_deck[$language][0]['value'];
+        $og_desc = ltrim(substr(str_replace('&nbsp;','',strip_tags($node->field_deck[$language][0]['value'])),0,155)).'...';        
+      }
+      //Setting meta description tag from deck field
+      $slideshow_meta_desc =  $conf['ti_amg_fw_default_meta_desc'];      
+      if(isset($node->metatags['und']['description']['value']) 
+                    && $node->metatags['und']['description']['value']!= ''){
+                  $slideshow_meta_desc = $node->metatags['und']['description']['value'];
+                  
+      }elseif(isset($node->field_deck['und'][0]['value']) && 
+                    $node->field_deck['und'][0]['value'] != ''){
+                    
+                    $slideshow_meta_desc = ltrim(substr(str_replace('&nbsp;','',strip_tags($node->field_deck[$language][0]['value'])),0,155)).'...';
+      }
+      //Adding meta tags to header
+      $html_head = array(
+        'og_image' => array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'og:image',
+            'content' => $slide_ogimg_url,
+          ),
+        ),
+        'og_title' => array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'og:title',
+            'content' => $slide_ogimg_title,
+          ),
+        ),
+        $og_description_tag = array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'og:description',
+            'content' => $og_desc,
+          ),
+        ),
+        $meta_description_tag = array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'description',
+            'content' => $slideshow_meta_desc,
+          ),
+        ),
+      );
+      foreach ($html_head as $key => $data) {
+        drupal_add_html_head($data, $key);
+      }
+
+      if (isset($node->field_slide_info[$language])) {
+        $first_slide_entity_id = $node->field_slide_info[$language][$index]['value'];
+        $first_slide_entity = entity_load('field_collection_item', array($first_slide_entity_id));
+        if (isset($first_slide_entity[$first_slide_entity_id]->field_slide_image[$language])) {
+          if (isset($first_slide_entity[$first_slide_entity_id]->field_slide_image[$language][0]['entity']->field_image[$language])) {
+            $first_slide_img_uri = $first_slide_entity[$first_slide_entity_id]->field_slide_image[$language][0]['entity']->field_image[$language][0]['uri'];
+            $variables['first_slide_img_url'] = file_create_url($first_slide_img_uri);
+          }
+        }
+        if (isset($first_slide_entity[$first_slide_entity_id]->field_slide_image[$language])) {
+          if (isset($first_slide_entity[$first_slide_entity_id]->field_overwrite_image_alt_text[$language][0]['value'])) {
+            $variables['first_slide_img_alt'] = $first_slide_entity[$first_slide_entity_id]->field_overwrite_image_alt_text[$language][0]['value'];
+          }
+          elseif (isset($first_slide_entity[$first_slide_entity_id]->field_slide_image[$language][0]['entity']->field_alt_text[$language])) {
+            $variables['first_slide_img_alt'] = $first_slide_entity[$first_slide_entity_id]->field_slide_image[$language][0]['entity']->field_alt_text[$language][0]['value'];
+          }
+        }
+        if (isset($node->field_gallery_type[$language])) {
+          $variables['slideshow_type'] = $node->field_gallery_type[$language][0]['taxonomy_term']->name;
+        }
+        if (isset($first_slide_entity[$first_slide_entity_id]->field_slide_link_url[$language])) {
+          $first_slide_url = $first_slide_entity[$first_slide_entity_id]->field_slide_link_url[$language][0]['url'];
+        }
+        if (isset($first_slide_entity[$first_slide_entity_id]->field_slide_title[$language])) {
+          $first_slide_title = $first_slide_entity[$first_slide_entity_id]->field_slide_title[$language][0]['safe_value'];
+          //Setting slide_title to Tealium UDO
+          ti_udo_set("slide_title", $first_slide_title);
+        }
+        $gallery_type_tid = $node->field_gallery_type[$language][0]['tid'];
+        $gallery_type_label = get_label_from_tid($gallery_type_tid, 'field_taxo_gallery_type_label');
+        if ($gallery_type_label == 'recipes') {
+          $link_class = array('link-button', 'recipe-link');
+        }
+        else {
+          $link_class = array('link-button', 'see-more');
+        }
+        $variables['first_slide_link_button'] = l(t(''), $first_slide_url, array('attributes' => array('class' => $link_class, 'title' => $first_slide_title)));
+        $link_class = array('slide-title');
+        $variables['first_slide_link_title'] = l($first_slide_title, $first_slide_url, array('attributes' => array('class' => $link_class, 'title' => $first_slide_title)));
+        if (isset($first_slide_entity[$first_slide_entity_id]->field_slide_deck[$language])) {
+          $variables['first_slide_deck'] = $first_slide_entity[$first_slide_entity_id]->field_slide_deck[$language][0]['safe_value'];
+        }
+      }
+
+      $variables['next_slideshow_title'] = $next_slideshow_title;
+      $variables['next_slideshow_slide_img_url'] = $next_slideshow_slide_img_url;
+      $total_slide_count = $count + 1;
+      
+       // For Simple Reach Test Ticket
+      $slideshow_smrt_info['type'] = 'HD';
+      if($variables['current_slide_count'] > ($variables['total_slide_count']-1)){
+          $slideshow_smrt_info['title'] = $variables['next_slideshow_title'];
+      }else{
+          $slideshow_smrt_info['title'] = $first_slide_title .' - ' .$node->title;
+      }
+    }
+    elseif ($gallery_layout == 'STD') {
+
+      $recent_galleries_link = l(t('See recent galleries'), 'slideshows', array('attributes' => array('class' => array('galleries'), 'title' => t('See recent galleries'))));
+      $variables['recent_galleries_link'] = $recent_galleries_link;
+      $variables['static_title'] = t('Slideshow');
+
+
+      $total_slides = count($node->field_slide_info[$language]);
+      $variables['total_slide_count'] = $total_slides;
+      $current_slide = 1;
+      if (is_numeric(arg(2))) {
+        $current_slide = arg(2);
+      }
+      //Setting page number to Tealium UDO
+      ti_udo_set("page_number", $current_slide);
+      // Implementing og:image & og:title tags for slideshows --- start
+      $page_title = $node->title;
+      $slide_revision_value = $node->field_slide_info[$language][$current_slide - 1]['value'];
+      $slide_details = entity_load('field_collection_item', array($slide_revision_value));
+      $slide_ogimg_title = '';
+     
+      $slide_og_description = $conf['ti_amg_fw_default_meta_desc'];
+      
+      if (isset($slide_details[$slide_revision_value]->field_slide_title[$language])) {
+        $slide_ogimg_title = $slide_details[$slide_revision_value]->field_slide_title[$language][0]['value'];
+        //Setting slide_title to Tealium UDO
+        ti_udo_set("slide_title", $slide_ogimg_title);
+      }
+      if(isset($slide_details[$slide_revision_value]->field_slide_deck[$language])){
+          $slide_og_description = ltrim(substr(str_replace('&nbsp;','',strip_tags($slide_details[$slide_revision_value]->field_slide_deck[$language][0]['value'])),0,155)).'...';
+      }
+     
+      if (isset($slide_details[$slide_revision_value]->field_slide_image[$language])) {
+        if (isset($slide_details[$slide_revision_value]->field_slide_image[$language][0]['entity']->field_image[$language])) {
+          $slide_ogimg_uri = $slide_details[$slide_revision_value]->field_slide_image[$language][0]['entity']->field_image[$language][0]['uri'];
+          $slide_ogimg_url = file_create_url($slide_ogimg_uri);
+        }
+      }
+      if ($slide_ogimg_title == '') {
+        $slide_ogimg_title = $page_title;
+      }
+      else {
+        $slide_ogimg_title = $slide_ogimg_title . ' - ' . $page_title;
+      }
+      $html_head = array(
+        'og_image' => array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'og:image',
+            'content' => $slide_ogimg_url,
+          ),
+        ),
+        'og_title' => array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'og:title',
+            'content' => $slide_ogimg_title,
+          ),
+        ),
+        'og_description' => array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'og:description',
+            'content' => $slide_og_description,
+          ),
+        ),
+        'meta_description' => array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+            'property' => 'description',
+            'content' => $slide_og_description,
+          ),
+        ),
+      );
+      foreach ($html_head as $key => $data) {
+        drupal_add_html_head($data, $key);
+      }
+      // Implementing og:image & og:title tags for slideshows --- end
+      //Setting for simple reach test
+      $slideshow_smrt_info['title'] =  $slide_ogimg_title;       
+      $slideshow_smrt_info['type'] = 'STD';
+      // Build Standard Slide Content by executing views
+      $variables['current_slide_count'] = $current_slide;
+      $node_path_alias = drupal_get_path_alias('node/' . $node->nid);
+      $variables['prev_slide_link'] = get_prev_slide_link($current_slide, $node_path_alias, "&lt; back");
+      $variables['next_slide_link'] = get_next_slide_link($current_slide, $total_slides, $node_path_alias, "next &gt;");
+
+      $delta = db_select('field_data_field_slide_info', 'slide')->fields('slide', array('delta'))->condition('entity_id', $node->nid)->orderBy('slide.delta', 'ASC')->range($current_slide - 1, 1)->execute()->fetchField();
+
+      $view = views_get_view('standard_slideshow');
+      $view->set_display('block');
+      $view->set_arguments(array($node->nid, $delta, $total_slides));
+      $view->pre_execute();
+      $view->execute();
+      $variables['std_slideshow_content'] = $view->render();           
+      $total_slide_count = $total_slides;      
+    }
+    //Implementing prev & next link tags for slideshows -- Starts
+    $slideshow_path = request_path();
+    $slideshow_path_array = explode('/', $slideshow_path);
+    if (arg(2)) {
+      //When directly open the particular slide
+      $next_slide = $slideshow_path_array[2] + 1;
+      $prev_slide = $slideshow_path_array[2] - 1;
+      if (arg(2) < $total_slide_count) {
+        if (arg(2) != 1) {
+          // except the last slide
+          $next_link = array(
+            'rel' => 'next',
+            'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $next_slide,
+          );
+          drupal_add_html_head_link($next_link);
+          $prev_link = array(
+            'rel' => 'prev',
+            'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $prev_slide,
+          );
+          drupal_add_html_head_link($prev_link);
+        }
+        else {
+          // For First Slide
+          $next_link = array(
+            'rel' => 'next',
+            'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/2',
+          );
+          drupal_add_html_head_link($next_link);
+        }
+      }
+      else {
+        // For Last Slide
+        $prev_link = array(
+          'rel' => 'prev',
+          'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/' . $prev_slide,
+        );
+        drupal_add_html_head_link($prev_link);
+      }
+    }
+    else {
+      //Normally by clicking the slideshow page url
+      $next_link = array(
+        'rel' => 'next',
+        'href' => $base_url . '/' . $slideshow_path_array[0] . '/' . $slideshow_path_array[1] . '/2',
+      );
+      drupal_add_html_head_link($next_link);
+    }
+    // Implementing prev & next link tags for slideshows -- Ends
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ * Construct Previous and Next link for standard slideshow.
+ */
+function ti_amg_fw_slideshow_views_pre_render(&$view) {
+  if ($view->name == 'standard_slideshow') {
+    foreach ($view->result as $key => $value) {
+      //Checking for alt text value
+      if (isset($value->field_field_overwrite_image_alt_text[0]['raw']['value'])) {
+        $img_alt = $value->field_field_overwrite_image_alt_text[0]['raw']['value'];
+      }
+      else {
+        if (isset($value->field_field_slide_title_2[0]['raw']['value'])) {
+          $img_alt = $value->field_field_slide_title_2[0]['raw']['value'];
+        }
+        else {
+          $img_alt = '';
+        }
+      }
+      //Assigning alt text value to alt and title attribute
+      if ($img_alt != '') {
+        $value->field_field_image[0]['rendered']['#item']['alt'] = $img_alt;
+        $value->field_field_image[0]['rendered']['#item']['title'] = $img_alt;
+      }
+    }
+    $current_slide = arg(2);
+    if (!$current_slide) {
+      $current_slide = 1;
+    }
+    $node_path_alias = drupal_get_path_alias('node/' . $view->result[0]->nid);
+    $prev_slide_link = get_prev_slide_link($current_slide, $node_path_alias, '');
+    $view->field['nothing']->options['alter']['text'] = $prev_slide_link;
+
+    $total_slides = $view->args[2];
+    $next_slide_link = get_next_slide_link($current_slide, $total_slides, $node_path_alias, '');
+    $view->field['nothing_1']->options['alter']['text'] = $next_slide_link;
+  }
+}
+
+/**
+ * Constructs Previous Slide Link
+ *
+ * @param integer $current_slide_count
+ *   The current slide count (Count starts from 1).
+ * @param string $node_path_alias
+ *   Path alias of current node.
+ * @param string $text
+ *   The translated link text for the anchor tag.
+ *
+ * @return
+ *   Link to Previous Slide
+ */
+function get_prev_slide_link($current_slide_count, $node_path_alias, $text = '') {
+  $class = array('slide-navigation', 'prev');
+
+  if ($current_slide_count > 1) {
+    $prev_slide_count = $current_slide_count - 1;
+    $path = $node_path_alias . '/' . $prev_slide_count;
+    $prev_slide_link = l($text, $path, array('html' => TRUE, 'attributes' => array('class' => $class, 'title' => t('previous slide'))));
+  }
+  else {
+    $prev_slide_link = theme('html_tag', array(
+        'element' => array(
+          '#tag' => 'span',
+          '#attributes' => array(
+            'class' => 'prev slide-navigation disabled',
+          ),
+          '#value' => $text,
+        ),
+      ));
+  }
+  return $prev_slide_link;
+}
+
+/**
+ * Constructs Next Slide Link
+ *
+ * @param integer $current_slide_count
+ *   The current slide count (Count starts from 1).
+ * @param integer $total_slide_count
+ *   Total slide count (Count starts from 1).
+ * @param string $node_path_alias
+ *   Path alias of current node.
+ * @param string $text
+ *   The translated link text for the anchor tag.
+ *
+ * @return
+ *   Link to Previous Slide
+ */
+function get_next_slide_link($current_slide_count, $total_slide_count, $node_path_alias, $text = '') {
+  $class = array('slide-navigation', 'next');
+
+  if ($current_slide_count < $total_slide_count) {
+    $next_slide_count = $current_slide_count + 1;
+    $path = $node_path_alias . '/' . $next_slide_count;
+    $next_slide_link = l($text, $path, array('html' => TRUE, 'attributes' => array('class' => $class, 'title' => t('next slide'))));
+  }
+  else {
+    $next_slide_link = theme('html_tag', array(
+        'element' => array(
+          '#tag' => 'span',
+          '#attributes' => array(
+            'class' => 'next slide-navigation disabled',
+          ),
+          '#value' => $text,
+        ),
+      ));
+  }
+  return $next_slide_link;
+}
+

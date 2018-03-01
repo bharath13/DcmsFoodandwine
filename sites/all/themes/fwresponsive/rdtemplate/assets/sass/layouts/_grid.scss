@@ -1,0 +1,193 @@
+/**
+ * Set Susy Grid defaults
+ */
+$susy: (
+  columns: 4,
+  gutters: 40 / 280
+);
+
+$block: grid;
+.grid {
+  @include clearfix;
+
+  &__item {
+    float: left;
+  }
+
+  &--6 {
+    max-width: 380px;
+    margin: 0 auto;
+    
+    @include respond-to('small and up') {
+      max-width: 730px;
+    }
+
+    @include respond-to('large and up') {
+      max-width: none;
+    }
+  }
+
+  &--6 &__item {
+    $item-width: 180px;
+    $item-count: 6;
+    
+    width: percentage($item-width / 380px);
+    margin-right: percentage(20px / 380px);
+    margin-bottom: 15px;
+
+    &:nth-child(2n) {
+      margin-right: 0;
+    }
+
+    @include respond-to('small and up') {
+      $item-width: 190px;
+      width: percentage($item-width / 730px);
+      margin-bottom: 30px;
+      
+      &:nth-child(4n) {
+        clear: left;
+      }
+
+      &:nth-child(2n),
+      & {
+        margin-right: percentage(80px / 730px);
+      }
+
+      &:nth-child(3n) {
+        margin-right: 0;
+      }
+    }
+
+    @include respond-to('large and up') {
+      $margin: ($page-container-width - ($item-width * $item-count)) / ($item-count - 1);
+      width: percentage($item-width / $page-container-width);
+      
+      &:nth-child(3n),
+      &:nth-child(2n),
+      & {
+        margin-right: percentage($margin / $page-container-width);
+      }
+      
+      &:nth-child(4n) {
+        clear: none;
+      }
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+  
+  &--2 {
+    @include clearfix;
+  }
+
+  &--2 &__item {
+    @include clearfix;
+    float: none;
+    max-width: 620px;
+    width: 85%;
+    box-sizing: border-box;
+    margin: 0 auto 25px;
+
+      @include respond-to('medium and up') {
+        float: left;
+        width: percentage(620px / $page-container-width);
+
+        &:not(:last-child) {
+          margin: 0 percentage(18px / $page-container-width) 0 0;
+        }
+      }
+  }
+}
+
+.grid-row {
+  @include clearfix;
+}
+
+/*-------------------------------------------- */
+/** Homepage/Section Front Grid Layouts */
+/*-------------------------------------------- */
+
+.grid-4-up {
+  @include clearfix;
+
+  &__item {
+    @include span(1 of 2);
+    margin-bottom: gutter(2);
+    
+    &:nth-child(2n) {
+      @include last;
+    }
+    float: left! important;
+    @include respond-to('small and up') {
+      &, &:nth-child(2n) {
+        @include span(1 of 4);
+        margin-bottom: gutter();
+      }
+      
+      &:nth-child(4n) {
+        @include last;
+      }
+    }
+
+  }
+
+  &--tight {
+    @include with-layout((gutters: 20/300)) {
+      
+      .grid-4-up__item {
+        @include span(1 of 2);
+        margin-bottom: gutter(2);
+
+        &:nth-child(2n) {
+          @include last;
+        }
+      }
+
+      @include respond-to('small and up') {
+        
+        .grid-4-up__item {
+          &, &:nth-child(2n) {
+            @include span(1 of 4);
+            margin-bottom: gutter();
+          }
+
+          &:nth-child(4n) {
+            @include last;
+          }
+        }
+      }
+    }
+  }
+}
+
+/*-------------------------------------------- */
+/** Grid 3 Up */
+/*-------------------------------------------- */
+
+.grid-3-up {
+  @include clearfix;
+  
+  @include respond-to('small and up') {
+    &__item {
+      @include span(1 of 3);
+      margin-bottom: gutter();
+
+      &:nth-child(3n) {
+        @include last;
+      }
+    }
+  }
+
+  &--stack-on-tablet {
+    @include respond-to('up to medium') {
+      .grid-3-up__item {
+        float: none;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+    }
+  }
+}

@@ -1,0 +1,262 @@
+/**
+ * Block: story-card
+ * Element: story-card__element
+ * Modifier: story-card--modifier
+ */
+
+$block: story-card;
+
+%feature-title {
+  .#{$block}__title {
+    @include font-droid-sans;
+    font-size: rem(18);
+  }
+}
+
+.#{$block} {
+  @include clearfix;
+  @include font-droid-sans;
+  position: relative;
+  
+  &__link,
+  &__link:hover {
+    
+      text-decoration: none;    
+  }
+
+  &__link:hover {
+
+    .#{$block}__title {
+      text-decoration: underline;
+    }
+  }
+  
+  &__img-wrap {
+    position: relative;
+    margin-bottom: 11px;
+  }
+
+  &__img {
+    vertical-align: bottom;
+    width: 100%;
+    max-width: none;
+  }
+
+  &__sponsor {
+    color: #e58232;
+    @include font-droid-sans-bold;
+    font-size: rem(15);
+    text-transform: uppercase;
+  }
+
+  &__info {
+    float: left;
+    padding-bottom: 10px;
+  }
+  
+  &__title {
+    margin-top: 0;
+    margin-bottom: 6px;
+    @include font-droid-sans-bold;
+    font-size: rem(16);
+    font-weight: 400;
+    line-height: 1.4;
+    color: #333;
+  
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  
+  &__text {
+    margin-top: 6px;
+    margin-bottom: 0;
+    color: #333333;
+    font-size: rem(12);
+  }
+
+  &__credit {
+    color: #666666;
+    font-size: rem(14);
+    font-style: italic;
+  }
+
+  /*-------------------------------------------- */
+  /** Modifiers */
+  /*-------------------------------------------- */
+  
+  &--feature {
+    @extend %feature-title;
+    
+    @include respond-to('up to small') {
+      margin-bottom: 20px;
+
+      .#{$block}__img-wrap {
+        float: left;
+        width: percentage(145 / 375);
+        margin-right: percentage(20 / 375);
+      } 
+
+      .#{$block}__content {
+        float: left;
+        width: percentage(210 / 375);
+      }
+    }
+  }
+
+  &--feature-lg {
+    @extend %feature-title;
+
+    .#{$block}__title {
+      font-size: rem(24);
+      
+      @include respond-to('small and up') {
+        font-size: rem(26);
+      }
+    }
+  }
+
+  &--outbound {
+    .#{$block}__link:hover {
+      text-decoration: underline;
+      color: inherit;
+    }
+  }
+  
+  &--related {
+     min-height: 255px;
+
+    .#{$block}__link {
+      &:hover:after {
+        opacity: 1;
+        bottom: 0;
+        transition-duration: .10s;
+      }
+
+      &:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        display: block;
+        width: 100%;
+        height: 2px;
+        background-color: $brand-primary;
+        opacity: 0;
+        transition: .15s ease-out;
+      }
+    }
+  }
+
+  // add video play icon when story card represents a video
+  &--is-video {
+    .#{$block}__img-wrap:after {
+      @extend %video-play-button-sm;
+      content: '';
+      position: absolute;
+      bottom: 3px;
+      left: 3px;
+      @include transform( scale( .75, .75) );
+      display: block;
+
+      @include respond-to('small and up') {
+        bottom: 6px;
+        left: 6px;
+        @include transform(none);
+      }
+    }
+  }
+
+  &--is-video {
+    &.#{$block}--feature-lg .#{$block}__img-wrap:after {
+      @extend %video-play-button;
+      top: 50%;
+      left: 50%;
+      margin-top: -50px;
+      margin-left: -50px;
+    }
+
+    &-alt {
+      
+      .#{$block}__title {
+        @include font-droid-serif-bold;
+        font-size: rem(26);
+        line-height: 1.125;
+        margin: 0 0 15px 0;
+        @include respond-to('small and up') {
+          font-size: rem(36);
+        }
+
+        @include respond-to('medium and up') {
+          font-size: rem(36);
+        }
+      }
+
+      .#{$block}__text {
+        font-size: rem(16);
+        margin-bottom: 15px;
+      }
+
+      &:not(:last-child) {
+        margin-bottom: 30px;
+      }
+    }
+  }
+
+  &--is-slideshow {
+    .#{$block}__img-wrap:after {
+      @extend %slideshow-icon;
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      display: block;
+      background-color: rgba(#000000, .5);
+    }
+  }
+
+  .breadcrumbs {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  &--horz {
+    position: relative;
+    @include clearfix();
+
+    .#{$block}__img-wrap {
+      width: 40%;
+      float: left;
+      margin: 0;
+    }
+
+    .#{$block}__content {
+      width: 60%;
+      float: left;
+
+      &-interior {
+        width: calc(60% - 38px);
+        box-sizing: border-box;
+        padding-left: 3%;
+        position: absolute;
+        top: 50%;
+        @include transform(translateY(-50%));
+      }
+    }
+  }
+
+  &-arrow {
+    color: $color-red;
+    width: 35px;
+    height: 35px;
+    position: absolute;
+    top: 50%;
+    @include transform(translateY(-50%));
+    right: 0px;
+
+    svg {
+      fill: $color-red;
+    }
+  }
+}
+
+

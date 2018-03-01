@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW GENERIC PAGE VIEWS feature.
+ */
+
+include_once 'ti_amg_fw_generic_page_views.features.inc';

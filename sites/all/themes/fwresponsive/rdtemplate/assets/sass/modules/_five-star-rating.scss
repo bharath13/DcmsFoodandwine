@@ -1,0 +1,24 @@
+// This overrides the Drupal 5 star rating module css in order to customize
+// the stars used in the display which are included in our SVG sprite
+
+div.fivestar-widget {
+  .star,
+  .star a {
+    @extend %rating-star-off;
+  }
+
+  div.on a {
+    color: blue;
+    @extend %rating-star-on;
+  }
+
+  div.star.hover a,
+  div.star.hover a:hover {
+    @extend %rating-star-hover;
+  }
+
+  .star {
+    margin-left: 1px;
+    margin-right: 1px;
+  }
+}

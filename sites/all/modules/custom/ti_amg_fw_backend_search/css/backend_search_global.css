@@ -1,0 +1,23 @@
+/**
+ * @file
+ * Stylesheet for FoodAndWine Backend Advanced Search (Global Scope).
+ */
+
+#ti-editorial-nav ul .search-recipes a{
+    background: url("/sites/all/modules/custom/ti_editorial_navbar/images/icons-main-menu.png") no-repeat scroll -125px 15px transparent!important;
+    padding-left: 35px;    
+}
+#fw_parent_desc {
+    background: none repeat scroll 0 0 papayawhip;
+    border: 1px solid orange;
+    padding: 10px;
+    width: 500px;
+}
+#fw_parent_desc ol {
+    margin-bottom: 0;
+    margin-left: 30px;
+    margin-top: 0;
+}
+#block-system-powered-by {
+    clear: both;
+}

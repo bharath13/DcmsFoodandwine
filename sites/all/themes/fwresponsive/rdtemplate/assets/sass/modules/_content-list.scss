@@ -1,0 +1,197 @@
+$block: content-list;
+
+.#{$block} {
+  display: none;
+
+  &__top {
+    @include clearfix;
+  }
+
+  &__heading {
+    @include font-droid-sans-bold;
+    font-size: rem(22);
+    text-transform: uppercase;
+    color: $color-black-2;
+    text-align: center;
+    border-top: 4px solid $color-black-2;
+    border-bottom: 4px solid $color-black-2;
+    margin: 0 0 10px 0;
+    padding: 12px 0;
+    width: auto;
+  }
+
+  &__counter {
+    font-size: rem(18);
+    line-height: 1;
+    font-style: italic;
+    color: $color-dark-grey;
+    display: inline-block;
+    vertical-align: middle;
+    cursor: pointer;
+
+    &-arrow {
+      margin-left: 5px;
+      @include size(16px);
+      color: $color-red;
+      @include transform(rotate(90deg));
+      @include transition(transform 0.3s common-ease());
+
+      .js-trigger-active & {
+        @include transform(rotate(0deg));
+      }
+    }
+  }
+
+  &__list {
+    @include ui-list;
+    max-height: 415px;
+    border-bottom: 1px solid $color-dark-grey;
+    overflow-y: auto;
+    background: #eee;
+    &::-webkit-scrollbar-track {
+      border-radius: 10px 10px 10px 10px;
+      -moz-border-radius: 10px 10px 10px 10px;
+      -webkit-border-radius: 10px 10px 10px 10px;
+      border: 1px solid #666666;
+      background: rgba(0, 0, 0, 0);
+    }
+    &::-webkit-scrollbar-thumb {
+      border-radius: 10px 10px 10px 10px;
+      -moz-border-radius: 10px 10px 10px 10px;
+      -webkit-border-radius: 10px 10px 10px 10px;
+      border: 1px solid #666666;
+      background: rgba(0, 0, 0, 0);
+    }
+    &:hover {
+      &::-webkit-scrollbar-thumb {
+        background: red;
+      }
+    }
+    &::-webkit-scrollbar  {
+      width: 5px;
+    }
+  }
+
+  &__list-item {
+    @include clearfix;
+    @include font-droid-sans-bold;
+    font-size: rem(16);
+    line-height: 1.4;
+    color: $color-dark-grey;
+    padding: 10px 2px 10px;
+    border-bottom: 1px solid $color-mid-grey;
+    background: white;
+    @include transition(background-color 0.15s);
+
+    &:hover,
+    &--active,
+    .#{$block}--dropdown & {
+      background: #f6f6f6;
+
+      .#{$block}__list-link {
+        color: $color-dark-grey;
+      }
+    }
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  &__list-link {
+    width: 100%;
+    color: $color-black;
+    @include transition(color 0.15s);
+  }
+
+  // Mod for a numbered list
+
+  &--numbered {
+    counter-reset: item;
+
+    .#{$block}__list-item {
+      
+      &:before {
+        width: 30px;
+        float: left;
+        counter-increment: item;
+        content: counter(item)".";
+      }
+    }
+
+    .#{$block}__list-link {
+      float: left;
+      width: calc(100% - 30px);
+    }
+  }
+
+  // Mod for tablet and mobile dropdown
+  
+  &--dropdown {
+    display: block;
+
+    .#{$block}__top {
+      text-align: left;
+    }
+
+    .#{$block}__heading {
+      font-size: rem(20);
+      border-bottom: 0;
+      border-top: 0;
+      padding: 0;
+      text-align: left;
+    }
+
+    .#{$block}__list {
+      display: none;
+      width: 240px;
+      text-align: left;
+      max-height: none;
+      position: absolute;
+      top: 100%;
+      z-index: $z-5;
+      box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 
+                0 2px 10px 0 rgba(0, 0, 0, 0.12);
+      border-bottom: 0;
+
+      @include respond-to('up to small') {
+        width: 100%;
+      }
+    }
+
+    .#{$block}__list-item {
+      border: 0;
+      padding: 10px 15px;
+    }
+  }
+}
+
+.#{$block} {
+    display: none;
+}
+
+.#{$block}--dropdown {
+  display: none;
+}
+  
+@include respond-to('small and up') {
+
+  .#{$block} {
+    display: none;
+  }
+
+  .#{$block}--dropdown {
+    display: none;
+  }
+}
+
+@include respond-to('medium and up') {
+
+  .#{$block} {
+    display: block;
+  }
+
+  .#{$block}--dropdown {
+    display: none;
+  }
+}

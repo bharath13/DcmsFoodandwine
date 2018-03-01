@@ -1,0 +1,5 @@
+name = "FW AMG Outbrain Integration"
+description = "Module used for the Outbrain integration"
+package = "AMG"
+core = 7.x
+version = 7.x-1.0

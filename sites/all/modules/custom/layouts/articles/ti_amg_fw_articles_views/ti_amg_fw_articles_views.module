@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW ARTICLES VIEWS feature.
+ */
+
+include_once 'ti_amg_fw_articles_views.features.inc';

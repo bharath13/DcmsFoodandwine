@@ -1,0 +1,3572 @@
+<?php
+
+/**
+ * @file
+ * To create custom functionalities to responsive FW site.
+ */
+
+require_once 'ti_amg_fwrd_custom.inc';
+
+define('FW_BRIGHTCOVE_VIDEO_URL', 'http://api.brightcove.com/services/library');
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fwrd_custom_block_info() {
+  $block['responsive_header'] = array(
+    'info' => t('FW Responsive Header'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['responsive_header_logo'] = array(
+    'info' => t('FW Responsive Header Logo'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['responsive_header_main_menu'] = array(
+    'info' => t('FW Responsive Header Main Menu'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['responsive_header_campaign'] = array(
+    'info' => t('FW Responsive Campaign Header'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  $block['responsive_header_homepage_menu'] = array(
+    'info' => t('FW Responsive Header Home Page Menu'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['responsive_header_recipe_menu'] = array(
+    'info' => t('FW Responsive Header Recipe Menu'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['responsive_header_search'] = array(
+    'info' => t('FW Responsive Header Search'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['responsive_footer'] = array(
+    'info' => t('FW Responsive Footer'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $block['smart_share'] = array(
+    'info' => t('Smart Share'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  return $block;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fwrd_custom_block_view($block_key = '') {
+  $block = array();
+  $share_text = 'Did you enjoy this article?';
+  $share_it = 'Share it.';
+
+  global $base_url;
+  $img_path = $base_url . '/' . drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/spritemap.svg';
+  switch ($block_key) {
+    case 'responsive_header_logo':
+      $node_type = '';
+      if (arg(0) == 'node' && arg(1)) {
+        $node_id = arg(1);
+        $page_path = drupal_get_path_alias('node/' . $node_id);
+        if ($page_path == 'fwrd-home') {
+          $node_type = 'home';
+        }
+      }
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('global-header-logo', array('node_type' => $node_type, 'img_path' => $img_path)),
+      );
+      break;
+
+    case 'responsive_header_main_menu':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('global-header-main-menu', array('main_menu' => _ti_amg_fwrd_custom_menu(), 'img_path' => $img_path)),
+      );
+      break;
+    case 'responsive_header_campaign':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('campaign-header', array('tag_name' => _ti_amg_fwrd_custom_get_tag())),
+      );
+      break;
+    case 'responsive_header_search':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('global-header-search'),
+      );
+      break;
+
+    case 'responsive_footer':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('global-footer'),
+      );
+      break;
+
+    case 'smart_share':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('smart_share_template', array(
+          'share_text' => $share_text,
+          'share_it' => $share_it,
+        )),
+      );
+      break;
+
+    case 'print_page_logo':
+      $block['subject'] = NULL;
+      $block['content'] = array(
+        '#markup' => theme('print-page-logo', array('img_path' => $img_path)),
+      );
+      break;
+
+    default:
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ti_amg_fwrd_custom_theme($existing, $type, $theme, $path) {
+  return array(
+    'global-header-logo' => array(
+      'template' => 'logo',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'node_type' => NULL,
+        'img_path' => array(),
+      ),
+    ),
+    'global-header-main-menu' => array(
+      'template' => 'main-menu',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+        'main_menu' => array(),
+        'img_path' => array(),
+      ),
+    ),
+    'global-header-homepage-menu' => array(
+      'template' => 'main-menu',
+      'path' => drupal_get_path('module', 'ti_amg_fwrd_homepage') . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'main_menu' => array(),
+        'img_path' => array(),
+      ),
+    ),
+    'global-header-search' => array(
+      'template' => 'search',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+      ),
+    ),
+    'global-footer' => array(
+      'template' => 'footer',
+      'path' => $path . '/templates',
+      'variables' => array(
+        'classes' => array(),
+      ),
+    ),
+    'social-share' => array(
+      'template' => 'social-share',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'url' => NULL,
+        'img_path' => NULL,
+        'social_share_content' => NULL,
+      ),
+    ),
+    'social-share-gallery-mobile' => array(
+      'template' => 'social-share-gallery-mobile',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'url' => NULL,
+        'img_path' => NULL,
+        'social_content' => NULL,
+      ),
+    ),
+    'social-share-gallery-slide' => array(
+      'template' => 'social-share-gallery-slide',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'url' => NULL,
+        'img_path' => NULL,
+        'social_content' => NULL,
+      ),
+    ),
+    'breadcrumbs-section' => array(
+      'template' => 'breadcrumbs',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'tagset' => array(),
+        'classes' => array(),
+        'links' => array(),
+      ),
+    ),
+    'story-card' => array(
+      'template' => 'story-card',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'type' => array(),
+        'title' => array(),
+        'text' => array(),
+        'tags' => array(),
+        'breadcrumbs' => array(),
+        'image_url' => array(),
+        'image_alt' => array(),
+        'placeholder_url' => array(),
+        'url' => array(),
+        'credit' => array(),
+        'classes_list' => array(),
+        'is_slideshow' => array(),
+        'is_video' => array(),
+        'nativo_ad' => NULL,
+        'home_page' => NULL,
+        'node_type' => NULL,
+      ),
+    ),
+    'hero-feature' => array(
+      'template' => 'hero-feature',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes_list' => array(),
+        'is_fullscreen' => NULL,
+        'hero_content' => array(),
+        'hero_carousel' => array(),
+      ),
+    ),
+    'hero-video-feature' => array(
+      'template' => 'hero-video-feature',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes_list' => array(),
+        'is_fullscreen' => NULL,
+        'hero_content' => array(),
+        'hero_carousel' => array(),
+      ),
+    ),
+    'spotlight-tout' => array(
+      'template' => 'spotlight-tout',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'pull_quote' => array(),
+        'type' => array(),
+        'alt_design' => array(),
+      ),
+    ),
+    'pagination-arrow' => array(
+      'template' => 'pagination-arrow',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+      ),
+    ),
+    'seo-links-section' => array(
+      'template' => 'seo-links-section',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'links_content' => array(),
+      ),
+    ),
+    'adv' => array(
+      'template' => 'adv',
+      'path' => $path . '/templates',
+      'variables' => array('classes' => array(), 'ad_resolution' => array()),
+    ),
+    'responsive_footer_template' => array(
+      'template' => 'fw_footer',
+    ),
+    'smart_share_template' => array(
+      'template' => 'ti_amg_fwrd_custom_smart_share',
+    ),
+    'print-page-logo' => array(
+      'template' => 'print-page-logo',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'classes' => array(),
+        'img_path' => array(),
+      ),
+    ),
+    'newsletters-opt' => array(
+      'template' => 'newsletters-opt',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'class' => array(),
+        'newsletter_image' => array(),
+      ),
+    ),
+    'subscribe-opt' => array(
+      'template' => 'subscribe-opt',
+      'path' => $path . '/templates/modules',
+      'variables' => array(
+        'class' => array(),
+        'sub_logo_image' => array(),
+        'sub_image' => array(),
+        'sub_color_hex' => array(),
+      ),
+    ),
+    'ti-amg-fwrd-custom-sitemap-html' => array(
+      'template' => 'ti-amg-fwrd-custom-sitemap-html',
+      'path' => $path . '/templates/modules',
+    ),
+    'ti-amg-fwrd-custom-children-sitemap-html' => array(
+      'template' => 'ti-amg-fwrd-custom-children-sitemap-html',
+      'path' => $path . '/templates/modules',
+    ),
+    'campaign-header' => array(
+      'template' => 'campaign-header',
+      'path' => $path . '/templates/modules',
+    ),
+  );
+}
+/**
+ * Function to get tag name.
+ */
+function _ti_amg_fwrd_custom_get_tag() {
+  $node = menu_get_object();
+  $tag_name = '';
+  $falvor = array('Local Flavor', 'Local Flavor International');
+  if ($node->type == 'category') {
+    if(isset($node->field_fw_category[LANGUAGE_NONE][0]['tid'])) {
+      $cat_type = ti_amg_fwrd_category_get_term_name($node->field_fw_category[LANGUAGE_NONE][0]['tid']);
+      if (in_array($cat_type, $falvor)) {
+        $tag_name = $cat_type;
+      }
+    }
+  }
+  else {
+    if (isset($node->field_fw_tags[LANGUAGE_NONE])) {
+      $tags = $node->field_fw_tags[LANGUAGE_NONE];
+      foreach ($tags as $tag) {
+        $tag_field_value = ti_amg_fwrd_category_get_term_name($tag['tid']);
+        if (in_array($tag_field_value, $falvor)) {
+          $tag_name = $tag_field_value;
+        }
+      }
+    }  
+  }
+  return $tag_name;
+}
+
+/**
+ * Create the array for the entire menu (root/children links).
+ *
+ * To accomodate the menu markup, css, js.
+ */
+function _ti_amg_fwrd_custom_menu() {
+  $main_menu = array();
+  $menuItems = menu_tree_page_data('main-menu');
+  foreach ($menuItems as $key => $menu) {
+    // Check current active menu.
+    if (!$menuItems[$key]['link']['hidden']) {
+      $menu_link = array();
+      $menu_link['title'] = $menuItems[$key]['link']['link_title'];
+      $special_class = (strtolower($menu_link['title']) == 'subscribe') ? ' main-menu__item__link--special' : '';
+      $href = $menuItems[$key]['link']['link_path'];
+      $menu_link['link'] = l($menu_link['title'], $href, array(
+        'attributes' => array(
+          'class' =>
+          array('main-menu__item__link' . $special_class),
+        ),
+        'title' => $menu_link['title'],
+      )
+      );
+      if ($menuItems[$key]['below']) {
+        $menu_link_leaf = array();
+        $menu = menu_tree_output($menuItems[$key]['below']);
+        foreach ($menu as $key => $submenu) {
+          $menu_link_leaf['title'] = (isset($menu[$key]['#title'])) ? $menu[$key]['#title'] : '';
+          if (isset($menu_link_leaf['title']) && ($menu_link_leaf['title'] != '')) {
+            $href = (isset($menu[$key]['#href'])) ? $menu[$key]['#href'] : '';
+            $menu_link_leaf['link'] = l($menu_link_leaf['title'], $href, array(
+              'attributes' => array(
+                'class' =>
+                array('main-menu__item__link'),
+              ),
+              'title' => $menu_link_leaf['title'],
+            )
+            );
+            $menu_link['leaf'][] = $menu_link_leaf;
+          }
+        }
+      }
+      $main_menu[] = $menu_link;
+    }
+  }
+
+  return $main_menu;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function ti_amg_fwrd_custom_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'search_block_form') {
+    if (is_array($form)) {
+      $form['#attributes']['class'] = array();
+      $form['#attributes'] = array(
+        'class' => array('site-header__search'),
+        'data-js-component' => 'headerSearch',
+      );
+    }
+  }
+
+  // To Add a new field to the menu form for the classic aspen menu.
+  if ($form_id == 'menu_edit_item') {
+    if (isset($form_state['build_info']['args'][0]) && $form_state['build_info']['args'][0] == 'edit') {
+      $generate_mlid = _ti_amg_fwrd_custom_generate_mlid($form_state['build_info']['args'][1]['mlid'], $form_state['build_info']['args'][1]['link_title']);
+    }
+    elseif (isset($form_state['build_info']['args'][0]) && $form_state['build_info']['args'][0] == 'add') {
+      $generate_mlid = _ti_amg_fwrd_custom_generate_mlid(0, $form_state['build_info']['args'][1]['link_title']);
+    }
+    else {
+      $generate_mlid = '';
+    }
+    if (is_array($form) && $form['original_item']['#value']['menu_name'] == 'menu-classic-in-aspen-menu') {
+      $form['classic_open_new_window'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Open in new window'),
+        '#description' => 'If selected then path will open on new page',
+        // '#id' => 'classic-open-new-window',.
+        '#default_value' => variable_get($generate_mlid, ''),
+      );
+      array_unshift($form['#submit'], 'ti_amg_fwrd_custom_form_submit');
+    }
+  }
+}
+
+/**
+ * Form Submit handler for the classic aspen menu.
+ */
+function ti_amg_fwrd_custom_form_submit(&$form, &$form_state) {
+  // Generate the mlid to append with the variable
+  // since the variable should differ for each menu link.
+  $generate_mlid = _ti_amg_fwrd_custom_generate_mlid($form_state['values']['mlid'], $form_state['values']['link_title']);
+  if (isset($form_state['values']['classic_open_new_window'])) {
+    if ($form_state['values']['classic_open_new_window'] == 1) {
+      variable_set($generate_mlid, 1);
+    }
+    else {
+      variable_set($generate_mlid, '');
+    }
+  }
+}
+
+/**
+ * To generate mlid based on the available parameters.
+ */
+function _ti_amg_fwrd_custom_generate_mlid($form_mlid, $link_title = '') {
+  // Check if menu link id is set for the Edit form
+  // If not, generate the menulink id using the path and set the variable.
+  $mlid_replace_spaces = drupal_strtolower(str_replace(' ', '-', $link_title));
+  $mlid_without_special_characters = preg_replace('/[^A-Za-z0-9\-]/', '', $mlid_replace_spaces);
+  if (!empty($form_mlid) && $form_mlid > 0 && $link_title != '') {
+    // Set the variable before deleting it.
+    $variable_set_value = variable_get($mlid_without_special_characters);
+    if ($variable_set_value != '') {
+      variable_set('classic-open-new-window-' . $form_mlid, $variable_set_value);
+      // Unset the existing variable created during the menu creation.
+      variable_del($mlid_without_special_characters);
+    }
+    $mlid = 'classic-open-new-window-' . $form_mlid;
+  }
+  else {
+    $mlid = $mlid_without_special_characters;
+  }
+  return $mlid;
+}
+
+/**
+ * To get the current user agent details.
+ */
+function _ti_amg_fwrd_custom_getuseragent() {
+  $tablet_browser = 0;
+  $mobile_browser = 0;
+
+  if (preg_match('/(tablet|ipad|playbook)|(android(?!.*(mobi|opera mini)))/i', strtolower($_SERVER['HTTP_USER_AGENT']))) {
+    $tablet_browser++;
+  }
+
+  if (preg_match('/(up.browser|up.link|mmp|symbian|smartphone|midp|wap|phone|android|iemobile)/i', strtolower($_SERVER['HTTP_USER_AGENT']))) {
+    $mobile_browser++;
+  }
+
+  if ((isset($_SERVER['HTTP_ACCEPT']) && (strpos(strtolower($_SERVER['HTTP_ACCEPT']), 'application/vnd.wap.xhtml+xml') > 0)) or ((isset($_SERVER['HTTP_X_WAP_PROFILE']) or isset($_SERVER['HTTP_PROFILE'])))) {
+    $mobile_browser++;
+  }
+
+  $mobile_ua = strtolower(substr($_SERVER['HTTP_USER_AGENT'], 0, 4));
+  $mobile_agents = array(
+    'w3c ', 'acs-', 'alav', 'alca', 'amoi', 'audi', 'avan', 'benq', 'bird', 'blac',
+    'blaz', 'brew', 'cell', 'cldc', 'cmd-', 'dang', 'doco', 'eric', 'hipt', 'inno',
+    'ipaq', 'java', 'jigs', 'kddi', 'keji', 'leno', 'lg-c', 'lg-d', 'lg-g', 'lge-',
+    'maui', 'maxo', 'midp', 'mits', 'mmef', 'mobi', 'mot-', 'moto', 'mwbp', 'nec-',
+    'newt', 'noki', 'palm', 'pana', 'pant', 'phil', 'play', 'port', 'prox',
+    'qwap', 'sage', 'sams', 'sany', 'sch-', 'sec-', 'send', 'seri', 'sgh-', 'shar',
+    'sie-', 'siem', 'smal', 'smar', 'sony', 'sph-', 'symb', 't-mo', 'teli', 'tim-',
+    'tosh', 'tsm-', 'upg1', 'upsi', 'vk-v', 'voda', 'wap-', 'wapa', 'wapi', 'wapp',
+    'wapr', 'webc', 'winw', 'winw', 'xda ', 'xda-',
+  );
+
+  if (in_array($mobile_ua, $mobile_agents)) {
+    $mobile_browser++;
+  }
+
+  if (strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'opera mini') > 0) {
+    $mobile_browser++;
+    // Check for tablets on opera mini alternative headers.
+    $stock_ua = strtolower(isset($_SERVER['HTTP_X_OPERAMINI_PHONE_UA']) ? $_SERVER['HTTP_X_OPERAMINI_PHONE_UA'] : (isset($_SERVER['HTTP_DEVICE_STOCK_UA']) ? $_SERVER['HTTP_DEVICE_STOCK_UA'] : ''));
+    if (preg_match('/(tablet|ipad|playbook)|(android(?!.*mobile))/i', $stock_ua)) {
+      $tablet_browser++;
+    }
+  }
+
+  if ($tablet_browser > 0) {
+    // Do something for tablet devices.
+    return 'tablet';
+  }
+  elseif ($mobile_browser > 0) {
+    // Do something for mobile devices.
+    return 'mobile';
+  }
+  else {
+    // Do something for everything else.
+    return 'desktop';
+  }
+}
+
+/**
+ * Function to detect device for leader board ad.
+ */
+function _ti_amg_fwrd_custom_device_leaderboard_ad($detect_device) {
+  $leaderboard_ad = array();
+  $leaderboard_ad['mobile'] = '';
+  $leaderboard_ad['tablet'] = '';
+  $leaderboard_ad['ffx'] = '';
+  // Checking whether the device is tablet or dektop.
+  if ($detect_device == 'mobile') {
+    $leaderboard_ad['mobile'] = module_invoke('ti_amg_ads', 'block_view', 'mobile_320x50');
+  }
+  elseif ($detect_device == 'tablet') {
+    $leaderboard_ad['tablet'] = module_invoke('ti_amg_ads', 'block_view', 'gcr_tablet_ld_728x90');
+  }
+  else {
+    // Adding dummy ad 2x9 for firefox browser.
+    $firefox = strpos($_SERVER["HTTP_USER_AGENT"], 'Firefox') ? TRUE : FALSE;
+    if ($firefox) {
+      $leaderboard_ad['ffx'] = module_invoke('ti_amg_ads', 'block_view', 'dummy_ffx_2x9');
+    }
+    $leaderboard_ad['desktop'] = module_invoke('ti_amg_ads', 'block_view', 'gcrsld_728x90');
+  }
+  return $leaderboard_ad;
+}
+
+/**
+ * Function to get video js.
+ */
+function _ti_amg_fwrd_custom_get_html5_video_js() {
+  $output = '!function(){var t=document.getElementsByClassName("video-js"),e=t.length,i={players:document.getElementsByClassName("video-js"),isPlayingVideo:function(t){return!videojs(t).paused()},isPlayingAd:function(t){return!!videojs(t).ima3&&!videojs(t).ima3.adPlayer.paused()},adIsActive:function(t){return"true"===t.getAttribute("data-ads-active")},adIsLoading:function(t){return"true"===t.getAttribute("data-ads-loading")},playVideo:function(t){this.isPlayingVideo(t)||videojs(t).play()},pauseVideo:function(t){this.isPlayingVideo(t)&&videojs(t).pause()},playAd:function(t){this.isPlayingAd(t)||videojs(t).ima3.adPlayer.play()},pauseAd:function(t){this.isPlayingAd(t)&&videojs(t).ima3.adPlayer.pause()},playVideoOrAd:function(t){this.adIsLoading(t)||(this.adIsActive(t)?this.playAd(t):this.playVideo(t))},pauseVideoOrAd:function(t){this.adIsActive(t)?this.pauseAd(t):this.pauseVideo(t)},muteVideo:function(t){videojs(t).muted(!0)},unmuteVideo:function(t){videojs(t).muted(!1)},muteAd:function(t){return!!videojs(t).ima3&&void videojs(t).ima3.adPlayer.volume(0)},unmuteAd:function(t){return!!videojs(t).ima3&&void videojs(t).ima3.adPlayer.volume(.5)},muteVideoOrAd:function(t){this.adIsActive(t)?this.muteAd(t):this.muteVideo(t)},unmuteVideoOrAd:function(t){this.adIsActive(t)?this.unmuteAd(t):this.unmuteVideo(t)},when:function(t,e,i){videojs(t).on(e,function(){i(this)})},forAll:function(i){for(var n=0;n<e;n++)i(t[n])},isInViewport:function(t,e){e||(e=0);var i=t.getBoundingClientRect();return i.top+e>=0&&i.left+e>=0&&i.bottom-e<=window.innerHeight&&i.right-e<=window.innerWidth}};i.forAll(function(t){i.when(t,"ads-ad-started",function(t){document.getElementById(t.id()).setAttribute("data-ads-active","true")}),i.when(t,"ads-ad-ended",function(t){document.getElementById(t.id()).setAttribute("data-ads-active","false")}),i.when(t,"ads-load",function(t){document.getElementById(t.id()).setAttribute("data-ads-loading","true")}),i.when(t,"ads-load",function(t){document.getElementById(t.id()).setAttribute("data-ads-loading","false")})}),window.bcJumpstart=i}(),function(){function t(){var e=window.pageYOffset;return s===e?void n(t):(s=e,i(),n(t),void 0)}bcJumpstart.scrollFunctions=[];var e=function(){return bcJumpstart.scrollFunctions},i=function(){for(var t=e(),i=0;i<t.length;i++)t[i]()},n=window.requestAnimationFrame||window.webkitRequestAnimationFrame||window.mozRequestAnimationFrame||window.msRequestAnimationFrame||window.oRequestAnimationFrame,s=window.pageYOffset;n&&t()}(),function(){bcJumpstart.forAll(function(t){"true"===t.getAttribute("data-autoplay")&&bcJumpstart.playVideoOrAd(t)})}(),function(){bcJumpstart.forAll(function(t){if("true"===t.getAttribute("data-stickyplay")){var e=document.createElement("div");e.classList.add("jumpstart-sticky-outer");var i=document.createElement("div");i.classList.add("jumpstart-sticky-inner");var n=document.createElement("div");n.classList.add("jumpstart-sticky-controls"),n.innerHTML=\'<div class="jumpstart-sticky-resize-btn"></div><div class="jumpstart-sticky-slide-btn"></div>\',i.appendChild(n),t.parentNode.insertBefore(e,t),e.appendChild(i),i.appendChild(t)}}),bcJumpstart.scrollFunctions.push(function(){for(var t=document.querySelectorAll(".jumpstart-sticky-outer"),e=0;e<t.length;e++){var i=t[e];i.getBoundingClientRect().top+200<=0?(i.classList.add("jumpstart-sticky-active"),i.classList.remove("jumpstart-sticky-inactive")):(i.classList.remove("jumpstart-sticky-active"),i.classList.add("jumpstart-sticky-inactive"))}});for(var t=document.querySelectorAll(".jumpstart-sticky-controls"),e=0;e<t.length;e++){var i=t[e].querySelector(".jumpstart-sticky-resize-btn");i.addEventListener("click",function(){var t=this.parentElement.parentElement;t.classList.contains("jumpstart-sticky-large")?t.classList.remove("jumpstart-sticky-large"):t.classList.add("jumpstart-sticky-large")});var n=t[e].querySelector(".jumpstart-sticky-slide-btn");n.addEventListener("click",function(){var t=this.parentElement.parentElement,e=t.querySelector(".video-js");t.classList.contains("jumpstart-sticky-slide")?t.classList.remove("jumpstart-sticky-slide"):(t.classList.add("jumpstart-sticky-slide"),bcJumpstart.pauseVideoOrAd(e),t.removeAttribute("style"))})}var s=function(t){var e,i,n,s,a=!1,d=t;d.addEventListener("mousedown",function(t){a=!0,n=d.offsetLeft,s=d.offsetTop,e=t.pageX,i=t.pageY}),document.addEventListener("mousemove",function(t){if(a){var o=function(){var i=n+t.pageX-e,s=document.body.clientWidth-d.offsetWidth;return i>=s&&(i=s),i<=0&&(i=0),i+"px"},u=function(){var e=s+t.pageY-i,n=document.body.clientHeight-d.offsetHeight;return e>=n&&(e=n),e<=0&&(e=0),e+"px"};d.style.left=o(),d.style.top=u(),d.style.right="auto",d.style.bottom="auto"}}),document.addEventListener("mouseup",function(t){a=!1})};bcJumpstart.forAll(function(t){t.parentElement.classList.contains("jumpstart-sticky-inner")&&s(t.parentElement)})}();';
+  return $output;
+}
+
+/**
+ * Responsive HTML5 player
+ * Dev/QA: brightcove_account_id = 1660653193
+ *         brightcove_player_id = SJ6MKWKF
+ * Prod: brightcove_account_id = default
+ *       brightcove_player_id = SJ6MKWKF
+ * Update in admin/config/fw_settings/video_player_settings.
+ */
+function _ti_amg_fwrd_custom_get_html5_video($video_id = '', $device = '', $page, $psettings = array()) {
+  $data_account = variable_get('brightcove_account_id', '');
+  $data_player = variable_get('brightcove_player_id', '');
+  if ($data_account != '') {
+    $auto_play = '';
+    $player_settings = '';
+    if ($device == "") {
+      $device = 'desktop';
+    }
+    if ($device == "desktop") {
+      if (!empty($psettings)) {
+        $player_settings = implode(" ", $psettings);
+      }
+      else {
+        if (($page == "category") || ($page == "video")) {
+          $player_settings = 'data-autoplay="true" data-stickyplay="true"';
+        }
+        if($page == "video_landing_page") {
+          $player_settings = 'data-autoplay="false"';
+        }
+        if ($page == "channel_landing_page_responsive") {
+          $player_settings = 'data-viewplay="true" data-stickyplay="true" ';
+        }
+        if ($page == 'home_page_responsive') {
+          $player_settings = 'data-viewplay="true"';
+        }
+      }
+    }
+    elseif ($device == "tablet" && $page != 'home_page_responsive') {
+      $player_settings = 'data-stickyplay="true" ';
+    }
+    else if ($device == "phone") {
+      $player_settings = 'data-stickyplay="false" ';
+    }
+    if ($page == "gallery") {
+      $player_settings = 'data-viewplay="false" data-autoplay="false" data-stickyplay="false"';
+    }
+    $output = '<div class="brightcove-jumpstart"><video ' . $player_settings . ' data-account="' . $data_account . '" data-player="' . $data_player . '" data-embed="default" data-video-id="' . $video_id . '" data-application-id class="video-js" controls></video></div>';
+  }
+  return $output;
+}
+
+/**
+ * Function to get video tout.
+ */
+function _ti_amg_fwrd_custom_get_video_tout($video_id = '', $image_url = '', $device = '') {
+  $output = '<div class="recipe__video-image-wrapper" onclick="loadVideoSlide(' . $video_id . ');">
+        <img  class="recipe__video-image"
+          src="' . $image_url . '">
+      </div><div class="hero_slide_video_id">' . $video_id . '</div>';
+  return $output;
+}
+
+/**
+ * Function to get hero slide video.
+ */
+function _ti_amg_fwrd_custom_get_hero_slide_video($video_id = '', $device = '') {
+  if ($device == "") {
+    $device = 'desktop';
+  }
+  $player_extra = '';
+  $output = '';
+  if ($device == 'mobile') {
+    $player_id = '3866761842001';
+    $player_key = 'AQ~~,AAAAAGL7jok~,vslbwQw3pdXn5PSsSjmiZNRU4ChTuD39';
+    $player_width = '480';
+    $player_height = '270';
+    $player_extra = '<param name="forceHTML" value="true" /><param name="width" value="' . $player_width . '" /><param name="height" value="' . $player_height . '" />';
+  }
+  elseif ($device == 'tablet') {
+    $player_id = '3866761842001';
+    $player_key = 'AQ~~,AAAAAGL7jok~,vslbwQw3pdXn5PSsSjmiZNRU4ChTuD39';
+    $player_width = '80%';
+    $player_height = '100%';
+    $player_extra = '<param name="forceHTML" value="true" /><param name="width" value="' . $player_width . '" /><param name="height" value="' . $player_height . '" />';
+  }
+  else {
+    $player_id = '3866761842001';
+    $player_key = 'AQ~~,AAAAAGL7jok~,vslbwQw3pdXn5PSsSjmiZNRU4ChTuD39';
+    $player_width = "100%";
+    $player_height = "100%";
+    $player_extra = '<param name="width" value="' . $player_width . '" /><param name="height" value="' . $player_height . '" />';
+  }
+
+  if ($device != 'desktop') {
+    $output = '<div class="hero_slide_video_id">' . $video_id . '</div><object id="myExperience' . $video_id . '"
+                class="BrightcoveExperience">
+                <param name="bgcolor" value="#FFFFFF" />
+                <param name="@videoPlayer" value="' . $video_id . '" />
+                <param name="playerID" value="' . $player_id . '" />
+                <param name="playerKey" value="' . $player_key . '" /> ' . $player_extra .
+        '<param name="isVid" value="true" />
+                <param name="isUI" value="true" />
+                <param name="includeAPI" value="true" />
+                <param name="autoStart" value="false" />
+                <param name="templateLoadHandler" value="omni_onTemplateLoad" />
+                <param name="templateReadyHandler"
+                value="omni_onTemplateReady"/>
+                <param name="dynamicStreaming" value="true" />
+              </object>';
+  }
+  else {
+    $output = '<div id="playerLightbox' . $video_id . '" class="playerLightbox"></div>';
+  }
+  return $output;
+}
+
+/**
+ * To get the video handler for video player integraion.
+ *
+ * @param player_id
+ *   player_id to play brightcove video
+ *
+ * @return the player configuration
+ */
+function _ti_amg_fwrd_custom_get_video_handler() {
+  $video_handler = '';
+  $video_handler = '
+  var slidePlayer, slideAPIModules, slideModVP,
+  slideNextVideo = 0, slideVideos = new Array();
+  playerId = "3866761842001";
+  playerKey = "AQ~~,AAAAAGL7jok~,vslbwQw3pdXn5PSsSjmiZNRU4ChTuD39";
+  iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false );
+
+  var loadVideoSlide = function(videoId) {
+  StopSlides(videoId, "desktop");
+     videoPlayer =  \'<object id="myExperience\' + videoId + \'" class="BrightcoveExperience">\' +
+                \'<param name="bgcolor" value="#FFFFFF" /><param name="@videoPlayer" value="\' +  videoId +  \'" />\' +
+                \'<param name="playerID" value="\' + playerId + \'" /><param name="playerKey" value="\' + playerKey + \'" />\' +
+                \'<param name="width" value="100%" /><param name="height" value="100%" />\' +
+                \'<param name="forceHTML" value="true" />\' +
+                \'<param name="isVid" value="true" /><param name="isUI" value="true" />\' +
+                \'<param name="autoStart" value="true" /><param name="includeAPI" value="true" />\' +
+                \'<param name="templateLoadHandler" value="omni_onTemplateLoad" />\' +
+                \'<param name="templateReadyHandler" value="omni_onTemplateReady"/>\' +
+                \'<param name="dynamicStreaming" value="true" /></object>\';
+     if (document.getElementById("playerLightbox" + videoId).innerHTML == "") {
+       console.log("player is not initialized yet");
+       document.getElementById("playerLightbox" + videoId).innerHTML = videoPlayer;
+       brightcove.createExperiences();
+     }
+     else {
+     console.log("player is already created");
+     }
+     document.getElementById("playerLightbox" + videoId).className = "playerLightbox playerShow";
+    if (iOS) {
+     document.getElementById("myExperience" + videoId).className = "BrightcoveExperience";
+    }
+    try { var playerInsidePagination = brightcove.api.getExperience("myExperience" + videoId);}
+    catch(err) {console.log("error - getExperience");}
+    if (playerInsidePagination) {
+      slideModVP = playerInsidePagination.getModule(brightcove.api.modules.APIModules.VIDEO_PLAYER);
+      slideModVP.play();
+    }
+  }
+
+  var StopSlides = function(videoId, device) {
+  console.log("stop slides");
+   var all_videos = document.getElementsByClassName("hero_slide_video_id");
+   var video_counts = all_videos.length;
+   for (var i=0; i<video_counts;i++) {
+     video_id = (all_videos[i].innerText || all_videos[i].textContent);
+     if ((video_id != videoId) && (document.getElementById("playerLightbox"+video_id).className.match("playerShow"))) {
+       var playerStop,modVPStop;
+       playerStop = brightcove.api.getExperience("myExperience" + video_id);
+       modVPStop = playerStop.getModule(brightcove.api.modules.APIModules.VIDEO_PLAYER);
+       modVPStop.pause();
+       document.getElementById("playerLightbox" + video_id).className = "playerLightbox playerHide";
+       if (iOS) {
+         document.getElementById("myExperience" + video_id).className = "playerHide";
+       }
+     }
+   }
+  }
+  var hideAndStopSlide = function(videoId) {
+    modVP1.pause();
+   var all_videos = document.getElementsByClassName("hero_slide_video_id");
+   var video_counts = all_videos.length;
+   document.getElementById("playerLightbox" + videoId).className = "playerLightbox playerHide";
+    if (iOS) {
+      document.getElementById("myExperience" + videoId).className = "BrightcoveExperience";
+    }
+  }';
+  return $video_handler;
+}
+
+/**
+ * Function to get video.
+ */
+function _ti_amg_fwrd_custom_get_video($video_id = '', $device = '', $template_name = '') {
+
+  $output = '';
+  $autoPlayStop = '';
+  if (($template_name == 'channel_landing_page_responsive') || ($template_name == 'home_page_responsive') || ($template_name == 'blog') || ($template_name == 'article')) {
+    $autoPlayStop = '<param name="autoStart" value="false" />';
+  }
+  if ($device == 'mobile') {
+    $player_id = '3866761842001';
+    $player_key = 'AQ~~,AAAAAGL7jok~,vslbwQw3pdXn5PSsSjmiZNRU4ChTuD39';
+    $player_width = '480';
+    $player_height = '270';
+    if (isset($template_name)) {
+      if ($template_name == 'recipe') {
+        $player_height = '200';
+      }
+    }
+    $player_extra = '<param name="forceHTML" value="true" /><param name="width" value="480" /><param name="height" value="' . $player_height . '" />';
+  }
+  else {
+    // $player_id = '3866761842001';
+    // $player_key = 'AQ~~,AAAAAGL7jok~,vslbwQw3pdXn5PSsSjmiZNRU4ChTuD39';.
+    $player_id = "4724779710001";
+    $player_key = "AQ~~,AAAAAGL7jok~,vslbwQw3pdXV00J3Q5PeBIAy8E7JDXf0";
+    $player_width = '100%';
+    $player_height = '100%';
+  }
+
+  if (!empty($device)) {
+    $output = '<object id="myExperience"
+                class="BrightcoveExperience">
+                <param name="bgcolor" value="#FFFFFF" />
+                <param name="@videoPlayer" value="' . $video_id . '" />
+                <param name="playerID" value="' . $player_id . '" />
+                <param name="playerKey" value="' . $player_key . '" /> ' . $player_extra . $autoPlayStop .
+        '<param name="isVid" value="true" />
+                <param name="isUI" value="true" />
+                <param name="includeAPI" value="true" />
+                <param name="templateLoadHandler" value="omni_onTemplateLoad" />
+                <param name="templateReadyHandler"
+                value="omni_onTemplateReady"/>
+                <param name="dynamicStreaming" value="true" />
+              </object>';
+  }
+  return $output;
+}
+
+/**
+ * Function to get external most popular contents.
+ */
+function _ti_amg_fwrd_custom_get_external_most_popular_contents() {
+  global $base_url;
+  $most_popular_result = array();
+  // Check if onenot api has a result.
+  $cache_result = cache_get("caas_most_popular_feed", 'cache');
+  if (empty($cache_result)) {
+    $caas_most_popular_api = variable_get('caas_most_popular_api');
+    $caas_most_popular_result = _ti_amg_fwrd_custom_get_external_api_result($caas_most_popular_api);
+    cache_set("caas_most_popular_feed", $caas_most_popular_result, 'cache', time() + 3600);
+    $cache_result = cache_get("caas_most_popular_feed", 'cache');
+  }
+  if (!empty($cache_result->data)) {
+    $most_popular_result = $cache_result->data;
+  }
+  return $most_popular_result;
+}
+
+/**
+ * Function to get external api result.
+ */
+function _ti_amg_fwrd_custom_get_external_api_result($caas_most_popular_api) {
+  $most_popular = array();
+  $most_popular_section = array();
+  $options = array(
+    'method' => 'GET',
+    'data' => '',
+    'timeout' => 30,
+    'headers' => array(
+      'Content-Type' => 'application/json',
+    ),
+  );
+
+  $most_popular = _ti_amg_fwrd_custom_caas_most_popular_api($caas_most_popular_api, $options);
+
+  return $most_popular;
+}
+
+/**
+ * Helpful function to remove dups from the array.
+ */
+function unique_multidim_array($array, $key) {
+  $excluded_dupes_array = array();
+  $count = 0;
+  $key_array = array();
+
+  foreach ($array as $val) {
+    if (!in_array($val[$key], $key_array)) {
+      $key_array[$count] = $val[$key];
+      $excluded_dupes_array[$count] = $val;
+    }
+    $count++;
+  }
+  return $excluded_dupes_array;
+}
+
+/**
+ * Function to get one bot api.
+ */
+function _ti_amg_fwrd_custom_caas_most_popular_api($caas_most_popular_api, $options) {
+  $request = '';
+  $most_popular = array();
+  $request = drupal_http_request($caas_most_popular_api, $options);
+  if ($request->code == 200 && (!empty($request->data))) {
+    $results = drupal_json_decode($request->data);
+    $result_contents = $results['urls'];
+    if (!empty($result_contents)) {
+      foreach ($result_contents as $item) {
+        $content = array();
+        $content['url'] = $item['url'];
+        $content['title'] = $item['headline'];
+        $content['total_shares'] = $item['total_shares'];
+        $most_popular[] = $content;
+      }
+      // Sorting the content based on total shares value.
+      usort($most_popular, '_ti_amg_fwrd_custom_sort_cmp');
+      foreach ($most_popular as $key => $item) {
+        // Iid = internal campaign id.
+        // Which is useful for tracking the most popular contents.
+        $iid_value = $key + 1;
+        $most_popular[$key]['link'] = l($item['title'], $item['url'], array(
+          'html' => TRUE,
+          'query' => array(
+            'iid' => 'most-popular-' . $iid_value,
+          ),
+          'attributes' => array(
+            'class' => 'highlight-list__item__link',
+          ),
+        )
+        );
+      }
+    }
+  }
+  return $most_popular;
+}
+
+/**
+ * Sorting the content array by total_shares.
+ */
+function _ti_amg_fwrd_custom_sort_cmp($a, $b) {
+  return $b['total_shares'] > $a['total_shares'];
+}
+
+/**
+ * Call back function will return prev and next nid.
+ *
+ * @param nid
+ *
+ * @return array
+ *   Returns array of path.
+ */
+function _ti_amg_fwrd_custom_prev_next_node($nid) {
+  global $NODE_PUBLISHED_AT;
+  global $base_url;
+  if (empty($nid)) {
+    return FALSE;
+  }
+  $node = node_load($nid);
+
+  if (!empty($node)) {
+    $NODE_PUBLISHED_AT = $node->published_at;
+    $prev_node = _ti_amg_fwrd_custom_prev_next_query_builder($node, '<', 'lt');
+    $next_node = _ti_amg_fwrd_custom_prev_next_query_builder($node, '>', 'gt');
+    if (!empty($prev_node[0])) {
+      $prev_link['url'] = '/' . drupal_get_path_alias('node/' . $prev_node[0]);
+      $prev_node_content = node_load($prev_node[0]);
+      if (isset($prev_node_content->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $image_tid = $prev_node_content->field_images[LANGUAGE_NONE][0]['target_id'];
+        $image = _ti_amg_fwrd_feature_get_image($image_tid, FEATURE_PAGINATION_IMAGE);
+        $prev_link['image'] = $image;
+      }
+      elseif (isset($prev_node_content->field_multiple_images[LANGUAGE_NONE])) {
+        $image_tid = $prev_node_content->field_multiple_images[LANGUAGE_NONE][0]['target_id'];
+        $image = _ti_amg_fwrd_feature_get_image($image_tid, FEATURE_PAGINATION_IMAGE);
+        $prev_link['image'] = $image;
+      }
+      elseif ((!empty($prev_node_content->field_related_videos)) || (!empty($prev_node_content->field_blog_video))) {
+        $image = _ti_amg_fwrd_feature_get_video_image($prev_node_content);
+        $prev_link['image'] = $image;
+      }
+      $prev_link['title'] = $prev_node_content->title;
+    }
+    if (!empty($next_node[0])) {
+      $next_link['url'] = '/' . drupal_get_path_alias('node/' . $next_node[0]);
+      $next_node_content = node_load($next_node[0]);
+      if (isset($next_node_content->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $image_tid = $next_node_content->field_images[LANGUAGE_NONE][0]['target_id'];
+        $image = _ti_amg_fwrd_feature_get_image($image_tid, FEATURE_PAGINATION_IMAGE);
+        $next_link['image'] = $image;
+      }
+      elseif (isset($next_node_content->field_multiple_images[LANGUAGE_NONE])) {
+        $image_tid = $next_node_content->field_multiple_images[LANGUAGE_NONE][0]['target_id'];
+        $image = _ti_amg_fwrd_feature_get_image($image_tid, FEATURE_PAGINATION_IMAGE);
+        $next_link['image'] = $image;
+      }
+      elseif ((!empty($next_node_content->field_related_videos)) || (!empty($next_node_content->field_blog_video))) {
+        $image = _ti_amg_fwrd_feature_get_video_image($next_node_content);
+        $next_link['image'] = $image;
+      }
+      $next_link['title'] = $next_node_content->title;
+    }
+    return array($prev_link, $next_link);
+  }
+}
+
+/**
+ * Function for prev next query builder.
+ */
+function _ti_amg_fwrd_custom_prev_next_query_builder($node, $op, $order) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', array('blog', 'article'))
+    ->propertyCondition('status', NODE_PUBLISHED)
+    ->addTag('where_publication_date_' . $order)->range(0, 1);
+  $result = $query->execute();
+  return array_keys($result['node']);
+}
+
+/**
+ * Function to get node lesser than publication date.
+ */
+function ti_amg_fwrd_custom_query_where_publication_date_lt_alter($query) {
+  global $NODE_PUBLISHED_AT;
+  $alias = $query->join('publication_date', 'pd', 'pd.nid = node.nid');
+  $query->where($alias . '.published_at < :pub_date', array(':pub_date' =>
+    $NODE_PUBLISHED_AT,
+  ));
+  $query->orderBy($alias . '.published_at', 'DESC');
+}
+
+/**
+ * Function to get node greater than publication date.
+ */
+function ti_amg_fwrd_custom_query_where_publication_date_gt_alter($query) {
+  global $NODE_PUBLISHED_AT;
+  $alias = $query->join('publication_date', 'pd', 'pd.nid = node.nid');
+  $query->where($alias . '.published_at > :pub_date', array(':pub_date' =>
+    $NODE_PUBLISHED_AT,
+  ));
+  $query->orderBy($alias . '.published_at', 'ASC');
+}
+
+/**
+ * Implementing hook_node_update().
+ */
+function ti_amg_fwrd_custom_node_update($node) {
+  // A skyword node updating from unpublished state to published state.
+  // Updating the path alias with normal category selection to it.
+  if ($node->original->status == 0 &&
+      !empty($node->original->skyword_content_id[LANGUAGE_NONE]) &&
+      $node->status == 1 && $node->path['pathauto'] == 0) {
+    if (!empty($node->field_fw_category[LANGUAGE_NONE])) {
+      $new_alias = token_replace('[node:category_top_two_levels_with_title_url]', array('node' => $node));
+      $node->path['alias'] = $new_alias;
+      path_save($node->path);
+    }
+  }
+  switch ($node->type) {
+    case 'channel_landing_page_responsive':
+      flush_cache_bin($node->id, 'cache');
+      break;
+
+    case 'home_page_responsive':
+      flush_cache_bin($node->id, 'cache');
+      break;
+
+    case 'blog':
+    case 'article':
+      $homepage_nid = ti_amg_fwrd_custom_get_homepage_nid();
+      flush_cache_bin($homepage_nid, 'cache');
+      $channel_nids = ti_amg_fwrd_custom_get_channelpage_nids();
+      if (count($channel_nids) > 0 && !empty($channel_nids)) {
+        foreach ($channel_nids as $channel_nid) {
+          flush_cache_bin($channel_nid, 'cache');
+        }
+      }
+      break;
+
+    case 'article':
+      flush_cache_bin($node->id, 'cache');
+      break;
+
+    case 'recipe':
+      if (isset($node->path['alias']) && $node->path['alias'] != '') {
+        $node->path['alias'] = ti_amg_fwrd_feature_convert_url_special_char($node->path['alias']);
+        if (!empty($node->path['original']['alias'])) {
+          $node->path['original']['alias'] = $node->path['alias'];
+        }
+        path_save($node->path);
+      }
+      else {
+        $type = 'recipes';
+        $node_title = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents($node->title));
+        $node_title = pathauto_cleanstring(utf8_decode($node_title));
+        $node->path['alias'] = trim($type . "/" . $node_title);
+        if (empty($node->path['source'])) {
+          $node->path['source'] = "node" . "/" . $node->nid;
+        }
+        path_save($node->path);
+      }
+
+      flush_cache_bin($node->id, 'recipe_ingred_cache');
+      break;
+  }
+}
+
+/**
+ * Get Homepage Node ID by this function.
+ */
+function ti_amg_fwrd_custom_get_homepage_nid() {
+  $homepage_path = variable_get('site_frontpage', 'node');
+  $parts = explode('/', trim($homepage_path));
+  if (!empty($parts) && is_numeric($parts[1])) {
+    $nid = $parts[1];
+  }
+  else {
+    $nid = '';
+  }
+  return $nid;
+}
+
+/**
+ * Get Channel Landing Page Node IDs by this function.
+ */
+function ti_amg_fwrd_custom_get_channelpage_nids() {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', array('channel_landing_page_responsive'))
+    ->propertyCondition('status', NODE_PUBLISHED);
+  $result = $query->execute();
+  $channel_nids = array_keys($result['node']);
+  return $channel_nids;
+}
+
+/**
+ * Implementing hook_preprocess_page.
+ */
+function ti_amg_fwrd_custom_preprocess_page(&$vars) {
+  global $theme;
+  $vars['taxonomy_fw_category'] = '';
+  $img_path = url(drupal_get_path('module', 'ti_amg_fwrd_custom') . '/img/spritemap.svg', array('absolute' => TRUE));
+  if (arg(0) == 'search') {
+    return;
+  }
+  if (arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2))) {
+    $term_obj = taxonomy_term_load(arg(2));
+    if ((!empty($term_obj)) && (!empty($term_obj->vocabulary_machine_name)) && ($term_obj->vocabulary_machine_name == 'fw_category')) {
+      $vars['taxonomy_fw_category'] = $term_obj->vocabulary_machine_name;
+    }
+  }
+
+  if (!empty($vars['node']) && ($vars['node']->type == 'recipe' ||
+      $vars['node']->type == 'blog' ||
+      $vars['node']->type == 'person' ||
+      $vars['node']->type == 'channel_landing_page_responsive' ||
+      $vars['node']->type == 'home_page_responsive' ||
+      $vars['node']->type == 'gallery' ||
+      $vars['node']->type == 'category' ||
+      $vars['taxonomy_fw_category'] == 'fw_category' ||
+      $vars['node']->type == 'video' ||
+      $vars['node']->type == 'video_landing_page' ||
+      arg(0) == 'partner' || $vars['node']->type == 'page')) {
+    $vars['header']['logo'] = module_invoke('ti_amg_fwrd_custom', 'block_view', 'responsive_header_logo');
+    $vars['header']['search'] = module_invoke('ti_amg_fwrd_custom', 'block_view', 'responsive_header_search');
+    $vars['header']['main_menu'] = module_invoke('ti_amg_fwrd_custom', 'block_view', 'responsive_header_main_menu');
+    if($vars['node']->type == 'blog' || $vars['node']->type == 'article' || $vars['node']->type == 'category' || ($vars['node']->type == 'gallery' && $vars['node']->field_gallery_template[LANGUAGE_NONE][0]['value'] == 'Vertical')) {
+      $vars['header']['tag_name'] = _ti_amg_fwrd_custom_get_tag();
+    }
+    $vars['header']['campaign'] = module_invoke('ti_amg_fwrd_custom', 'block_view', 'responsive_header_campaign');
+    $vars['footer_section'] = module_invoke('ti_amg_fwrd_custom', 'block_view', 'responsive_footer');
+  }
+  if (!empty($vars['node']) && ($vars['node']->type == 'recipe' ||
+      $vars['node']->type == 'blog' ||
+      $vars['node']->type == 'article' ||
+      $vars['node']->type == 'person' ||
+      $vars['node']->type == 'category' ||
+      $vars['taxonomy_fw_category'] == 'fw_category' ||
+      $vars['node']->type == 'channel_landing_page_responsive' ||
+      $vars['node']->type == 'video_landing_page' ||
+      $vars['node']->type == 'home_page_responsive' ||
+      arg(0) == 'partner')) {
+    $leaderboard_ad = <<<EOD
+     <script type="text/javascript">
+       var detect_device = 'desktop';
+       isPhone = navigator.userAgent.match(/(up.browser|up.link|mmp|symbian|smartphone|midp|wap|iPhone|android|iemobile|mobile)/i) != null;
+       isTablet = navigator.userAgent.match(/(tablet|ipad|playbook)|(android(?!.*(mobi|opera mini)))/i) != null;
+       if (isTablet) isPhone = false;
+       if (isPhone) detect_device = 'phone';
+       if (isTablet) detect_device = 'tablet';
+     </script>
+     <div id="leaderboard_ad_holder"></div>
+EOD;
+    $vars['leaderboard_ad'] = $leaderboard_ad;
+  }
+  // Adding a class for Classic Aspen Menu Pages.
+  if (!empty($vars['node']) && ($vars['node']->type == 'blog' ||
+      ($vars['node']->type == 'article') ||
+      $vars['node']->type == 'person' ||
+      $vars['node']->type == 'channel_landing_page_responsive' ||
+      $vars['node']->type == 'gallery')) {
+    if (!empty($vars['node']->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value']) &&
+        $vars['node']->field_show_classic_aspen_menu[LANGUAGE_NONE][0]['value'] == 1) {
+      $vars['classic_aspen_menu_enabled'] = 1;
+    }
+  }
+
+  $count_arg = count(arg()) - 1;
+  if (arg(0) == 'sitemap' && strpos(arg($count_arg), 'page') === FALSE) {
+    $desc = 'Use this sitemap to find the most exciting places, experiences, emerging trends & sensations with Food & Wine';
+    $meta_desc = array(
+      '#type' => 'html_tag',
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'name' => 'description',
+        'content' => $desc,
+      ),
+      '#weight' => 2,
+    );
+    drupal_add_html_head($meta_desc, 'meta_desc');
+  }
+  $jumpstart_url = variable_get('brightcove_jumpstart_url', '');
+  if (!empty($vars['node']) && isset($vars['node']->type)) {
+    $node_type = $vars['node']->type;
+    if (isset($vars['node']->type) && ($node_type == 'channel_landing_page_responsive') || ($node_type == 'video_landing_page') || ($node_type == 'blog') || ($node_type == 'article') || ($node_type == 'category') || ($node_type == 'home_page_responsive') || ($node_type == 'video') || ($node_type == 'recipe') || ($node_type == 'gallery')) {
+      $data_account = variable_get('brightcove_account_id', '');
+      $data_player = variable_get('brightcove_player_id', '');
+      if ($data_account != '') {
+        drupal_add_js($jumpstart_url, array(
+          'type' => 'external',
+          'scope' => 'footer',
+          'group' => JS_THEME,
+          'weight' => -140,
+          'preprocess' => TRUE,
+          'cache' => TRUE,
+          'defer' => FALSE
+            )
+        );
+     }
+      if (($node_type == 'article') || ($node_type == 'blog'))  {
+        drupal_add_css(
+           drupal_get_path('module', 'ti_amg_fwrd_custom')
+          .'/css/jumpstart-embed.css');
+      }
+    }
+  }
+}
+
+/**
+ * Function for custom ad module.
+ */
+function ti_amg_fwrd_custom_ad_module($ad_wrapper_class, $ad_txt, $ad_id, $detect_device, $ad_size, $position, $companion = NULL) {
+  $ad_module = '';
+  $ad_module = $ad_module . '<div class="advertisement ' . $ad_wrapper_class . '" id="' . $ad_id . '_wrapper">';
+  if (isset($ad_txt) && !(empty($ad_txt))) {
+    $ad_module = $ad_module . '<p class="adtxt"><span>Advertisement</span></p>';
+  }
+  $ad_module = $ad_module . '<div id="' . $ad_id . '">';
+  $ad_module = $ad_module . '<script type="text/javascript">
+    if (detect_device == "' . $detect_device . '") {
+      ad = ' . $ad_size . ';
+      ad.setPosition("' . $position . '");';
+
+  if (isset($companion)) {
+    $ad_module = $ad_module . 'ad.write("' . $ad_id . '","companion"); } ';
+  }
+  else {
+    $ad_module = $ad_module . 'ad.write("' . $ad_id . '"); }';
+  }
+
+  $ad_module = $ad_module . 'else {
+    document.getElementById("' . $ad_id . '_wrapper").style.display = "none"; } </script></div></div>';
+
+  return $ad_module;
+}
+
+/**
+ * To get the Ads for our redesign pageds.
+ *
+ * @param1 $newsletter
+ * Boolean variable to enable the newsletter.
+ *
+ * @return Array of Ad variables.
+ */
+function ti_amg_fwrd_custom_get_ads($newsletter = FALSE) {
+  $page_info = array();
+  $page_info['detect_device'] = _ti_amg_fwrd_custom_getuseragent();
+  $page_info['right_rail_block2'] = '';
+  $page_info['newsletters'] = '';
+  if ($page_info['detect_device'] != 'mobile') {
+    if ($page_info['detect_device'] == 'desktop') {
+      $page_info['right_rail_block2'] = theme('ti_amg_fw_outbrain_redesign', array(
+        'widget_id' => 'SB_4',
+        'title' => '',
+          )
+      );
+    }
+  }
+  if ($newsletter) {
+    if ($page_info['detect_device'] == 'desktop') {
+      $page_info['newsletters'] = theme('ti_amg_fw_custom_newsletter');
+    }
+  }
+  return $page_info;
+}
+
+/**
+ * To get the Query Paramters as string.
+ *
+ * @param $query_parameters
+ *   It is an Array of query parameters passed to the current URL.
+ */
+function ti_amg_fwrd_custom_get_query_params($query_parameters = '') {
+  $params = '';
+  if (!empty($query_parameters)) {
+    $params = '?';
+    $iteration = 1;
+    foreach ($query_parameters as $key => $value) {
+      if ($iteration > 1) {
+        $params .= '&';
+      }
+      $params .= $key . '=' . $value;
+      ++$iteration;
+    }
+  }
+  return $params;
+}
+
+/**
+ * Returns Label Field value for a given tid.
+ *
+ * @param $tid
+ *   The term id (tid) of a txonomy term
+ * @param string $label_field_name
+ *   Machine name of the Label field.
+ *
+ * @return
+ *   Value of the label field
+ */
+function _ti_amg_fwrd_custom_get_label_from_tid($tid, $label_field_name) {
+  $query = db_select('taxonomy_term_data', 'term');
+  $query->join('field_data_' . $label_field_name, 'label', 'term.tid = label.entity_id');
+  $query->fields('label', array($label_field_name . '_value'))
+    ->condition('term.tid', $tid, '=')->range(0, 1);
+
+  $label_field_value = $query->execute()->fetchField();
+  return $label_field_value;
+}
+
+/**
+ * SEO LInks Module for Laning Section and Home pages
+ *  param: $node
+ *  retun the section markup with the data.
+ */
+function _ti_amg_fwrd_custom_seo_links_section($node = array(), $device = '') {
+  global $base_url;
+  $links_section = array();
+  $links_section['section_title'] = 'What\'s happening';
+  if (isset($node->field_seo_link_section_title[LANGUAGE_NONE][0])) {
+    $links_section['section_title'] = $node->field_seo_link_section_title[LANGUAGE_NONE][0]['safe_value'];
+  }
+  // First Column.
+  if (isset($node->field_subsection_col_1_title[LANGUAGE_NONE][0])) {
+    $links_section['col_1']['subsection_title'] = $node->field_subsection_col_1_title[LANGUAGE_NONE][0]['safe_value'];
+  }
+  if (isset($node->field_featured_col_1_content[LANGUAGE_NONE][0])) {
+    $links_col_1 = $node->field_featured_col_1_content[LANGUAGE_NONE][0]['target_id'];
+    $links_section['col_1'] = _ti_amg_fwrd_landing_page_get_content($links_col_1, LATEST_STORIES_SMALL_TOUT_STYLE);
+  }
+  if (isset($node->field_featured_col_1_image[LANGUAGE_NONE][0])) {
+    $links_col_image_nid = $node->field_featured_col_1_image[LANGUAGE_NONE][0]['target_id'];
+    $links_section['col_1']['image'] = _ti_amg_fwrd_homepage_get_image($links_col_image_nid, LATEST_STORIES_SMALL_TOUT_STYLE);
+  }
+  if (isset($node->field_featured_col_1_link[LANGUAGE_NONE][0])) {
+    $links_section['col_1']['url'] = $node->field_featured_col_1_link[LANGUAGE_NONE][0]['url'];
+  }
+  if (isset($node->field_featured_col_1_link_text[LANGUAGE_NONE][0])) {
+    $links_section['col_1']['title'] = $node->field_featured_col_1_link_text[LANGUAGE_NONE][0]['safe_value'];
+  }
+  $links_section['col_1']['image_link'] = l('<img src="' . $links_section['col_1']['image']['uri'] . '" alt="' . $links_section['col_1']['image']['alt'] . '">', $links_section['col_1']['url'], array(
+    'html' => TRUE,
+    'attributes' => array(
+      'target' => '_blank',
+    ),
+  )
+  );
+  $links_section['col_1']['content_link'] = l($links_section['col_1']['title'], $links_section['col_1']['url'], array(
+    'html' => TRUE,
+  )
+  );
+
+  // Second Column.
+  if (isset($node->field_subsection_col_2_title[LANGUAGE_NONE][0])) {
+    $links_section['col_2']['subsection_title'] = $node->field_subsection_col_2_title[LANGUAGE_NONE][0]['safe_value'];
+  }
+  // Fetching the Second Column links.
+  if (isset($node->field_link_column_2_content[LANGUAGE_NONE])) {
+    $selected_links = $node->field_link_column_2_content[LANGUAGE_NONE];
+    $links_section['col_2']['links'] = _ti_amg_fwrd_custom_get_column_links($selected_links);
+  }
+
+  // Third Column.
+  if (isset($node->field_subsection_col_3_title[LANGUAGE_NONE][0])) {
+    $links_section['col_3']['subsection_title'] = $node->field_subsection_col_3_title[LANGUAGE_NONE][0]['safe_value'];
+  }
+  if (isset($node->field_featured_col_3_content[LANGUAGE_NONE][0])) {
+    $links_col_3 = $node->field_featured_col_3_content[LANGUAGE_NONE][0]['target_id'];
+    $links_section['col_3'] = _ti_amg_fwrd_landing_page_get_content($links_col_3, LATEST_STORIES_SMALL_TOUT_STYLE);
+  }
+  if (isset($node->field_featured_col_3_image[LANGUAGE_NONE][0])) {
+    $links_col_image_nid = $node->field_featured_col_3_image[LANGUAGE_NONE][0]['target_id'];
+    $links_section['col_3']['image'] = _ti_amg_fwrd_homepage_get_image($links_col_image_nid, LATEST_STORIES_SMALL_TOUT_STYLE);
+  }
+  if (isset($node->field_featured_col_3_link[LANGUAGE_NONE][0])) {
+    $links_section['col_3']['url'] = $node->field_featured_col_3_link[LANGUAGE_NONE][0]['url'];
+  }
+  if (isset($node->field_featured_col_3_link_text[LANGUAGE_NONE][0])) {
+    $links_section['col_3']['title'] = $node->field_featured_col_3_link_text[LANGUAGE_NONE][0]['safe_value'];
+  }
+  $links_section['col_3']['image_link'] = l('<img src="' . $links_section['col_3']['image']['uri'] . '" alt="' . $links_section['col_3']['image']['alt'] . '">', $links_section['col_3']['url'], array(
+    'html' => TRUE,
+    'attributes' => array(
+      'target' => '_blank',
+    ),
+  )
+  );
+  $links_section['col_3']['content_link'] = l($links_section['col_3']['title'], $links_section['col_3']['url'], array(
+    'html' => TRUE,
+  )
+  );
+
+  // Forth Column.
+  if (isset($node->field_subsection_col_4_title[LANGUAGE_NONE][0])) {
+    $links_section['col_4']['subsection_title'] = $node->field_subsection_col_4_title[LANGUAGE_NONE][0]['safe_value'];
+  }
+  // Fetching the Fourth Column links.
+  if (isset($node->field_link_column_4_content[LANGUAGE_NONE])) {
+    $selected_links = $node->field_link_column_4_content[LANGUAGE_NONE];
+    $links_section['col_4']['links'] = _ti_amg_fwrd_custom_get_column_links($selected_links);
+  }
+
+  return theme('seo-links-section', array(
+    'classes' => '',
+    'links_content' => $links_section,
+  ));
+}
+
+/**
+ * To Fetch the latest content nids.
+ *
+ * @param $node_types
+ *   Node type of the content.
+ * @param $count
+ *   Count of the fetching content.
+ * @param $nids_excempt
+ *   Nids which need to exclude in the content fetching.
+ *
+ * @return The latest content node ids based on content types
+ */
+function _ti_amg_fwrd_custom_get_latest_content($node_types = array(), $count = 0, $nids_excempt = array()) {
+  $node_ids = array();
+  if (!empty($node_types)) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node');
+    $query->entityCondition('bundle', $node_types);
+    $query->addTag('publication_date_desc');
+    $query->propertyCondition('status', 1);
+    if (!empty($nids_excempt)) {
+      $query->propertyCondition('nid', $nids_excempt, 'NOT IN');
+    }
+    $query->range(0, $count);
+    $result = $query->execute();
+    if (isset($result['node'])) {
+      $node_ids = array_keys($result['node']);
+    }
+  }
+  return $node_ids;
+}
+
+/**
+ * To get the selected links for column2 or column4 in the SEO links section.
+ *
+ * @param $selected_links
+ *   An Array of field collection items for links
+ *
+ * @return links
+ *   An Array of links selected for particular section
+ */
+function _ti_amg_fwrd_custom_get_column_links($selected_links = array()) {
+  global $base_url;
+  $links = array();
+  if (!empty($selected_links)) {
+    foreach ($selected_links as $key => $item) {
+      $item_id = $item['value'];
+      $entity = entity_load('field_collection_item', array($item_id));
+      $link_title = '';
+      $link_url = '';
+      // Fetching the Editor Overriden title and url for link.
+      if (isset($entity[$item_id]->field_override_link_content[LANGUAGE_NONE])) {
+        $link_title = $entity[$item_id]->field_override_link_content[LANGUAGE_NONE][0]['title'];
+        $link_url = $entity[$item_id]->field_override_link_content[LANGUAGE_NONE][0]['url'];
+      }
+      // Fetching from the selected enti.
+      if ($link_title == '' && $link_url == '') {
+        if (isset($entity[$item_id]->field_link_content[LANGUAGE_NONE])) {
+          $link_title = $entity[$item_id]->field_link_content[LANGUAGE_NONE][0]['entity']->title;
+        }
+        if (isset($entity[$item_id]->field_link_content[LANGUAGE_NONE])) {
+          $node_id = $entity[$item_id]->field_link_content[LANGUAGE_NONE][0]['entity']->nid;
+          $link_url = $base_url . '/' . drupal_get_path_alias('node/' . $node_id);
+        }
+      }
+      $links[]['content_link'] = l($link_title, $link_url, array('html' => TRUE));
+    }
+  }
+  return $links;
+}
+
+/**
+ * To implement Swoopads.
+ *
+ * @return output
+ *   Script tag with data-domain and data-serverbase attributes
+ */
+function ti_amg_fwrd_custom_swoopads() {
+  $output = '';
+
+  if (variable_get('default_swoop', '')) {
+    $script_tag = array(
+      '#tag' => 'script',
+      '#attributes' => array(
+        'type' => 'text/javascript',
+        'src' => url('http://ardrone.swoop.com/js/spxw.js'),
+        'data-domain' => 'SW-84350843-22',
+        'data-serverbase' => 'http://ardrone.swoop.com/',
+      ),
+      // We need to add an empty string for #value so the script tag will be
+      // properly closed with </script>.
+      '#value' => '',
+      '#theme' => 'html_tag',
+    );
+
+    $output = render($script_tag);
+  }
+
+  return $output;
+}
+
+/**
+ * Implements hook_init().
+ */
+function ti_amg_fwrd_custom_init() {
+  global $base_url;
+  // 301 redirect from horizontal to vertical gallery.
+  // Redirect paginated gallery slides to the URL with corrsponding hash(#) values.
+  // Only apply to the galleries converted from Horizontal to Vertical.
+  $slide_index = explode("/", request_path());
+  $slide_number = array_pop($slide_index);
+  if (is_numeric($slide_number) == TRUE) {
+    $node = node_load(arg(1));
+    // Check the current page is gallery
+    if (isset($node->field_gallery_template[LANGUAGE_NONE][0]['value'])) {
+      $is_vertical = ($node->field_gallery_template[LANGUAGE_NONE][0]['value'] == 'Vertical') ? TRUE : FALSE;
+      if ($is_vertical) {
+        // For entity reference slides
+        if (isset($node->field_multiple_images[LANGUAGE_NONE][$slide_number-1]['target_id'])) {
+          $slide_id = $node->field_multiple_images[LANGUAGE_NONE][$slide_number-1]['target_id'];
+          $slide_entity = entity_load('node', array($slide_id));
+          // Generate URL hash value from headline field
+          $slide_headline = $slide_entity[$slide_id]->field_headline[LANGUAGE_NONE][0]['value'];
+          $slide_hash_value = pathauto_cleanstring(ti_amg_fw_custom_remove_accents($slide_headline));
+          $redirect_url = $base_url."/".implode("/", $slide_index)."#".$slide_hash_value;
+          drupal_goto($redirect_url, array(), 301);
+        }
+        // For field collection slides
+        else if(isset($node->field_slide_info[LANGUAGE_NONE][$slide_number-1]['value'])) {
+          $slide_id = $node->field_slide_info[LANGUAGE_NONE][$slide_number-1]['value'];
+          $slide_entity = entity_load('field_collection_item', array($slide_id));
+          // Generate URL hash value from field colletion field 'field_slide_title'
+          $slide_title = $slide_entity[$slide_id]->field_slide_title[LANGUAGE_NONE][0]['value'];
+          $slide_hash_value = pathauto_cleanstring(ti_amg_fw_custom_remove_accents($slide_title));
+          $redirect_url = $base_url."/".implode("/", $slide_index)."#".$slide_hash_value;
+          drupal_goto($redirect_url, array(), 301);
+        }
+      }
+    }
+  }
+
+  if (arg(0) == 'node') {
+    $node = node_load(arg(1));
+  }
+  // Constructing section value.
+  if (!empty($node)) {
+    if (!empty($node->type)) {
+      // Redirect page or page1 subpath back to landing page
+      if ($node->type == 'category' || $node->type ==  'person') {
+        if (!empty(arg(2)) && substr(arg(2), 0, 4) == 'page') {
+          if (empty(substr(arg(2), 4)) || substr(arg(2), 4) == 1 ) {
+            drupal_goto(arg(0).'/'.arg(1));
+          }
+        }
+      }
+    }
+  }
+
+}
+
+/**
+ * Implements hook_token_info().
+ *
+ * @return mixed
+ */
+function ti_amg_fwrd_custom_token_info() {
+  $info['tokens']['node'] = array(
+    'category_top_two_levels_with_title_url' => array(
+      'name' => t('Category Taxonomy Top Two Levels'),
+      'description' => t('Pulling Category Taxonomy Top Two Levels'),
+    ),
+    'custom-twitter-title' => array(
+      'name' => t('Custom Twitter Title'),
+      'description' => t('This token will render twitter title.'),
+    ),
+  );
+
+  // Tokens for Category paginatin.
+  $info['types']['category_pagination'] = array(
+    'name' => t('My custom token to detect page'),
+    'description' => t('A token type for my custom tokens.'),
+  );
+  $info['tokens']['category_pagination']['page_description'] = array(
+    'name' => t('Page description for category pages'),
+    'description' => t('Page description of 140 characters for category pages'),
+  );
+  $info['tokens']['category_pagination']['page_number'] = array(
+    'name' => t('Page Number for category pages'),
+    'description' => t('Page Number for category pages'),
+  );
+  $info['tokens']['category_pagination']['term_name'] = array(
+    'name' => t('Term Nmae for category pages'),
+    'description' => t('Term Name for category pages'),
+  );
+  $info['tokens']['node']['fw_custom_meta_description'] = array(
+    'name' => t('F&W Custom Meta Description Token'),
+    'description' => t('Pulling Custom Meta Description'),
+  );
+  $info['tokens']['node']['fw_custom_ad_etype_tag'] = array(
+    'name' => t('F&W Custom Ad Etype Tag'),
+    'description' => t('Custom Ad Etype Tag'),
+  );
+  $info['tokens']['node']['custom-og-image'] = array(
+    'name' => t('Custom og image'),
+    'description' => t('Custom og image'),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function ti_amg_fwrd_custom_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  global $conf, $heroSectionIsVideo;
+  $replacements = array();
+  if ($type == 'node' && !empty($data['node'])) {
+    $node = $data['node'];
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'category_top_two_levels_with_title_url':
+          $top_two_levels = '';
+          $alias = '';
+          $title = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents($node->title));
+          $title = pathauto_cleanstring(utf8_decode($title));
+          if ($node->type == 'gallery' || $node->type == 'blog') {
+            $tid = ti_amg_fwrd_category_get_category_tid($node);
+            $taxonomy_tree = taxonomy_get_parents_all($tid);
+            $taxonomy_tree = array_reverse($taxonomy_tree);
+            foreach ($taxonomy_tree as $key => $term) {
+              $term_name = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents(pathauto_cleanstring(utf8_decode($term->name))));
+              if ($key > 1) {
+                break;
+              }
+              if ($key == 0) {
+                $top_two_levels = $term_name;
+              }
+              if ($key == 1) {
+                $top_two_levels .= "/" . $term_name;
+              }
+            }
+            if ($top_two_levels != '') {
+              $alias = $top_two_levels . "/" . $title;
+            }
+            if ($alias == '' && $node->type == 'gallery') {
+              $alias = "slideshows/" . $title;
+            }
+            if ($alias == '' && $node->type == 'blog') {
+              $alias = "blogs/" . $title;
+            }
+          }
+          else if ($node->type == 'article') {
+            $tid = ti_amg_fwrd_category_get_category_tid($node);
+            $taxonomy_tree = taxonomy_get_parents_all($tid);
+            $taxonomy_tree = array_reverse($taxonomy_tree);
+            if ($seo_path_value = field_get_items('node', $node, 'field_seo_path')) {
+              $seo_path = $seo_path_value[0]['value'];
+              $seo_path = urldecode($seo_path);
+              $seo_path = htmlspecialchars_decode($seo_path);
+              $seo_path = preg_replace("/[^a-zA-Z0-9-\s]+/", "", $seo_path);
+              $seo_path = pathauto_cleanstring($seo_path);
+            }
+            if (!empty($seo_path)) {
+              $arg = $seo_path;
+            } else {
+              $arg = $title;
+            }
+            foreach ($taxonomy_tree as $key => $term) {
+              $term_name = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents(pathauto_cleanstring(utf8_decode($term->name))));
+              if ($key > 1) {
+                break;
+              }
+              if ($key == 0) {
+                $top_two_levels = $term_name;
+              }
+              if ($key == 1) {
+                $top_two_levels .= "/" . $term_name;
+              }
+            }
+            if ($top_two_levels != '') {
+              $alias = $top_two_levels . "/" . $arg;
+            }
+            if ($alias == '') {
+              $alias = "articles/" . $arg;
+            }
+          }
+
+          $replacements[$original] = $alias;
+          break;
+
+        case 'custom-twitter-title':
+          $twitter_title = '';
+          if (isset($vars['node']->type)) {
+            if ($twr_title = reset(field_get_items('node', $node, 'field_twitter_title'))) {
+              if (!empty($twr_title['value'])) {
+                $twitter_title = $twr_title['value'];
+              }
+            }
+            else if ($twr_title = reset(field_get_items('node', $node, 'field_headline'))) {
+              if (!empty($twr_title['value'])) {
+                $twitter_title = $twr_title['value'];
+                }
+              }
+            else {
+              $twitter_title = $node->title;
+            }    
+          }  
+          $replacements[$original] = $twitter_title;
+          break;
+
+        case 'fw_custom_meta_description':
+          $meta_desc_val = $conf['ti_amg_fw_default_meta_desc'];
+          if (isset($vars['node']->type) && (($node->type == 'recipe') || ($node->type == 'blog') || ($node->type == 'video') || ($node->type == 'article') || ($node->type == 'person') || ($node->type == 'gallery'))) {
+            if ($deck = reset(field_get_items('node', $node, 'field_deck'))) {
+              if (!empty($deck['value'])) {
+                $meta_desc_val = ltrim(substr(str_replace('&nbsp;', '', strip_tags($deck['value'])), 0, 150)) . '...';
+              }
+            }
+            else if ($body = reset(field_get_items('node', $node, 'body'))) {
+              if (!empty($body['value'])) {
+                $meta_desc_val = ltrim(substr(str_replace('&nbsp;', '', strip_tags($body['value'])), 0, 150)) . '...';
+              }
+            }
+            else if ($desc = reset(field_get_items('node', $node, 'field_description'))) {
+              if (!empty($desc['value'])) {
+                $meta_desc_val = ltrim(substr(str_replace('&nbsp;', '', strip_tags($desc['value'])), 0, 150)) . '...';
+              }
+            }
+            else {
+              if ($node->type == 'gallery') {
+                $meta_desc_val = ti_amg_fwrd_custom_get_first_slide_deck($node);
+              }
+            }
+          }
+          $replacements[$original] = $meta_desc_val;
+          break;
+          
+        case 'fw_custom_ad_etype_tag':
+          $ad_etype_tag = '';
+          if (!empty($node)) {
+            switch ($node->type) {
+              case 'home_page_responsive':
+                $ad_etype_tag = 'video';
+                break;
+              case 'channel_landing_page_responsive':
+                $video_tout = field_get_items('node', $node, 'field_channel_video_tout');
+                $video_tout = reset($video_tout);
+                if (isset($video_tout['target_id'])) {
+                    $ad_etype_tag = 'video';
+                }  
+                break;
+              case 'video_landing_page':
+                $ad_etype_tag = 'video';
+                break;  
+              case 'category':
+                if (isset($heroSectionIsVideo) && ($heroSectionIsVideo)) {         
+                  $ad_etype_tag = 'video';
+                } 
+                break;
+              case 'gallery':
+                // Local Flavor pages
+                if (isset($heroSectionIsVideo) && ($heroSectionIsVideo)) {         
+                   $ad_etype_tag = 'video';
+                } 
+                break;
+              case 'blog':
+                // Local Flavor pages
+                if (isset($heroSectionIsVideo) && ($heroSectionIsVideo)) {         
+                   $ad_etype_tag = 'video';
+                } 
+                break;    
+              default:
+                break;
+            }
+          }  
+          $replacements[$original] = $ad_etype_tag;
+          break;
+          
+        case 'custom-og-image':
+          $image_style = variable_get('ti_content_api_marquee_large_2x_article_style', '4_3_horizontal_-_1200x900');
+          if (in_array($node->type, array('article', 'recipe')) && !empty($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+            $image_node_id = $node->field_images[LANGUAGE_NONE][0]['target_id'];
+          }
+          else if ('video' == $node->type) {
+            $video_image = !empty($node->field_video_still) ? $node->field_video_still[LANGUAGE_NONE][0]['uri'] : '';
+            $video_image = empty($video_image) && !empty($node->field_video_thumbnail) ? $node->field_video_thumbnail[LANGUAGE_NONE][0]['uri'] : $video_image;
+            if (!empty($video_image)) {
+              $replacements[$original] = image_style_url($image_style, $video_image);
+              break;
+            }
+          }
+          else if ('gallery' == $node->type) {
+            if (!empty($node->field_multiple_images)) {
+              $image_node_id = $node->field_multiple_images[LANGUAGE_NONE][0]['target_id'];
+            }
+            else {
+              $slide_entity = reset(entity_load('field_collection_item', array($node->field_slide_info[LANGUAGE_NONE][0]['value'])));
+              $image_node_id = $slide_entity->field_slide_image[LANGUAGE_NONE][0]['target_id'];
+            }
+          }
+          if (!empty($image_node_id)) {
+            $image_node = node_load($image_node_id);
+            if ('image' != $image_node->type) {
+              return $replacements;
+            }
+            if (!empty($image_node->field_large_image)) {
+              $image_uri = $image_node->field_large_image[LANGUAGE_NONE][0]['uri'];
+            }
+            else {
+              $image_uri = $image_node->field_image[LANGUAGE_NONE][0]['uri'];
+            }
+            $replacements[$original] = image_style_url($image_style, $image_uri);
+            break;
+         }
+      }
+    }
+  }
+  // Token replacements for category pagination pages.
+  if ($type == 'category_pagination') {
+    $node = menu_get_object();
+    if ($node->type == 'category') {
+      foreach ($tokens as $name => $original) {
+        switch ($name) {
+          case 'page_description':
+            $trimmed_content = '';
+            if (isset($node->body[LANGUAGE_NONE])) {
+              $body = $node->body[LANGUAGE_NONE][0]['value'];
+              $trimmed_content = trim(substr(str_replace('&nbsp;', '', strip_tags($body)), 0, 140)) . '...';
+            }
+            $replacements[$original] = $trimmed_content;
+            break;
+
+          case 'page_number':
+            $current_page = ti_amg_fwrd_category_get_page_number();
+            $replacements[$original] = $current_page;
+            break;
+
+          case 'term_name':
+            $tid = ti_amg_fwrd_category_get_category_tid($node);
+            $term_name = ti_amg_fwrd_category_get_term_name($tid);
+            $replacements[$original] = $term_name;
+            break;
+        }
+      }
+    }
+    if (arg(0) == 'sitemap') {
+      foreach ($tokens as $name => $original) {
+        switch ($name) {
+          case 'page_number':
+            $current_page = ti_amg_fwrd_category_get_current_page_number();
+            $replacements[$original] = $current_page;
+            break;
+        }
+      }
+    }
+  }
+
+  return $replacements;
+}
+
+/*
+ * Implements hook_node_presave().
+ */
+function ti_amg_fwrd_custom_node_presave($node) {
+  if ($node->type == 'article') {
+    if (isset($node->path['alias'])) {
+      $url_alias = ti_amg_fw_custom_remove_accents($node->path['alias']);
+      $url_alias = urldecode($url_alias);
+      $url_alias = htmlspecialchars_decode($url_alias);
+      $url_alias = preg_replace("/[^a-zA-Z0-9-\/\s]+/", "", $url_alias);
+      $node->path['alias'] = $url_alias;
+      path_save($node->path);
+    }
+    if ($seo_path_value = field_get_items('node', $node, 'field_seo_path')) {
+      $seo_path = ti_amg_fw_custom_remove_accents($seo_path_value[0]['value']);
+      $seo_path = urldecode($seo_path);
+      $seo_path = htmlspecialchars_decode($seo_path);
+      $seo_path = preg_replace("/[^a-zA-Z0-9-\/\s]+/", "", $seo_path);
+      $seo_path = pathauto_cleanstring($seo_path);
+      $node->field_seo_path[LANGUAGE_NONE][0]['value'] = $seo_path;
+    }
+  }
+}
+
+/*
+ * To get the gallery first slide deck value.
+ *
+ * @param $node
+ *    node array
+ *
+ * @return a value of deck field.
+ */
+function ti_amg_fwrd_custom_get_first_slide_deck($node = array()) {
+  $output = '';
+  $entity_slides = ti_amg_fwrd_custom_get_entity_reference_field_values('node', $node, 'field_multiple_images');
+  if (!empty($entity_slides)) {
+    $first_slide = reset($entity_slides);
+    $lead_nid = $first_slide['target_id'];
+    $node = node_load($lead_nid);
+    if ($deck = reset(field_get_items('node', $node, 'field_deck'))) {
+      if (!empty($deck['value'])) {
+        $output = ltrim(substr(str_replace('&nbsp;', '', strip_tags($deck['value'])), 0, 150)) . '...';
+      }
+    }
+  }
+  elseif (!empty($node->field_slide_info[LANGUAGE_NONE][0])) {
+    $field_collection = field_collection_field_get_entity($node->field_slide_info[LANGUAGE_NONE][0]);
+    if ($slide_deck = reset(field_get_items('field_collection_item', $field_collection, 'field_slide_deck'))) {
+      if (!empty($slide_deck['value'])) {
+        $output = ltrim(substr(str_replace('&nbsp;', '', strip_tags($slide_deck['value'])), 0, 150)) . '...';
+      }
+    }
+  }
+  return $output;
+}
+
+/**
+ * To get parent category names with links.
+ *
+ * @param string $tid
+ *   TID of taxonomy.
+ *
+ * @return array
+ *   Rendered array of breadcrumbs.
+ */
+function ti_amg_fwrd_custom_category_breadcrumb_items($tid = '', $bread = TRUE) {
+  global $base_url;
+  $breadcrumbs = array();
+  $home['label'] = 'Home';
+  $home['url'] = $base_url;
+  if ($tid != '') {
+// Getting all the hirarchy for current page TID.
+    $terms_tree = taxonomy_get_parents_all($tid);
+    // Ordering from Top Parent level.
+    $terms_tree = array_reverse($terms_tree);
+    $parent_ids = array();
+    if (!empty($terms_tree)) {
+      foreach ($terms_tree as $item) {
+        $parent_ids[] = $item->tid;
+      }
+      // Getting the NIDs of TIDs attached.
+      // But the order of the nid's will not match with the passing TID's
+      // Because query will give latest nodes in first.
+      $breadcrumbs = ti_amg_fwrd_custom_get_category_page($parent_ids);
+    }
+    if (arg(0) == 'sitemap') {
+      $breadcrumb[1]['label'] = t('sitemap');
+      $breadcrumb[1]['url'] = $base_url . '/' . arg(0);
+      $count_arg = count(arg());
+      if ($count_arg > 2 && strpos(arg(2), 'page') === FALSE) {
+        $breadcrumb[2]['label'] = t(arg(1));
+        $breadcrumb[2]['url'] = $base_url . '/' . arg(0) . '/' . arg(1);
+      }
+      if ($count_arg > 3 && strpos(arg(3), 'page') === FALSE) {
+        $breadcrumb[3]['label'] = t(arg(2));
+        $breadcrumb[3]['url'] = $base_url . '/' . arg(0) . '/' . arg(1) . '/' . arg(2);
+      }
+      if ($count_arg > 4 && strpos(arg(4), 'page') === FALSE) {
+        $breadcrumb[4]['label'] = t(arg(3));
+        $breadcrumb[4]['url'] = $base_url . '/' . arg(0) . '/' . arg(1) . '/' . arg(2) . '/' . arg(3);
+      }
+      $breadcrumbs = $breadcrumb;
+    }
+  }
+
+  // Prepending the Home link to the breadcrumbs.
+  if ($bread == TRUE) {
+    array_unshift($breadcrumbs, $home);
+  }
+
+  return $breadcrumbs;
+}
+
+/**
+ * To get any node page breadcrumbs dynamically based on selected category.
+ *
+ * @param object $node
+ *   Node Object.
+ *
+ * @return array
+ *   Rendered array of breadcrumbs.
+ */
+function ti_amg_fwrd_custom_get_page_breadcrumbs($node) {
+  $breadcrumbs = '';
+  // Dynamically pulling the breadcrumbs.
+  $tid = ti_amg_fwrd_category_get_category_tid($node);
+  if ($tid != '') {
+    $breadcrumbs = ti_amg_fwrd_custom_category_breadcrumb_items($tid, TRUE);
+  }
+
+  return $breadcrumbs;
+}
+
+function content_api_breadcrumb_handler_for_fw($path) {
+  $internal_path = drupal_lookup_path('source', $path);
+  if (!($node = menu_get_object('node', 1, $internal_path))) {
+    return;
+  }
+
+  $links = array();
+  // F&W uses unified templates on articles.
+  $crumbs = ti_amg_fwrd_custom_get_page_breadcrumbs($node);
+  foreach ($crumbs as $link) {
+    $links[] = array(
+      'uri' => '/' . trim(parse_url($link['url'], PHP_URL_PATH), '/'),
+      'title' => $link['label'],
+    );
+  }
+
+  return $links;
+}
+
+/**
+ * To get Facebook and Pinterest share.
+ *
+ * @param title $social_share_img_path,
+ *   $page_url, $widget_name ('fb',''pinit)
+ *
+ * @return url
+ */
+function _ti_amg_fwrd_custom_social_share_widget($title = '', $social_share_img_path = '', $page_url = '', $widget_name = '') {
+  global $base_url;
+  $social_share_content = array();
+  $social_share_content['data'] = array();
+  $site_name = variable_get('site_name');
+  $current_url = $base_url . $page_url;
+  $social_share_content['title'] = urlencode($title);
+  $social_share_content['social_share_img_path'] = $social_share_img_path;
+  if (isset($widget_name)) {
+    if ($widget_name == "fb") {
+      $social_share_content['fb_data'] = '';
+      if (isset($_COOKIE['TI_PREFS']) && $_COOKIE['TI_PREFS'] == 'phone') {
+        $fb_params = array(
+          'u' => $current_url,
+          'images' => array($social_content['social_share_img_path']),
+          't' => $social_content['title'],
+        );
+        $social_share_content['data'] = 'http://m.facebook.com/sharer.php?' .
+            http_build_query($fb_params);
+      }
+      else {
+        // Desktop.
+        $fb_params = array(
+          's' => 100,
+          'p' => array(
+            'url' => $current_url,
+            'images' => array($social_share_img_path),
+            'title' => $social_share_content['title'],
+          ),
+        );
+        $social_share_content['data'] = 'http://www.facebook.com/sharer/sharer.php?' .
+            http_build_query($fb_params);
+      }
+    }
+    elseif ($widget_name == "pinit") {
+      $social_share_content['pinit_title'] = $title . ' | ' . $site_name;
+      $pinterest_params = array(
+        'description' => $social_share_content['pinit_title'],
+        'url' => $current_url,
+        'media' => $social_share_img_path,
+      );
+      $social_share_content['data'] = 'http://pinterest.com/pin/create/linkshare/?' .
+          http_build_query($pinterest_params);
+    }
+  }
+  return $social_share_content['data'];
+}
+
+/**
+ * Get taxonomy terms.
+ */
+function ti_amg_fwrd_custom_get_taxonomy($taxonomy) {
+  $myvoc = taxonomy_vocabulary_machine_name_load($taxonomy);
+  $tree = taxonomy_get_tree($myvoc->vid);
+  foreach ($tree as $term) {
+    $taxo[] = $term;
+  }
+  return $taxo;
+}
+
+/**
+ * Get nodes by created date.
+ */
+function ti_amg_fwrd_custom_get_nodes_by_create_date($node_created_from, $node_created_to, $exempt_ids) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', array('gallery', 'video', 'recipe'))
+    ->propertyCondition('created', array($node_created_from, $node_created_to), 'BETWEEN');
+  if (!empty($exempt_ids)) {
+    $query->propertyCondition('nid', $exempt_ids, 'NOT IN');
+  }
+  $result = $query->execute();
+  if (!empty($result['node'])) {
+    $nids = array_keys($result['node']);
+    $nodes = node_load_multiple($nids);
+  }
+  return $nodes;
+}
+
+/**
+ * Implements hook_xmlsitemap_element_alter().
+ */
+function ti_amg_fwrd_custom_xmlsitemap_element_alter(array &$element, array $link, $sitemap) {
+  // Alter the Frequency.
+  $element['changefreq'] = 'daily';
+}
+
+/**
+ * Function to generate HTML Sitemap based on the results.
+ */
+function ti_amg_fwrd_custom_sitemap_html_links() {
+  $output = '';
+  $page_title = 'Sitemap';
+  $dynamic_links = _ti_amg_fwrd_custom_parent_catergory_list();
+  foreach ($dynamic_links as $dynamic_link) {
+    $title = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents(strtolower($dynamic_link['name'])));
+    $title = pathauto_cleanstring($title);
+    $links[] = l($dynamic_link['name'], '/sitemap/' . $title);
+  }
+  $breadcrumbs = ti_amg_fwrd_custom_category_breadcrumb_items($tid, TRUE);
+  $breadcrumbs = theme('breadcrumbs-section', array(
+    'links' => $breadcrumbs,
+  ));
+  $output = theme('ti-amg-fwrd-custom-sitemap-html', array(
+    'dynamic_links' => $links,
+    'page_title' => $page_title,
+    'breadcrumbs' => $breadcrumbs,
+  ));
+
+  return $output;
+}
+
+/**
+ * Function to get parent category list.
+ */
+function _ti_amg_fwrd_custom_parent_catergory_list() {
+  $cat = taxonomy_vocabulary_machine_name_load('fw_category');
+  $cat_parents = taxonomy_get_tree($cat->vid, $parent = 0, $max_depth = 1);
+  $catgry_parent = array();
+  foreach ($cat_parents as $key => $cat_parent) {
+    $catgry_parent[$key]['name'] = $cat_parent->name;
+    $catgry_parent[$key]['tid'] = $cat_parent->tid;
+  }
+
+  return $catgry_parent;
+}
+
+/**
+ * Function to generate HTML Sitemap Channel links.
+ */
+function ti_amg_fwrd_custom_children_list($term) {
+  $child = array();
+  $category = _ti_amg_fwrd_custom_parent_catergory_list();
+  foreach ($category as $categ) {
+    if ($categ['name'] == $term) {
+      $child_terms = taxonomy_get_children($categ['tid']);
+      if ($child_terms) {
+        foreach ($child_terms as $key => $child_term) {
+          $child[$key]['name'] = $child_term->name;
+          $child[$key]['tid'] = $child_term->tid;
+          $child_title = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents(strtolower($child_term->name)));
+          $child[$key]['title'] = pathauto_cleanstring($child_title);
+          $child[$key]['path'] = l($child_term->name, '/sitemap/' . arg(1) . '/' . $child[$key]['title']);
+        }
+      }
+    }
+  }
+  return $child;
+}
+
+/**
+ * Function to generate HTML Sitemap Channel links.
+ */
+function ti_amg_fwrd_custom_grand_children_list($term_title, $child_name) {
+  $children = ti_amg_fwrd_custom_children_list($child_name);
+  foreach ($children as $child) {
+    if ($term_title == $child['name']) {
+      $grand_children_terms = taxonomy_get_children($child['tid']);
+      if ($grand_children_terms) {
+        foreach ($grand_children_terms as $key => $grand_children_term) {
+          $grand_child[$key]['name'] = $grand_children_term->name;
+          $grand_child[$key]['tid'] = $grand_children_term->tid;
+          $grand_child_title = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents(strtolower($grand_children_term->name)));
+          $grand_child[$key]['title'] = pathauto_cleanstring($grand_child_title);
+          $grand_child[$key]['path'] = l($grand_children_term->name, '/sitemap/' . arg(1) . '/' . arg(2) . '/' . $grand_child[$key]['title']);
+        }
+      }
+    }
+  }
+
+  return $grand_child;
+}
+
+/**
+ * Function to get children category list details.
+ */
+function ti_amg_fwrd_custom_children_list_details($term, $tid) {
+  // $children_tag = array();
+  $page_title = $term . ' Sitemap';
+  $childrens = ti_amg_fwrd_custom_children_list($term);
+  foreach ($childrens as $children) {
+    $children_tag[] = $children['path'];
+  }
+
+  $nodes = ti_amg_fwrd_category_get_nodes_by_term($tid);
+  $breadcrumbs = ti_amg_fwrd_custom_category_breadcrumb_items($tid, TRUE);
+  $breadcrumbs = theme('breadcrumbs-section', array(
+    'links' => $breadcrumbs,
+  ));
+  $pager = theme('sf_pager');
+  $output = theme('ti-amg-fwrd-custom-children-sitemap-html', array(
+    'children_links' => $children_tag,
+    'nodes' => $nodes,
+    'page_title' => $page_title,
+    'sf_pager' => $pager,
+    'breadcrumbs' => $breadcrumbs,
+  ));
+
+  return $output;
+}
+
+/**
+ * Function to get grand children category list details.
+ */
+function ti_amg_fwrd_custom_grand_children_list_details($term_title, $child_name, $tid) {
+  // $grand_child_tag = array();
+  $page_title = $term_title . ' Sitemap';
+  $grand_children = ti_amg_fwrd_custom_grand_children_list($term_title, $child_name);
+  foreach ($grand_children as $grand_child) {
+    $grand_child_tag[] = $grand_child['path'];
+  }
+  $nodes = ti_amg_fwrd_category_get_nodes_by_term($tid);
+  $breadcrumbs = ti_amg_fwrd_custom_category_breadcrumb_items($tid, TRUE);
+  $breadcrumbs = theme('breadcrumbs-section', array(
+    'links' => $breadcrumbs,
+  ));
+  $pager = theme('sf_pager');
+  $output = theme('ti-amg-fwrd-custom-children-sitemap-html', array(
+    'children_links' => $grand_child_tag,
+    'nodes' => $nodes,
+    'page_title' => $page_title,
+    'sf_pager' => $pager,
+    'breadcrumbs' => $breadcrumbs,
+  ));
+
+  return $output;
+}
+
+/**
+ * Function to generate HTML Sitemap Channel links.
+ */
+function ti_amg_fwrd_custom_greatgrand_children_list($grand_child_name, $children_name, $child_name) {
+  $greatgrand_child = array();
+  $grand_children = ti_amg_fwrd_custom_grand_children_list($children_name, $child_name);
+  foreach ($grand_children as $grand_child) {
+    if ($grand_child_name == $grand_child['name']) {
+      $great_grand_children_terms = taxonomy_get_children($grand_child['tid']);
+      if ($great_grand_children_terms) {
+        foreach ($great_grand_children_terms as $key => $great_grand_children) {
+          $greatgrand_child[$key]['name'] = $great_grand_children->name;
+          $greatgrand_child[$key]['tid'] = $great_grand_children->tid;
+          $greatgrand_child_title = ti_amg_fwrd_custom_convert_accented_char(ti_amg_fw_custom_remove_accents(strtolower($great_grand_children->name)));
+          $greatgrand_child[$key]['title'] = pathauto_cleanstring($greatgrand_child_title);
+          $greatgrand_child[$key]['path'] = l($great_grand_children->name, '/sitemap/' . arg(1) . '/' . arg(2) . '/' . arg(3) . '/' . $greatgrand_child[$key]['title']);
+        }
+      }
+    }
+  }
+  return $greatgrand_child;
+}
+
+/**
+ * Function to get great grand children category list details.
+ */
+function ti_amg_fwrd_custom_greatgrand_children_list_details($grand_child_name, $children_name, $child_name, $grand_child_tid) {
+  // $great_grand_child_tag = array();
+  $page_title = $grand_child_name . ' Sitemap';
+  $great_grand_children = ti_amg_fwrd_custom_greatgrand_children_list($grand_child_name, $children_name, $child_name);
+  foreach ($great_grand_children as $great_grand_child) {
+    $great_grand_child_tag[] = $great_grand_child['path'];
+  }
+  $nodes = ti_amg_fwrd_category_get_nodes_by_term($grand_child_tid);
+
+  $breadcrumbs = ti_amg_fwrd_custom_category_breadcrumb_items($grand_child_tid, TRUE);
+  $breadcrumbs = theme('breadcrumbs-section', array(
+    'links' => $breadcrumbs,
+  ));
+  $pager = theme('sf_pager');
+  $output = theme('ti-amg-fwrd-custom-children-sitemap-html', array(
+    'children_links' => $great_grand_child_tag,
+    'nodes' => $nodes,
+    'page_title' => $page_title,
+    'sf_pager' => $pager,
+    'breadcrumbs' => $breadcrumbs,
+  ));
+
+  return $output;
+}
+
+/**
+ * Function to get nodes by great grand children category term.
+ */
+function ti_amg_fwrd_category_get_nodes_by_ggterm($grand_child_tid, $great_grand_child) {
+  $page_title = $great_grand_child . ' Sitemap';
+  $nodes = ti_amg_fwrd_category_get_nodes_by_term($grand_child_tid);
+
+  $breadcrumbs = ti_amg_fwrd_custom_category_breadcrumb_items($grand_child_tid, TRUE);
+  $breadcrumbs = theme('breadcrumbs-section', array(
+    'links' => $breadcrumbs,
+  ));
+  $pager = theme('sf_pager');
+  $output = theme('ti-amg-fwrd-custom-children-sitemap-html', array(
+    'nodes' => $nodes,
+    'page_title' => $page_title,
+    'sf_pager' => $pager,
+    'breadcrumbs' => $breadcrumbs,
+  ));
+
+  return $output;
+}
+
+/**
+ * Implements hook_form_WIDGET_TYPE_alter.
+ */
+function ti_amg_fwrd_custom_field_widget_taxonomy_autocomplete_form_alter(&$form, &$form_state) {
+  // Add our validate handler.
+  $form['#element_validate'][] = 'ti_amg_fwrd_custom_taxonomy_autocomplete_validate';
+}
+
+/**
+ * Form element validate handler for taxonomy term autocomplete element.
+ *
+ * This is a clone of taxonomy_autocomplete_validate
+ * It adds a single additional access check
+ * prior to creating a new taxonomy term.
+ */
+function ti_amg_fwrd_custom_taxonomy_autocomplete_validate($element, &$form_state, $form) {
+  // Autocomplete widgets do not send their tids in the form, so we must detect
+  // them here and process them independently.
+  $value = array();
+  if ($tags = $element['#value']) {
+    // Collect candidate vocabularies.
+    $field = field_widget_field($element, $form_state);
+    $vocabularies = array();
+    foreach ($field['settings']['allowed_values'] as $tree) {
+      if ($vocabulary = taxonomy_vocabulary_machine_name_load($tree['vocabulary'])) {
+        $vocabularies[$vocabulary->vid] = $vocabulary;
+      }
+    }
+
+    // Translate term names into actual terms.
+    $typed_terms = drupal_explode_tags($tags);
+    foreach ($typed_terms as $typed_term) {
+      // See if the term exists in the chosen vocabulary and return the tid;
+      // otherwise, create a new 'autocreate' term for insert/update.
+      if ($possibilities = taxonomy_term_load_multiple(array(), array('name' => trim($typed_term), 'vid' => array_keys($vocabularies)))) {
+        $term = array_pop($possibilities);
+      }
+      else {
+        $term = NULL;
+        // Display error message to user entering a non-existent term.
+        form_error($element, t('You have entered an invalid value %value for %name. Please select one of the available terms.', array('%name' => t($element['#title']), '%value' => $typed_term)));
+      }
+      if (isset($term)) {
+        $value[] = (array) $term;
+      }
+    }
+  }
+  form_set_value($element, $value, $form_state);
+}
+
+/**
+ * Implements hook_redirect_presave.
+ * To block the redirect creation for the unpublished nodes on very first time.
+ */
+function ti_amg_fwrd_custom_redirect_presave($redirect) {
+  if (!empty($redirect) && (!empty($redirect->redirect))) {
+    $url_path = explode('/', $redirect->redirect);
+    if (($url_path[0] == 'node') && (!empty($url_path[1]) && is_numeric($url_path[1]))) {
+      $current_node = node_load($url_path[1]);
+      if (($current_node->published_at == 0) && ($redirect->is_new)) {
+        $redirect->is_new = FALSE;
+      }
+    }
+  }
+}
+
+/**
+ * Function to get category page details by its tids.
+ */
+function ti_amg_fwrd_custom_get_category_page($tids = array()) {
+  // Getting the NIDs of TIDs attached.
+  // But the order of the nid's will not match with the passing TID's
+  // Because query will give latest nodes in first.
+  $nids = ti_amg_fwrd_category_get_nids_from_tids($tids);
+  $available_nodes = array();
+
+  // Making the nodes as per the TID's.
+  if (!empty($nids)) {
+    foreach ($tids as $tid) {
+      if (isset($nids[$tid])) {
+        $available_nodes[] = array(
+          'nid' => $nids[$tid]['nid'],
+          'name' => $nids[$tid]['name']
+        );
+      }
+    }
+  }
+  $node_detail = ti_amg_fwrd_category_get_category_page_paths($available_nodes);
+
+  return $node_detail;
+}
+
+/**
+ * To get entity field value using field api.
+ *
+ * @param string $entity_type
+ *   Type of entity.
+ * @param object $entity
+ *   Entity Object.
+ * @param string $field_name
+ *   Entity field name.
+ *
+ * @return array
+ *   Rendered field value.
+ */
+function ti_amg_fwrd_custom_get_field_value($entity_type, $entity, $field_name) {
+  $field = field_get_items($entity_type, $entity, $field_name);
+  if ($field) {
+    $value = field_view_value($entity_type, $entity, $field_name, reset($field));
+  }
+  else {
+    $value = '';
+  }
+  return $value;
+}
+
+function ti_amg_fwrd_custom_load_ads_mini_panels() {
+  $rendered_content = '';
+
+  // Rendering marketplace mini panel.
+  $marketpalce_mini = panels_mini_load('market_place_ads');
+  if ($marketpalce_mini) {
+    $marketpalce_mini->display->css_id = panels_mini_get_id($marketpalce_mini->name);
+    // Here is the markup, to with with whatever you wish.
+    $rendered_content .= render(panels_render_display($marketpalce_mini->display));
+  }
+
+  // Rendering Desktop Right Rail First Ad panel.
+  $desktop_first_rightrail_mini = panels_mini_load('desktop_first_rightrail_ad');
+  if ($desktop_first_rightrail_mini) {
+    $desktop_first_rightrail_mini->display->css_id = panels_mini_get_id($desktop_first_rightrail_mini->name);
+    // Here is the markup, to with with whatever you wish.
+    $rendered_content .= render(panels_render_display($desktop_first_rightrail_mini->display));
+  }
+
+  // Rendering desktop_rightrail_300x100 mini panel.
+  $desktop_rightrail_nativo_mini = panels_mini_load('desktop_rightrail_300x100');
+  if ($desktop_rightrail_nativo_mini) {
+    $desktop_rightrail_nativo_mini->display->css_id = panels_mini_get_id($desktop_rightrail_nativo_mini->name);
+    // Here is the markup, to with with whatever you wish.
+    $rendered_content .= render(panels_render_display($desktop_rightrail_nativo_mini->display));
+  }
+
+  // Rendering desktop_second_rightrail_ad mini panel.
+  $desktop_second_right_rail_mini = panels_mini_load('desktop_second_rightrail_ad');
+  if ($desktop_second_right_rail_mini) {
+    $desktop_second_right_rail_mini->display->css_id = panels_mini_get_id($desktop_second_right_rail_mini->name);
+    // Here is the markup, to with with whatever you wish.
+    $rendered_content .= render(panels_render_display($desktop_second_right_rail_mini->display));
+  }
+
+  // Rendering device_300x100 mini panel.
+  $device_nativo_mini = panels_mini_load('device_300x100');
+  if ($device_nativo_mini) {
+    $device_nativo_mini->display->css_id = panels_mini_get_id($device_nativo_mini->name);
+    // Here is the markup, to with with whatever you wish.
+    $rendered_content .= render(panels_render_display($device_nativo_mini->display));
+  }
+
+  // Rendering device_multi_ad mini panel.
+  $device_multiad_mini = panels_mini_load('device_multi_ad');
+  if ($device_multiad_mini) {
+    $device_multiad_mini->display->css_id = panels_mini_get_id($device_multiad_mini->name);
+    // Here is the markup, to with with whatever you wish.
+    $rendered_content .= render(panels_render_display($device_multiad_mini->display));
+  }
+
+  // Rendering device inline_teads_ad mini panel.
+  $device_inline_teads_ad_mini = panels_mini_load('inline_teads_ad');
+  if ($device_inline_teads_ad_mini) {
+    $device_inline_teads_ad_mini->display->css_id = panels_mini_get_id($device_inline_teads_ad_mini->name);
+    // Here is the markup, to with with whatever you wish.
+    $rendered_content .= render(panels_render_display($device_inline_teads_ad_mini->display));
+  }
+
+  // Rendering desktop inline_teads_ad mini panel.
+  $desktop_inline_teads_ad_mini = panels_mini_load('desktop_inline_teads_ad');
+  if ($desktop_inline_teads_ad_mini) {
+    $desktop_inline_teads_ad_mini->display->css_id = panels_mini_get_id($desktop_inline_teads_ad_mini->name);
+    // Here is the markup, to with with whatever you wish.
+    $ad_mini_display = $desktop_inline_teads_ad_mini->display;
+    $rendered_content .= render(panels_render_display($ad_mini_display));
+  }
+
+  return $rendered_content;
+}
+
+/**
+ * To get Video Still Image URI.
+ *
+ * @param object $entity
+ *   Node object.
+ *
+ * @return string
+ *   Still image URI.
+ */
+function ti_amg_fwrd_custom_get_video_still_image_uri($entity) {
+  $image_file_uri = '';
+  $field = 'field_video_still';
+  $video_still_image = ti_amg_fwrd_custom_get_field_value('node', $entity, $field);
+  if (!empty($video_still_image)) {
+    $image_file_uri = $video_still_image['#file']->uri;
+  }
+  return $image_file_uri;
+}
+
+/**
+ * To get Styled Video Still Image URL.
+ *
+ * @param object $entity
+ *   Node object.
+ * @param string $image_style
+ *   Image Style name.
+ *
+ * @return string
+ *   Styled Still image URL.
+ */
+function ti_amg_fwrd_custom_get_styled_video_still_image($entity, $image_style) {
+  $styled_still_img = '';
+  $still_img_uri = ti_amg_fwrd_custom_get_video_still_image_uri($entity);
+    if (!empty($still_img_uri)) {
+      $styled_still_img = image_style_url($image_style, $still_img_uri);
+    }else{
+      $styled_still_img = image_style_url($image_style, DEFAULT_IMAGE_URI);
+    }
+  return $styled_still_img;
+}
+
+/**
+ * To get Video Still image info.
+ *
+ * @param object $entity
+ *   Video node object.
+ * @param string $image_style
+ *   Image Style name.
+ *
+ * @return array
+ *   Still image info.
+ */
+function ti_amg_fwrd_custom_get_video_still_image_info($entity, $image_style) {
+  $image = array();
+  $image['uri'] = ti_amg_fwrd_custom_get_styled_video_still_image($entity, $image_style);
+  $image['credit'] = $entity->title;
+  $image['alt'] = $entity->title;
+
+  return $image;
+}
+
+/**
+ * To get entity reference field value using field api.
+ *
+ * @param string $entity_type
+ *   Type of entity.
+ * @param object $entity
+ *   Entity Object.
+ * @param string $field_name
+ *   Entity field name.
+ *
+ * @return array
+ *   Field value.
+ */
+function ti_amg_fwrd_custom_get_entity_reference_field_values($entity_type, $entity, $field_name) {
+  $field_values = field_get_items($entity_type, $entity, $field_name);
+  if ($field_values) {
+    return $field_values;
+  }
+  return '';
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function ti_amg_fwrd_custom_menu_alter(&$items) {
+ $search = array(
+   'search',
+   'search/site',
+   'search/site/%',
+   'search/site/%menu_tail',
+ );
+ foreach ($search as $keys) {
+   unset($items[$keys]);
+ }
+ $items['search'] = $items['fw_search'];
+}
+
+/**
+ * To get brightcove video details by video ID.
+ *
+ * @param string $video_id
+ *   Brightcove video id.
+ *
+ * @return array
+ *   Rendered array of video details.
+ */
+function ti_amg_fwrd_custom_get_videoinfo_by_vid($video_id = NULL) {
+  $video = array();
+  $url = FW_BRIGHTCOVE_VIDEO_URL . '?command=find_videos_by_ids&video_ids=' .$video_id. '&media_delivery=http&token=G0WAHddcP6XZOG9rNsyKkIyiDCGh9C7gfIxjRADssc0.';
+  $output = drupal_http_request(url($url));
+  if ($output->code == 200) {
+    $brighcove_response =  json_decode($output->data);
+    foreach ($brighcove_response->items as $key => $video_data) {
+      $video['video_url'] = !empty($video_data->videoFullLength->url) ? $video_data->videoFullLength->url : '';
+      $video['video_type'] = !empty($video_data->videoFullLength->videoContainer) ? 'video/' . strtolower($video_data->videoFullLength->videoContainer) : '';
+      $video['video_duration'] = !empty($video_data->length) ? $video_data->length : '';
+      $video['video_thumbnail_url'] = !empty($video_data->thumbnailURL) ? $video_data->thumbnailURL : '';
+      $video['video_title'] = !empty($video_data->name) ? $video_data->name : '';
+      $video['video_description'] = !empty($video_data->shortDescription) ? $video_data->shortDescription : '';
+    }
+  }
+  return $video;
+}
+
+/*
+ * To Fetch the latest content nids.
+ *
+ * @param $node_types
+ *   Node type of the content.
+ * @param $count
+ *   Count of the fetching content.
+ * @param $nids_excempt
+ *   Nids which need to exclude in the content fetching.
+ *
+ * @return The latest content node ids based on content types
+ */
+
+function ti_amg_fwrd_custom_get_latest_content($node_types = array()) {
+  $node_ids = array();
+  if (!empty($node_types)) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node');
+    $query->entityCondition('bundle', $node_types);
+    $query->addTag('publication_date_latest');
+    $query->propertyCondition('status', 1);
+    $result = $query->execute();
+    if (isset($result['node'])) {
+      $node_ids = array_keys($result['node']);
+    }
+  }
+  return $node_ids;
+}
+
+/**
+  * Replaced main style by the default image url
+  */
+function ti_amg_fwrd_custom_replace_inline_image_url($body) {
+  $search = '/sites/default/files/styles/main/public/';
+  $current_img_url = '/sites/default/files/';
+  if (strpos($body, $search) != FALSE) {
+    while (strpos($body, $search) != FALSE) {
+       $body = str_replace($search, $current_img_url, $body);
+    }
+  }
+  return $body;
+}
+
+/*
+ * To Fetch the respective content information.
+ *
+ * @param object $node
+ *  node object.
+ * @param string $image_style
+ *  Image Style name.
+ *
+ * @return The required information from the respective content.
+ */
+function ti_amg_fwrd_custom_get_content($node, $image_style) {
+  global $base_url;
+  $content = array();
+  $content['title'] = $node->title;
+  $content['is_video'] = '';
+  $content['url'] = $base_url . '/' .
+      drupal_get_path_alias('node/' . $node->nid);
+  $image_style = (isset($image_style)) ? $image_style : LANDING_TOUT_IMAGE_STYLE;
+  $device = _ti_amg_fwrd_custom_getuseragent();
+  $content['deck'] = (isset($node->field_deck[LANGUAGE_NONE][0]['value'])) ?
+      strip_tags($node->field_deck[LANGUAGE_NONE][0]['value']) : "";
+  if (($node->type == 'article') || ($node->type == 'blog')) {
+    if ($node->type == 'article') {
+      if (!empty($node->field_video_hero)) {
+         $content['is_video'] = TRUE;
+      }
+      if (!empty($node->field_blog_video)) {
+         $content['is_video'] = TRUE;
+      }
+    }
+    // Checking if any video mapped to the blog.
+    if (!empty($node->field_related_videos) &&
+        isset($node->field_related_videos[LANGUAGE_NONE][0]['target_id'])) {
+      $video_nid = $node->field_related_videos[LANGUAGE_NONE][0]['target_id'];
+      $video_object = node_load($video_nid);
+      if (!empty($video_object->field_video_id)) {
+        $video_id = $video_object->field_video_id[LANGUAGE_NONE][0]['value'];
+        $content['video'] = _ti_amg_fwrd_custom_get_video($video_id, $device, 'channel_landing_page_responsive');
+      }
+    }
+    elseif (!empty($node->field_blog_video)) {
+      // Checking if any iframe video mapped to the blog.
+      $content['video'] = $node->field_blog_video[LANGUAGE_NONE][0]['value'];
+    }
+    elseif (!empty($node->field_blog_hero_image[LANGUAGE_NONE][0]['target_id'])) {
+      // Checking if hero image uploaded to the blog.
+      $image_tid = $node->field_blog_hero_image[LANGUAGE_NONE][0]['target_id'];
+    }
+    elseif (isset($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+      // Checking if image uploaded to the blog.
+      $image_tid = $node->field_images[LANGUAGE_NONE][0]['target_id'];
+    }
+    if (isset($image_tid)) {
+      $lead_image = _ti_amg_fwrd_feature_get_image($image_tid, $image_style);
+      $lead_image_credit = '';
+      $lead_image_alt = '';
+      if (isset($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['value'])) {
+        $lead_image_credit = strip_tags($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['value']);
+      }
+      if (isset($node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value'])) {
+        $lead_image_alt = strip_tags($node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value']);
+      }
+      $content['image'] = $lead_image;
+      $content['image']['credit'] = (isset($lead_image_credit)) ?
+          $lead_image_credit : $lead_image['credit'];
+      $content['image']['alt'] = (isset($lead_image_alt)) ?
+          $lead_image_alt : $lead_image['alt'];
+      $content['image']['alt'] = (isset($content['image']['alt'])) ?
+          $content['image']['alt'] : '';
+    }
+    else {
+      // If no image attached, Taking the default image.
+      $content['image']['uri'] = image_style_url($image_style, DEFAULT_LOGO_IMAGE_URI);
+    }
+  }
+  elseif ($node->type == 'gallery') {
+    if (isset($node->field_multiple_images[LANGUAGE_NONE][0])) {
+      $first_slide_nid = $node->field_multiple_images[LANGUAGE_NONE][0]['target_id'];
+      $slide_entity = node_load($first_slide_nid);
+      $lead_image = _ti_amg_fwrd_feature_get_image($first_slide_nid, $image_style);
+      $content['image'] = $lead_image;
+      $content['image']['alt'] = (isset($lead_image['alt'])) ?
+          $lead_image['alt'] : '';
+    }
+    else
+    if (isset($node->field_slide_info[LANGUAGE_NONE][0])) {
+      $first_slide_nid = $node->field_slide_info[LANGUAGE_NONE][0]['value'];
+      $slide_entity = entity_load('field_collection_item', array($first_slide_nid));
+      if (isset($slide_entity[$first_slide_nid]->field_slide_image[LANGUAGE_NONE][0]['target_id'])) {
+        $lead_image_nid = $slide_entity[$first_slide_nid]->field_slide_image[LANGUAGE_NONE][0]['target_id'];
+        $lead_image = _ti_amg_fwrd_feature_get_image($lead_image_nid, $image_style);
+        $content['image'] = $lead_image;
+        $content['image']['alt'] = (isset($lead_image['alt'])) ?
+            $lead_image['alt'] : '';
+      }
+    }
+    if (!empty($node->field_hero_image[LANGUAGE_NONE][0]['target_id'])) {
+      // Checking if hero image uploaded to the gallery.
+      $image_tid = $node->field_hero_image[LANGUAGE_NONE][0]['target_id'];
+      if (isset($image_tid)) {
+        $lead_image = _ti_amg_fwrd_feature_get_image($image_tid, $image_style);
+        $lead_image_credit = '';
+        $lead_image_alt = '';
+        $content['hero_image'] = $lead_image;
+        $content['hero_image']['credit'] = $lead_image['credit'];
+        $content['hero_image']['alt'] = $lead_image['alt'];
+      }
+    }
+  }
+  elseif ($node->type == 'video') {
+    $content['is_video'] = TRUE;
+    if (isset($node->field_video_still[LANGUAGE_NONE][0])) {
+      $video_thumbnail_uri = (isset($node->field_video_still[LANGUAGE_NONE][0]['uri'])) ?
+          $node->field_video_still[LANGUAGE_NONE][0]['uri'] : DEFAULT_IMAGE_URI;
+      $content['image']['uri'] = image_style_url($image_style, $video_thumbnail_uri);
+      $content['image']['alt'] = '';
+    }
+  }
+  elseif ($node->type == 'recipe') {
+    if (!empty($node->field_images)) {
+      if (isset($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+        $recipe_nid = $node->field_images[LANGUAGE_NONE][0]['target_id'];
+        // Load the image node by using given recipe nid.
+        $image_node = node_load($recipe_nid);
+        // Load the image_uri from large image field.
+        if (!empty($image_node->field_large_image)) {
+          $image_file = $image_node->field_large_image[LANGUAGE_NONE][0];
+          $content['image']['uri'] = image_style_url($image_style, $image_file['uri']);
+        }
+        // Load the image_uri from image field.
+        elseif (!empty($image_node->field_image)) {
+          $image_file = $image_node->field_image[LANGUAGE_NONE][0];
+          $content['image']['uri'] = image_style_url($image_style, $image_file['uri']);
+        }
+        // Load the default recipe image.
+        else {
+          $content['image']['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+        }
+        // Load the image_credit.
+        if (!empty($image_node->field_credit)) {
+          $content['image']['credit'] = $image_node->field_credit[LANGUAGE_NONE][0]['value'];
+        }
+        else {
+          $content['image']['credit'] = '';
+        }
+        if (!empty($image_node->field_alt_text)) {
+          $content['image']['alt'] = $image_node->field_alt_text[LANGUAGE_NONE][0]['value'];
+        }
+        else {
+          $content['image']['alt'] = '';
+        }
+      }
+    }
+    else {
+      // Load the default recipe image.
+      $content['image']['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+      $content['image']['credit'] = '';
+      $content['image']['alt'] = '';
+    }
+  }
+
+  return $content;
+}
+
+/*
+ * To fetch the gallery image details.
+ *
+ * @param $node_id
+ *  node_id string.
+ * @param string $image_style
+ *  Image Style name.
+ *
+ * @return The required information from image content.
+ */
+function ti_amg_fwrd_custom_get_image($node_id, $image_style) {
+  $image = array();
+  $image_node = node_load($node_id);
+  $image_style = (isset($image_style)) ? $image_style : LANDING_TOUT_IMAGE_STYLE;
+  $image['img_original_uri'] = '';
+  // Load the field_headline.
+  if (!empty($image_node->field_headline)) {
+    $image['title'] = !empty($image_node->field_headline[LANGUAGE_NONE][0]['value']) ? strip_tags(html_entity_decode($image_node->field_headline[LANGUAGE_NONE][0]['value'])) : '';
+  }
+  // Load the field_deck.
+  if (!empty($image_node->field_deck)) {
+    $image['deck'] = html_entity_decode($image_node->field_deck[LANGUAGE_NONE][0]['value']);
+  }
+  // Load the image_uri from large image field.
+  if (!empty($image_node->field_large_image)) {
+    $image_file = $image_node->field_large_image[LANGUAGE_NONE][0];
+    $image['uri'] = image_style_url($image_style, $image_file['uri']);
+  }
+  // Load the image_uri from image field.
+  elseif (!empty($image_node->field_image)) {
+    $image_file = $image_node->field_image[LANGUAGE_NONE][0];
+    $image['uri'] = image_style_url($image_style, $image_file['uri']);
+  }
+  // Load the default recipe image.
+  else {
+    $image['uri'] = image_style_url($image_style, DEFAULT_IMAGE_URI);
+  }
+  $image['img_original_uri'] = $image_file['uri'];
+  // Load the image_credit.
+  if (!empty($image_node->field_credit)) {
+    $image['credit'] = $image_node->field_credit[LANGUAGE_NONE][0]['value'];
+  }
+  else {
+    $image['credit'] = '';
+  }
+  // Load the image_caption.
+  if (!empty($image_node->field_caption)) {
+    $image['caption'] = $image_node->field_caption[LANGUAGE_NONE][0]['value'];
+  }
+  else {
+    $image['caption'] = '';
+  }
+  // Load the image_alt.
+  if (!empty($image_node->field_alt_text)) {
+    $image['alt'] = $image_node->field_alt_text[LANGUAGE_NONE][0]['value'];
+  }
+  else {
+    $image['alt'] = '';
+  }
+  // Load the external_link.
+  if (!empty($image_node->field_external_link)) {
+    $image['external_link'] = !empty($image_node->field_external_link[LANGUAGE_NONE][0]['url']) ? $image_node->field_external_link[LANGUAGE_NONE][0]['url'] : '';
+    $image['external_title'] = !empty($image_node->field_external_link[LANGUAGE_NONE][0]['title']) ? $image_node->field_external_link[LANGUAGE_NONE][0]['title'] : '';
+  }
+  // Load the slide_related_places.
+  if (!empty($image_node->field_slide_related_places)) {
+    $image['slide_related_places'] = _ti_amg_fwrd_gallery_get_slide_related_places($image_node);
+  }
+  else {
+    $image['slide_related_places'] = '';
+  }
+  $image['no_index'] = 0;
+  $image['no_follow'] = 0;
+  return $image;
+}
+
+/**
+ * Converting accented characters to html.
+ */
+function ti_amg_fwrd_custom_convert_accented_char($string) {
+  $string = str_replace('©', '&copy;', $string);
+  $string = str_replace('¤', '', $string);
+  return $string;
+}
+
+/*
+ * Replace broken camera image to slideshow text from recipe deck.
+ *
+ * @param $recipe_deck
+ *    Recipe Deck Field Content.
+ *
+ * @return Replaced slideshow text from Recipe Deck Field Content.
+ */
+function _ti_amg_fwrd_custom_remove_broken_deck_image($recipe_deck) {
+  return preg_replace('/(<img.*icon_camera2\.gif.*?>)/i', '<strong>Slideshow:</strong>', $recipe_deck);
+}
+
+function _ti_amg_fwrd_custom_process_image($node) {
+  global $base_url, $conf;
+  // Set the recipe default image conf variable
+  $recipe_default_img = url("/sites/all/themes/foodandwine/images/recipe-placeholder.gif", array('absolute' => TRUE));
+  $image = array();
+  $image['image_style'] = '';
+  $image['caption'] = '';
+  $image['credit'] = '';
+  $image['alt_text'] = '';
+  if (isset($node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value'])) {
+    $image['alt_text'] =
+      $node->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value'];
+  }
+  if (isset($node->field_overwrite_image_caption[LANGUAGE_NONE][0]['value'])) {
+      $image['caption'] =
+        $node->field_overwrite_image_caption[LANGUAGE_NONE][0]['value'];
+  }
+  if (isset($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['value'])) {
+      $image['credit'] =
+        strip_tags($node->field_overwrite_image_credit[LANGUAGE_NONE][0]['value']);
+  }
+  if (isset($node->field_images[LANGUAGE_NONE][0]['target_id'])) {
+    $image_id = $node->field_images[LANGUAGE_NONE][0]['target_id'];
+    $image_obj = node_load($image_id);
+    if (isset($image_obj->field_large_image[LANGUAGE_NONE][0]['uri'])) {
+      $image_uri = $image_obj->field_large_image[LANGUAGE_NONE][0]['uri'];
+      $image['large_image_flag'] = 1;
+    }
+    elseif (isset($image_obj->field_image[LANGUAGE_NONE][0]['uri'])) {
+      $image_uri = $image_obj->field_image[LANGUAGE_NONE][0]['uri'];
+      $image['large_image_flag'] = 0;
+    }
+    $image_path = file_create_url($image_uri);
+    $image['org_path'] = $image_path;
+    $image['recipe_carousel_img'] = image_style_url('551x551', $image_uri);
+    $image['print_img'] = theme("image_style", array(
+        'style_name' => '551x551',
+        'path' => $image_uri,
+      ));
+    if ($image['alt_text'] == '') {
+      $image['alt_text'] = $image_obj->field_alt_text[LANGUAGE_NONE][0]['value'];
+    }
+    $image['image_style'] = theme("image_style",
+      array('style_name' => '200x250', 'path' => $image_uri,
+      'alt' => $image['alt_text'],
+      'attributes' => array('itemprop' => 'image'),
+        )
+    );
+    if ($image['caption'] == '') {
+      $image['caption'] =
+        $image_obj->field_caption[LANGUAGE_NONE][0]['value'];
+    }
+    if ($image['credit'] == '') {
+      $image['credit'] = strip_tags($image_obj->field_credit[LANGUAGE_NONE][0]['value']);
+    }
+    $image['social_share_img_path'] = $image['org_path'];
+  }
+  else {
+    $image['org_path'] = $base_url.$recipe_default_img;
+    $image['recipe_carousel_img'] = $base_url.$recipe_default_img;
+    $image['image_style'] = theme("image", array(
+      'path' => $recipe_default_img,
+      'alt' => $image['alt_text'],
+      'attributes' => array('class' => 'recipe-default-img',
+        'width' => 200,
+        'height' => 250,
+        'itemprop' => 'image',
+       ),
+    ));
+    $image['social_share_img_path'] = url($conf['social_share_default_img'], array('absolute' => TRUE));
+    $image['print_img'] = theme("image", array(
+        'path' => $recipe_default_img,
+      ));
+  }
+  if (!empty($image['credit'])) {
+    $image['credit'] = ti_amg_fwrd_custom_convert_accented_char($image['credit']);
+  }
+  return $image;
+}
+function _ti_amg_fwrd_custom_preprocessing_time($node) {
+  $recipe_time = array();
+  // Process recipe time
+  $recipe_time['total_time'] = '';
+  $total_time = '';
+  $rich_snippet_total_time = 'PT';
+  if (isset($node->field_recipe_time[LANGUAGE_NONE])) {
+    foreach ($node->field_recipe_time[LANGUAGE_NONE] as $key
+        => $collection_item) {
+      $entity = entity_load('field_collection_item',
+        array($collection_item['value'])
+      );
+    }
+    foreach ($entity as $entityid => $entityobject) {
+      if (isset($entityobject->field_recipe_time_hour[LANGUAGE_NONE]
+          [0]['value'])) {
+        $total_hour = $entityobject->field_recipe_time_hour[LANGUAGE_NONE]
+            [0]['value'];
+      }
+      if (isset($entityobject->field_recipe_time_minute[LANGUAGE_NONE]
+          [0]['value'])) {
+        $total_minute = $entityobject->field_recipe_time_minute[LANGUAGE_NONE]
+            [0]['value'];
+      }
+    }
+  }
+  if (isset($total_hour) && $total_hour != 0) {
+    $total_time = $total_time . $total_hour . ' HR ';
+    $rich_snippet_total_time .= $total_hour . 'H';
+  }
+  if (isset($total_minute) && $total_minute != 0) {
+    $total_time = $total_time . $total_minute . ' MIN ';
+    $rich_snippet_total_time .= $total_minute . 'M';
+  }
+  $recipe_time['total_time'] = $total_time;
+  $recipe_time['rich_snippet_total_time'] = $rich_snippet_total_time;
+
+  $total_time_in_minutes = 0;
+  if ($total_hour) {
+    $total_time_in_minutes = $total_hour * 60;
+  }
+  if ($total_minute) {
+    $total_time_in_minutes += $total_minute;
+  }
+  $recipe_time['total_time_in_minutes'] = $total_time_in_minutes;
+
+  return $recipe_time;
+}
+/**
+ * Preprocessing active time.
+ */
+function _ti_amg_fwrd_custom_preprocessing_active_time($node) {
+  $recipe_active_time = array();
+  // Process recipe active time
+  $recipe_active_time['active_time'] = '';
+  $active_time = '';
+  $rich_snippet_active_time = 'PT';
+  if (isset($node->field_active_time[LANGUAGE_NONE])) {
+    foreach ($node->field_active_time[LANGUAGE_NONE] as $key
+        => $collection_item) {
+      $entity = entity_load('field_collection_item',
+        array($collection_item['value'])
+      );
+    }
+    foreach ($entity as $entityid => $entityobject) {
+      if (isset($entityobject->field_active_time_hour[LANGUAGE_NONE]
+          [0]['value'])) {
+        $active_hour = $entityobject->field_active_time_hour[LANGUAGE_NONE]
+            [0]['value'];
+      }
+      if (isset($entityobject->field_active_time_minute[LANGUAGE_NONE]
+          [0]['value'])) {
+        $active_minute = $entityobject->field_active_time_minute[LANGUAGE_NONE]
+            [0]['value'];
+      }
+    }
+  }
+  if (isset($active_hour) && $active_hour != 0) {
+    $active_time = $active_time . $active_hour . ' HR ';
+    $rich_snippet_active_time .= $active_hour . 'H';
+  }
+  if (isset($active_minute) && $active_minute != 0) {
+    $active_time = $active_time . $active_minute . ' MIN ';
+    $rich_snippet_active_time .= $active_minute . 'M';
+  }
+  $recipe_active_time['active_time'] = $active_time;
+  $recipe_active_time['rich_snippet_active_time'] = $rich_snippet_active_time;
+
+  return $recipe_active_time;
+}
+
+/**
+ * Preprocessing  other time.
+ */
+function _ti_amg_fwrd_custom_preprocessing_other_time($node) {
+  // Process recipe other time
+  $other_time = '';
+  if (isset($node->field_recipe_time[LANGUAGE_NONE])) {
+    foreach ($node->field_recipe_time[LANGUAGE_NONE] as $key
+        => $collection_item) {
+      $entity = entity_load('field_collection_item',
+        array($collection_item['value'])
+      );
+    }
+    foreach ($entity as $entityid => $entityobject) {
+      if (isset($entityobject->field_time_other[LANGUAGE_NONE])) {
+        $other_time = $entityobject->field_time_other[LANGUAGE_NONE][0]['value'];
+      }
+    }
+  }
+  return $other_time;
+}
+
+/**
+ * Preprocessing  Ingredients.
+ */
+function _ti_amg_fwrd_custom_ingredients($node) {
+  global $base_url;
+  $ingredient_kill_switch_default_value = 0;
+  $ingredient = array();
+  foreach ($node->field_ingredients[LANGUAGE_NONE] as $key => $collection_item) {
+    $ing_entity[] = entity_load('field_collection_item', array($collection_item['value'])
+    );
+  }
+  $previous_title = '';
+  $preparation = array();
+
+  $ingredient_kill_switch_value = variable_get('recipe_clickable_ingredients_switch', '');
+  // Clear cache once $ingredient_kill_switch_value changes.
+  // Set default value to $ingredient_kill_switch_value.
+  if ($ingredient_kill_switch_default_value != $ingredient_kill_switch_value) {
+    cache_clear_all('*', 'recipe_ingred_cache', TRUE);
+    $ingredient_kill_switch_default_value = $ingredient_kill_switch_value;
+  }
+  // Checking whether the environment is editor or not.
+  $check_env = strpos($base_url, 'editor') ? true : false;
+  if (!$check_env) {
+    $cache = cache_get($node->nid, 'recipe_ingred_cache');
+    if (!$cache || empty($cache->data)) {
+      $preparation = _ti_amg_fwrd_custom_prepare_ingredients($ing_entity);
+      cache_set($node->nid, $preparation, 'recipe_ingred_cache', time() + 3600 * 24);
+    }
+    else {
+      $preparation = $cache->data;
+    }
+  }
+  else {
+    $preparation = _ti_amg_fwrd_custom_prepare_ingredients($ing_entity);
+  }
+  return $preparation;
+}
+
+function _ti_amg_fwrd_custom_instructions($node) {
+  //Directions section
+  $entity = array();
+  if (isset($node->field_directions[LANGUAGE_NONE])) {
+    foreach ($node->field_directions[LANGUAGE_NONE] as $key => $collection_item) {
+      $entity[] = entity_load('field_collection_item',
+        array($collection_item['value'])
+      );
+    }
+    $step_content = array();
+    foreach ($entity as $index => $id) {
+      foreach ($id as $entityid => $entityobject) {
+        if (isset($entityobject->field_direction_list_title[LANGUAGE_NONE]
+            [0]['value']
+          )) {
+          $step_title = $entityobject->field_direction_list_title[LANGUAGE_NONE]
+              [0]['value'];
+        }
+        $count = 0;
+        $direction_steps = field_get_items('field_collection_item', $entityobject, 'field_direction_steps');
+        if (isset($direction_steps)) {
+          foreach ($direction_steps as $step_key => $steps) {
+            $directions = array();
+            if ($count == 0 && isset($step_title)) {
+              $step_title_tag = $step_title;
+              if (isset($steps['value'])) {
+                $directions['title'] = $step_title_tag;
+                $step_value = field_view_value('field_collection_item', $entityobject, 'field_direction_steps', $steps);
+              }
+            }
+            else {
+              if (isset($steps['value'])) {
+                $step_value = field_view_value('field_collection_item', $entityobject, 'field_direction_steps', $steps);
+              }
+            }
+            $directions['content'] = $step_value;
+            $step_content[] = $directions;
+
+            $count++;
+          }
+        }
+      }
+    }
+  }
+  return $step_content;
+}
+
+/**
+  * Preprocesing top video tout -
+  * default: the video, which has the same global tags as the current recipe content,
+  * sorted by published date,
+  * overwrite(editor's pick): Title and video entity come from the recipe content
+  */
+function _ti_amg_fwrd_custom_top_video_tout($node, $device) {
+  $top_video_tout = array();
+  $tids = array();
+  $video_tout_set = FALSE;
+  $top_video_tout['title'] =
+    (isset($node->field_top_video_tout_title[LANGUAGE_NONE][0]['value'])) ?
+    $node->field_top_video_tout_title[LANGUAGE_NONE][0]['value'] : 'Related Video';
+
+  if (isset($node->field_top_video_tout_video[LANGUAGE_NONE][0]['target_id'])) {
+    $video_nid = $node->field_top_video_tout_video[LANGUAGE_NONE][0]['target_id'];
+    $video_tout_set = TRUE;
+    $top_video_tout['video'] = _ti_amg_fwrd_custom_get_top_video_tout($video_nid);
+  }
+  else if (isset($node->field_global_tags[LANGUAGE_NONE][0]['tid'])) {
+    $query = new EntityFieldQuery();
+    $tid_to_check = '';
+    $field_to_check = '';
+    if (isset($node->field_global_tags[LANGUAGE_NONE][0]['tid'])) {
+      $tid_to_check = $node->field_global_tags[LANGUAGE_NONE][0]['tid'];
+      $tids[] = $tid_to_check;
+      $parent_tids = taxonomy_get_parents($tid_to_check);
+      if (!empty($parent_tids)) {
+        foreach($parent_tids as $parent_tid) {
+          $tids[] = $parent_tid->tid;
+        }
+      }
+      $field_to_check = 'field_global_tags';
+      $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', array('video'))
+      ->propertyCondition('status', 1)
+      ->fieldCondition($field_to_check, 'tid', $tids, 'IN')
+      ->propertyOrderBy('changed', 'DESC')
+      ->range(0,1);
+
+      $result = $query->execute();
+      if (isset($result['node'])) {
+        $video_nid = array_keys($result['node']);
+        $video_tout_set = TRUE;
+        $top_video_tout['video'] = _ti_amg_fwrd_custom_get_top_video_tout($video_nid[0], $device);
+      }
+    }
+  }
+  if (!$video_tout_set) {
+    // default: the latest video by selected below video_tags
+    $query = new EntityFieldQuery();
+    $vocabulary = 'video_tags';
+    $terms_to_check = array();
+    $terms_to_check[] = 'Mad Genius Cooking Tips';
+    $terms_to_check[] = 'Chef Steps';
+    $terms_to_check[] = 'ChefSteps';
+    $terms_to_check[] = 'chefsteps';
+
+    $tids_to_check = array();
+    foreach($terms_to_check as $term) {
+      $term_id_obj = taxonomy_get_term_by_name($term);
+      $current_term = current($term_id_obj);
+      $tids_to_check[] = $current_term -> tid;
+    }
+
+    $field_to_check = 'field_video_tags';
+    $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', array('video'))
+    ->propertyCondition('status', 1)
+    ->fieldCondition($field_to_check, 'tid', $tids_to_check, 'IN')
+    ->propertyOrderBy('changed', 'DESC')
+    ->range(0,1);
+
+    $result = $query->execute();
+    if (isset($result['node'])) {
+      $video_nid = array_keys($result['node']);
+      $top_video_tout['video'] = _ti_amg_fwrd_custom_get_top_video_tout($video_nid[0], $device);
+    }
+  }
+  return $top_video_tout;
+}
+
+function _ti_amg_fwrd_custom_get_top_video_tout($video_nid, $device) {
+  $video_obj = node_load($video_nid);
+  $video = array();
+  $video['title'] = (isset($video_obj->title)) ? $video_obj->title : '';
+  $video['headline'] = (isset($video_obj->headline)) ? $video_obj->title : '';
+    if (isset($video_obj->field_video_still[LANGUAGE_NONE][0]['uri'])) {
+      $image_uri = $video_obj->field_video_still[LANGUAGE_NONE][0]['uri'];
+      if (isset($video_obj->field_video_still[LANGUAGE_NONE][0]['filename']))
+         $image_file = $video_obj->field_video_still[LANGUAGE_NONE][0]['filename'];
+      $image_uri = image_style_url('rd_video_tout', $image_uri);
+    }
+    else if (isset($video_obj->field_video_still[LANGUAGE_NONE][0]['fid'])) {
+      $top_video_tout_fid = $video_obj->field_video_still[LANGUAGE_NONE][0]['fid'];
+      $top_video_tout_image_obj = node_load($top_video_tout_fid);
+      $image_uri =$top_video_tout_image_obj->field_image[LANGUAGE_NONE][0]['uri'];
+      $video['image']['alt_text'] =
+      $top_video_tout_image_obj->field_overwrite_image_alt_text[LANGUAGE_NONE][0]['value'];
+      $video['image']['caption'] =
+      $top_video_tout_image_obj->field_caption[ANGUAGE_NONE][0]['value'];
+      $video['image']['credit'] =
+      $top_video_tout_image_obj->field_credit[ANGUAGE_NONE][0]['value'];
+      $image_uri = image_style_url('rd_video_tout', $image_uri);
+    }
+    else {
+      $image_uri = url(DEFAULT_VIDEO_IMAGE_URI, array('absolute' => TRUE));
+    }
+    $video['image']['url'] = $image_uri;
+    $video['video_id'] =
+      isset($video_obj->field_video_id[LANGUAGE_NONE][0]['value']) ?
+    $video_obj->field_video_id[LANGUAGE_NONE][0]['value'] : '';
+    drupal_add_js(array('video_tout_id' => $video['video_id']), 'setting');
+    if ((isset($device)) && ($device != 'desktop')) {
+      $video['embed_video'] = _ti_amg_fwrd_custom_get_html5_video($video['video_id'], $device, 'recipe');
+    }
+  return $video;
+}
+
+/**
+ * Preparing Recipe Ingredients.
+ */
+function _ti_amg_fwrd_custom_prepare_ingredients($ing_entity = NULL) {
+  $preparation = array();
+  if (!empty($ing_entity)) {
+    foreach ($ing_entity as $ing_index => $ingid) {
+      foreach ($ingid as $ing_entityid => $ing_entityobject) {
+        $ing_qty = '';
+        $ing_whole_str = '';
+        $ing_fraction = '';
+        $ing_unit_str = '';
+        $ing_meas_notes_str = '';
+        $ing_prep_notes_str = '';
+        $ing_name_str = '';
+        $ing_title = '';
+        if (isset($ing_entityobject->field_ingredient_quantity[LANGUAGE_NONE]
+                [0]['value']
+            ) && $ing_entityobject->field_ingredient_quantity
+            [LANGUAGE_NONE][0]['value'] != 0
+        ) {
+          $ing_qty = $ing_entityobject->field_ingredient_quantity[LANGUAGE_NONE]
+              [0]['value'];
+          $ing_qty_str = $ing_qty . " ";
+        }
+        if (isset($ing_entityobject->field_ingredient_whole[LANGUAGE_NONE]
+                [0]['value']
+            ) && $ing_entityobject->field_ingredient_whole
+            [LANGUAGE_NONE][0]['value'] != 0
+        ) {
+          $ing_whole = $ing_entityobject->field_ingredient_whole[LANGUAGE_NONE]
+              [0]['value'];
+          $ing_whole_str = $ing_whole . " ";
+        }
+
+        if (isset($ing_entityobject->field_ingredient_fraction[LANGUAGE_NONE]
+                [0]['tid']
+            )) {
+          $ing_fraction_tid = $ing_entityobject->field_ingredient_fraction
+              [LANGUAGE_NONE][0]['tid'];
+          $ing_fraction = db_query('SELECT name FROM {taxonomy_term_data} ' .
+              'WHERE ' . 'tid = :tid', array(':tid' => $ing_fraction_tid)
+              )->fetchField();
+          if ($ing_fraction != 0) {
+            $ing_fraction_str = $ing_fraction . " ";
+          }
+        }
+        if (isset($ing_entityobject->field_ingredient_unit[LANGUAGE_NONE]
+                [0]['tid']
+            )) {
+          $ing_unit_tid = $ing_entityobject->field_ingredient_unit[LANGUAGE_NONE]
+              [0]['tid'];
+          $ing_unit = db_query('SELECT name FROM {taxonomy_term_data} WHERE '
+              . 'tid = :tid', array(':tid' => $ing_unit_tid))
+              ->fetchField();
+          $ing_unit_str = $ing_unit . " ";
+        }
+        if (isset($ing_entityobject->field_ingredient_mea_notes[LANGUAGE_NONE]
+                [0]['value']
+            )) {
+          $ing_meas_notes = $ing_entityobject->field_ingredient_mea_notes
+              [LANGUAGE_NONE][0]['value'];
+          $ing_meas_notes_str = $ing_meas_notes . " ";
+        }
+        if (isset($ing_entityobject->field_prep_notes[LANGUAGE_NONE]
+                [0]['value']
+            )) {
+          $ing_prep_notes = $ing_entityobject->field_prep_notes[LANGUAGE_NONE]
+              [0]['value'];
+          $ing_prep_notes_str = ", " . $ing_prep_notes;
+        }
+        if (isset($ing_entityobject->field_ingredient_primary[LANGUAGE_NONE]
+                [0]['tid']
+            ) && !isset($ing_entityobject->field_ingredient_name
+                [LANGUAGE_NONE][0]['value']
+            )) {
+          $ing_name_tid = $ing_entityobject->field_ingredient_primary
+              [LANGUAGE_NONE][0]['tid'];
+          $ing_name = db_query('SELECT name FROM {taxonomy_term_data} WHERE '
+              . 'tid = :tid', array(':tid' => $ing_name_tid))
+              ->fetchField();
+        }
+        elseif (!isset($ing_entityobject->field_ingredient_primary[LANGUAGE_NONE]
+                [0]['tid']
+            ) && isset($ing_entityobject->field_ingredient_name
+                [LANGUAGE_NONE][0]['value']
+            )) {
+          $ing_name = $ing_entityobject->field_ingredient_name[LANGUAGE_NONE]
+              [0]['value'];
+        }
+        elseif (isset($ing_entityobject->field_ingredient_primary[LANGUAGE_NONE]
+                [0]['tid']
+            ) && isset($ing_entityobject->field_ingredient_name
+                [LANGUAGE_NONE][0]['value']
+            )) {
+          $ing_name = $ing_entityobject->field_ingredient_name[LANGUAGE_NONE]
+              [0]['value'];
+        }
+        if (isset($ing_entityobject->field_ingredient_list_title[LANGUAGE_NONE]
+                [0]['value']
+            )) {
+          $ing_title = $ing_entityobject
+              ->field_ingredient_list_title[LANGUAGE_NONE][0]['value'];
+        }
+        if (empty($ing_title)) {
+          if (!empty(array_keys($preparation))) {
+            $preparation_keys = array_keys($preparation);
+            $ing_title = end($preparation_keys);
+          }
+          else {
+            $ing_title = '';
+          }
+        }
+        if (isset($ing_entityobject->field_ingredient_display_text[LANGUAGE_NONE][0]['value'])) {
+          $ingredient = drupal_html_to_text(strip_tags($ing_entityobject->field_ingredient_display_text[LANGUAGE_NONE][0]['value']));
+        }
+        else {
+          $ingredient = $ing_qty_str . $ing_whole_str . $ing_fraction_str . $ing_unit_str . $ing_meas_notes_str . $ing_name . $ing_prep_notes_str;
+        }
+        // Applying kill switch condition to load the ingredients with links.
+        if (variable_get('recipe_clickable_ingredients_switch', '')) {
+          $preparation[$ing_title][] = ti_amg_fwrd_custom_alter_ingredients($ingredient, 'fw_category');
+        }
+        else {
+          $preparation[$ing_title][] = $ingredient;
+        }
+      }
+    }
+  }
+  return $preparation;
+}
+
+/*
+ * Function to search term and alter ingredient.
+ */
+
+function ti_amg_fwrd_custom_alter_ingredients($ingredient, $vocabulory) {
+
+  $taxonomy_terms = ti_amg_fwrd_custom_get_taxonomy($vocabulory);
+  foreach ($taxonomy_terms as $taxonomy_term) {
+    $term_tids = array();
+    $term_name = strtolower($taxonomy_term->name);
+    if (preg_match('/\b' . $term_name . '\b/i', $ingredient, $matches)) {
+      $replace_term = $matches[0];
+      $term_tids[] = $taxonomy_term->tid;
+      $term_path = ti_amg_fwrd_custom_get_category_page($term_tids);
+      if (!empty($term_path)) {
+        $term_url = l($replace_term, $term_path[0]['url']);
+        $ingredient = preg_replace('/\b' . $replace_term . '\b/i', $term_url, $ingredient);
+      }
+    }
+  }
+  return $ingredient;
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function ti_amg_fwrd_custom_field_extra_fields() {
+  $extra = array();
+
+  $entities_info = entity_get_info();
+
+  foreach ($entities_info as $entity_type => $entity_info) {
+    $bundles = array_keys($entity_info['bundles']);
+    foreach ($bundles as $bundle) {
+      $extra[$entity_type][$bundle]['display'] = array(
+        'xmlsitemap_published_date' => array(
+          'label' => t('XMLSitemap Published Date'),
+          'description' => t('XMLSitemap Published Date'),
+          'visible' => FALSE,
+          'weight' => 0,
+          // This begins integration with extra_field_formatter module.
+          'extra field type' => 'text',
+        ),
+      );
+
+    }
+  }
+
+  return $extra;
+}
+
+/**
+ * Implements hook_entity_view().
+ *
+ * Create/Insert data into render array for extra_field_formatter
+ * to pick up and render using formatters.
+ */
+function ti_amg_fwrd_custom_entity_view($entity, $entity_type, $view_mode, $langcode) {
+  list(,, $bundle) = entity_extract_ids($entity_type, $entity);
+  $bundle_settings = field_bundle_settings($entity_type, $bundle);
+
+  // Check to make sure this field is visible in this view mode.
+  if (empty($bundle_settings['extra_fields']['display']['xmlsitemap_published_date'][$view_mode]['visible'])) {
+    return;
+  }
+
+  // Placing things into '#items' mimics real fields $items array.
+  $entity->content['xmlsitemap_published_date']['#items'] = array(
+    array(
+      'value' => format_date($entity->published_at, 'custom', 'Y-m-d\TH:i:sP'),
+    ),
+  );
+
+}

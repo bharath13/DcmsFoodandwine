@@ -1,0 +1,47 @@
+/**
+ * Block: recipe-notes
+ * Element: recipe-notes__element
+ * Modifier: recipe-notes--modifier
+ */
+
+$block: recipe-notes;
+.recipe-notes {
+  @include clearfix;
+  margin-top: 30px;
+  margin-bottom: 30px;
+
+  &__heading {
+    margin-top: 0;
+    margin-bottom: 4px;
+    font-size: rem(16);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  &__content {
+    font-size: rem(15);
+
+    p {
+      margin-top: 0;
+      margin-bottom: 10px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  &__group {
+    margin-bottom: 15px;
+    p {
+      @include font-droid-sans;
+      font-weight: 400 !important;
+      line-height: 1.5 !important;
+      font-size: rem(15) !important;
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}

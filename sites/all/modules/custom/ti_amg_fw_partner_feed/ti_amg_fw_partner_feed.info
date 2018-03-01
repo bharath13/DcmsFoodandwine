@@ -1,0 +1,7 @@
+name = Partner Feed
+description = Services for the Partner_Feed content type.
+package = Partner_Feed 
+dependencies[] = services
+files[] = ti_amg_fw_partner_feed.inc
+files[] = ti_amg_fw_partner_feed.module
+core = 7.x

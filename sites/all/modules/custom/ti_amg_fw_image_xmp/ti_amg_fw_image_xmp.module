@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * Module file for ti_amg_fw_image_xmp.
+ */
+
+/**
+ * Implements hook_widget_field_image_image_form_alter().
+ */
+function ti_amg_fw_image_xmp_field_widget_image_image_form_alter(&$element, &$form_state, $context) { ctools_include('ajax');
+if ($element[0]['#bundle'] == 'image' && $element[0]['#field_name'] == 'field_image') {
+  if ($element[0]['#default_value']['fid'] !== 0) {
+    $element[0]['metadataxmp'] = array(
+      '#type' => 'submit',
+      '#value' => t('View XMP'),
+      '#suffix' => '<div id="replace_imagexmp_div"></div>',
+      '#attributes' => array('class' => array('ctools-use-ajax'),
+      ),
+      '#id' => 'extract-xmp-button',
+      '#submit' => array(''),
+      '#ajax' => array(
+        'callback' => 'ti_amg_fw_image_xmp_insert_submit',
+        'wrapper' => "replace_imagexmp_div",
+      ),
+      '#limit_validation_errors' => array(),
+      '#executes_submit_callback' => FALSE,
+    );
+    }
+  }
+}
+/**
+ * Implements insert_submit().
+ */
+function ti_amg_fw_image_xmp_insert_submit($form, &$form_state) {
+  drupal_add_js(drupal_get_path('module', 'ti_amg_fw_image_xmp') . '/js/ti_image_xmp.js');
+
+  $commands = array();
+
+  $img = file_load($form_state['values']['field_image']['und'][0]['fid']);
+  $metadata = ti_editorial_image_metadata_get_exif_fields($img->uri);
+
+  $json = drupal_json_encode($metadata);
+
+  return array(
+    '#type' => 'ajax',
+    '#commands' => array(
+      array(
+        'command' => 'modal',
+        'text' => $json,
+      ),
+    ),
+  );
+}
+

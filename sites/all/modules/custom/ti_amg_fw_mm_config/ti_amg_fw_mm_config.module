@@ -1,0 +1,9 @@
+<?php
+
+/**
+ * @file
+ * Intentionally sparse.
+ */
+
+include_once 'includes/ti_amg_fw_mm_config.form.inc';
+include_once 'includes/ti_amg_fw_mm_config.preprocess.inc';

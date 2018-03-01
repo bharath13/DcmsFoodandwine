@@ -1,0 +1,5 @@
+name = TI AMG FW Pronto Component Body Field
+description = Pronto Component to get Body Field value
+version = 7.x-1.0
+core = 7.x
+dependencies[] = ti_pronto_field_formatters

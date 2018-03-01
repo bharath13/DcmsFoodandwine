@@ -1,0 +1,6 @@
+name = TI AMG FW Pronto Component Recipe Time
+description = Pronto component for recipe content type - Recipe Time
+package = Pronto Component
+version = 7.x-1.0
+core = 7.x
+dependencies[] = ti_pronto_field_formatters

@@ -1,0 +1,13 @@
+diff --git a/memcache.inc b/memcache.inc
+index 3b5520d..ca7047a 100644
+--- a/memcache.inc
++++ b/memcache.inc
+@@ -182,7 +182,7 @@ class MemCacheDrupal implements DrupalCacheInterface {
+     $cache = new stdClass();
+     $cache->cid = $cid;
+     $cache->data = is_object($data) ? clone $data : $data;
+-    $cache->created = REQUEST_TIME;
++    $cache->created = (int) $_SERVER['REQUEST_TIME'];
+     $cache->created_microtime = $created_microtime;
+     // Record the previous number of wildcard flushes affecting our cid.
+     $cache->flushes = $this->wildcardFlushes($cid);

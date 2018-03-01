@@ -1,0 +1,333 @@
+<?php
+
+/**
+ * This is a @file
+ */
+
+/**/
+function ti_amg_fw_omniture_init() {
+
+  $settings = array(
+    's_account' => 'timefoodandwine',
+    'pageName' => '',
+    'prop5' => '',
+    'prop6' => '',
+    'prop7' => '',
+    'prop13' => '',
+    'prop15' => '',
+    'prop16' => '',
+    'prop19' => '',
+    'prop20' => '',
+  );
+
+  // set variables
+  // var s_account
+
+  if (arg(0) == 'node') {
+
+    $node = node_load(arg(1));
+
+  }
+
+
+  if ((strpos($_SERVER['HTTP_HOST'], 'dev') !== FALSE) ||
+    (strpos($_SERVER['HTTP_HOST'], 'qa') !== FALSE) ||
+    (strpos($_SERVER['HTTP_HOST'], 'editor') !== FALSE)
+  ) $settings['s_account'] = 'timefoodandwinedev';
+
+
+  //site channel(prop)
+  
+  ti_udo_set("channel", "fw");
+  $current_path = current_path();
+  if (isset($node)) {
+    ti_udo_set("friendly_url", url($current_path, array('absolute' => TRUE)));
+  }
+
+  $settings['prop16'] = arg(0, request_path());
+  if($settings['prop16'] != ''){
+    ti_udo_set("site_section1", $settings['prop16']);
+  }
+  if (!empty($node) && $node->type != 'blog' && $node->type != 'article') {
+    if(arg(1, request_path()) != ''){
+      ti_udo_set("site_section2", arg(1, request_path()));
+    }
+  }
+  if ((isset($node)) && (!empty($node->type))) {
+    //Removing section3 and section4 from gallery content type
+    if ($node->type != 'gallery' && $node->type != 'blog' && $node->type != 'article') {
+      if(arg(2, request_path()) != ''){
+        ti_udo_set("site_section3", arg(2, request_path()));
+      }        
+      if(arg(3, request_path()) != ''){
+        ti_udo_set("site_section4", arg(3, request_path()));
+      }        
+    }
+  }
+
+  if ((!empty($node->type)) && ($node->type == 'blog' || $node->type == 'article')) {
+    if( (arg(1, request_path()) != '') && (arg(2, request_path()) == '')){
+      ti_udo_set("site_section2", arg(1, request_path()));
+    }
+  }
+
+  //content type(prop15)
+  if (isset($node)) {
+    if (!empty($node->type)) {      
+      if($node->type == 'page'){
+        ti_udo_set("template_type", 'generic-page');
+        $settings['prop15'] = $node->type;
+      } // Setting the static value for the homepage and channel landing pages
+      else if($node->type == 'home_page_responsive'){        
+        ti_udo_set("template_type", 'homepage');
+        $settings['prop15'] = 'Home Page';
+      }
+      else if($node->type == 'channel_landing_page_responsive'){
+        ti_udo_set("template_type", 'channel_landing_page');
+        $settings['prop15'] = 'channel_landing_page';
+      }
+      else if ($node->type == 'gallery') {
+        if (!empty($node->field_gallery_template[LANGUAGE_NONE][0]['value']) && $node->field_gallery_template[LANGUAGE_NONE][0]['value'] == 'Vertical') {
+          ti_udo_set("template_type", 'vertical_gallery');
+        }
+        else {
+          ti_udo_set("template_type", $node->type);
+        }
+      }
+      else {
+        ti_udo_set("template_type", $node->type);
+        $settings['prop15'] = $node->type;
+      }      
+    }
+  }
+  else {
+    // To set the static content type for Blog and Homepage
+    // Since they are not node pages and Generic Page CT is used for Landing Page
+    // FWDRUPAL-602
+    $path = arg(0, request_path());
+    $path1 = arg(1, request_path());
+    if ($path == 'blogs') {
+      //Updating Blog Landing and Blog Topic Page's Template Type Variables
+      if($path !='' && $path1 == ''){
+        ti_udo_set("template_type", 'blog_landing_page');
+        $settings['prop15'] = 'Blog Landing Page';
+      } else if($path !='' && $path1 != ''){
+        ti_udo_set("template_type", 'blog_subcategory');
+        $settings['prop15'] = 'Blog Sub Category';
+      }
+      ti_udo_set("page_name", $settings['prop15']);
+    }    
+  }
+  
+  //pageName
+  if (drupal_is_front_page()) {
+    $settings['pageName'] = 'fw|home';
+    ti_udo_set("page_name", 'Home Page');
+  }
+  elseif (arg(0) == 'node') {
+    $settings['pageName'] = 'fw|' . $settings['prop16'] . "| " . drupal_get_title();
+    ti_udo_set("page_name", drupal_get_title());
+  }
+  else {
+    $settings['pageName'] = '';
+    
+  }
+
+  //prop5-Subchannel
+  //    $gallery_layout = (isset($node->field_gallery_layout[LANGUAGE_NONE][0]['value'])) ? $node->field_gallery_layout[LANGUAGE_NONE][0]['value'] : "";
+  //    if ($gallery_layout != 'HD') {
+  if (arg(0) != "node" && arg(1) != "") {    
+    $settings['prop5'] =  arg(1, request_path());
+  }
+  elseif (drupal_is_front_page()) {
+    $settings['prop5'] = '';
+  }
+  elseif (arg(0) == "node") {    
+    $arg_0_request_path = arg(0, request_path());
+    $arg_1_request_path = arg(1, request_path());
+    if ($arg_0_request_path == 'video' && $arg_1_request_path != '') {
+      $arg_1_request_path = ti_amg_fw_custom_remove_accents(arg(1, request_path()));
+    }
+    if($arg_0_request_path != '' && $arg_1_request_path != ''){
+      $settings['prop5'] = $settings['prop16'] . '|' . $arg_1_request_path;
+      $settings['arg_0_request_path'] = $arg_0_request_path;
+      $settings['arg_1_request_path'] = $arg_1_request_path;
+    }
+    else if ($arg_0_request_path == 'video' && $arg_1_request_path == '') {
+      $settings['prop5'] = $settings['prop16'];
+      $settings['arg_0_request_path'] = $arg_0_request_path;
+      $settings['arg_1_request_path'] = '';
+    }
+    else {
+       $settings['prop5'] = $settings['prop16'];
+    }
+  }
+  else {
+    $settings['prop5'] = '';
+  }
+  $settings['prop5'] = html_entity_decode($settings['prop5'], ENT_QUOTES);
+  //}
+  if (isset($node)) {
+    // var prop7 -- any themes?
+    $theme = array();
+    $node_type = isset($node->type) ? $node->type : "";
+    if ($node_type == 'person') {
+      if (!empty($node->field_simple_theme[LANGUAGE_NONE][0]['tid'])) {
+        foreach ($node->field_simple_theme[LANGUAGE_NONE] as $cat) $theme[] = $cat['tid'];
+
+        $themes = taxonomy_term_load_multiple($theme);
+
+        $theme = array();
+        foreach ($themes as $term) $theme[] = (isset($term->field_simple_theme_label[LANGUAGE_NONE][0]['safe_value'])) ? $term->field_simple_theme_label[LANGUAGE_NONE][0]['safe_value'] : "";
+      }
+    }
+    elseif ($node_type == 'recipe' || $node_type == 'gallery') {
+      if (!empty($node->field_complex_theme[LANGUAGE_NONE][0]['tid'])) {
+        foreach ($node->field_complex_theme[LANGUAGE_NONE] as $cat) $theme[] = $cat['tid'];
+
+        $themes = taxonomy_term_load_multiple($theme);
+
+        $theme = array();
+        foreach ($themes as $term) $theme[] = (isset($term->field_complex_theme_label[LANGUAGE_NONE][0]['safe_value'])) ? $term->field_complex_theme_label[LANGUAGE_NONE][0]['safe_value'] : "";
+      }
+    }
+    $settings['prop7'] = implode('|', $theme);
+    $settings['prop6'] = implode('|', $theme);
+ 
+    if (!empty($node->type)) {
+      if ($node->type == 'article' || $node->type == 'blog' || $node->type == 'recipe' || $node->type == 'gallery' || $node->type == 'video') {
+        //content id(prop13)
+        if (!empty($node->nid)) {
+          $settings['prop13'] = $node->nid;
+          ti_udo_set("content_id", $node->nid);
+        }
+        //publishing date(prop20)
+        if (!empty($node->published_at)) {
+          $settings['prop20'] = date("Y-m-d", $node->published_at);
+          ti_udo_set("publish_date", gmdate('c', $node->published_at));
+        }
+      }
+    }
+
+    // Update tag_keywords
+    if (!empty($node->type)) {
+      if ($node->type == 'article' || $node->type == 'blog' || $node->type == 'recipe' || $node->type == 'gallery' || $node->type == 'video' || $node->type == 'channel_landing_page_responsive') {
+          if (!empty($node->field_fw_tags[LANGUAGE_NONE])) {
+            $tag_names = '';  
+            $tags = $node->field_fw_tags[LANGUAGE_NONE];
+            foreach ($tags as $tag) {
+              $term = taxonomy_term_load($tag['tid']);
+              $tag_names .= ($tag_names == '') ? $term->name : '|'.$term->name; 
+            }
+            ti_udo_set("tag_keywords", $tag_names);
+          }
+      }
+    }        
+
+    //Author(prop19)
+    if ($node->type == 'recipe') {
+      $auth_name = '';
+      if ($node->field_chefs_author[LANGUAGE_NONE]) {
+        $total_authors = count($node->field_chefs_author[LANGUAGE_NONE]);
+        foreach ($node->field_chefs_author[LANGUAGE_NONE] as $key=>$auth) {
+          $author = node_load($auth['target_id']);
+          $separator = ($key == ($total_authors - 1)) ? '' : ', ';
+          $auth_name .= $author->title . $separator;
+        }
+      }
+      $settings['prop19'] = $auth_name;
+      ti_udo_set("author_name", $auth_name);
+    }
+    //Updating Gallery and Recipe Landing Page's Template Type Variables
+    elseif ($node->type == 'channel_landing_page') {
+      $path = arg(0, request_path());
+      $path1 = arg(1, request_path());
+      if($path =='slideshows' && $path1 == ''){
+        ti_udo_set("template_type", 'gallery_landing_page');
+      } else if($path =='recipes' && $path1 == ''){
+        ti_udo_set("template_type", 'recipe_landing_page');
+      }
+    }
+    elseif (!empty($node->field_author[LANGUAGE_NONE])) {
+      $auth_name = '';
+      $total_authors = count($node->field_author[LANGUAGE_NONE]);
+      foreach ($node->field_author[LANGUAGE_NONE] as $key => $auth) {
+        $author = node_load($auth['target_id']);
+        $separator = ($key == ($total_authors - 1)) ? '' : ', ';
+        $auth_name .= $author->title . $separator;
+      }
+      $settings['prop19'] = ($auth_name);
+      ti_udo_set("author_name", $auth_name);
+    }
+  }
+  // channel
+  if (drupal_is_front_page()) {
+    $settings['channel'] = 'home';
+    ti_udo_set("site_section1", "main");
+  }
+  if (!empty($node->field_gallery_layout[LANGUAGE_NONE][0]['value']) && $node->field_gallery_layout[LANGUAGE_NONE][0]['value'] == 'HD') {
+    $settings['channel'] = arg(0, request_path()) . 'HD';
+  }
+  else {
+    $settings['channel'] = arg(0, request_path());
+  }
+  
+  $detect_device = _ti_amg_fwrd_custom_getuseragent();
+  if (!empty($detect_device)) {
+    if ($detect_device == 'mobile') {
+      ti_udo_set("site_display_format", "mobile");
+    }
+    else {
+      ti_udo_set("site_display_format", "desktop");
+    }
+  }
+  
+  $path_str = arg(0, request_path());
+  if (isset($path_str)) {
+    if ($path_str == 'partner') {
+      ti_udo_set("page_name", "partner");
+      ti_udo_set("site_section1", "general");
+      ti_udo_set("template_type", "partner");
+    }
+    elseif ($path_str == 'search' || $path_str == 'search.mobi') {
+      if ($path_str == 'search.mobi') {
+        ti_udo_set("site_section1", "search");
+      }
+      ti_udo_set("page_name", "search results");
+      ti_udo_set("template_type", "search");
+      if (isset($_GET['keyword'])) {
+        ti_udo_set("search_keyword", html_entity_decode(str_replace(
+                    array("{", "}", "\"", "&lt;", "&gt;", "%7D", "%7B", "%22", "%3C", "%3E"), '', filter_xss($_GET['keyword']))));
+      }
+    }
+    elseif ($path_str == 'monthly') {
+      ti_udo_set("page_name", "FW Issues");
+      ti_udo_set("template_type", "monthly-issues");
+    }
+  }
+  // Assigning site_section2 value as arg(0), If arg(1) is empty.
+  if ((arg(0, request_path()) != '') && (arg(1, request_path()) == '')) {
+    ti_udo_set("site_section2", arg(0, request_path()));
+  }
+
+  // For category or contributor pagination page udo_metadata update by custom.
+  if (!empty($node->type) && ($node->type == 'category' || $node->type == 'person') && count(arg()) > 2 ) {
+    $ti_udo_metadata = &drupal_static('ti_udo_metadata');   
+    if (!empty($ti_udo_metadata)) {   
+      drupal_add_js(array('catpg_udo_metadata' => $ti_udo_metadata), 'setting');    
+    }   
+  }
+
+  drupal_add_js(array('omniture' => $settings), 'setting');
+}
+
+/**
+ * Implements hook_views_pre_render().
+ *
+ */
+function ti_amg_fw_omniture_views_pre_render(&$view) {
+  if (($view->name == 'foodandwine_search' || $view->name == 'foodandwine_mobile_search') && ($view->current_display == 'page')) {
+    $src_totcnt = $view->total_rows;
+    ti_udo_set("search_results", $src_totcnt);
+  }
+}

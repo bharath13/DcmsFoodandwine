@@ -1,0 +1,200 @@
+$content-pager: content-pager;
+
+.#{$content-pager} {
+
+  &__link {
+    @include clearfix;
+    outline: none;
+    background: white;
+
+    .pagination-btn {
+      height: 100%;
+      width: 57px;
+      color: $color-red;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    &--next {
+      right: 0;
+      border-left: 3px solid $color-red;
+
+      .pagination-btn {
+        float: right;
+      }
+
+      .#{$content-pager}__link-interior {
+        float: left;
+      }
+    }
+
+    &--prev {
+      text-align: right;
+      left: 0;
+      border-right: 3px solid $color-red;
+
+      .pagination-btn {
+        float: left;
+      }
+
+      .#{$content-pager}__link-interior {
+        float: right;
+      }
+    }
+
+    &-dir {
+      @include font-droid-sans-bold;
+      text-transform: uppercase;
+      color: $color-red;
+      font-size: rem(14);
+      line-height: 1;
+      opacity: 0;
+      margin: 13px 15px 5px;
+    }
+
+    &-title {
+      color: $color-black;
+      line-height: 1.125;
+      font-size: rem(16);
+      opacity: 0;
+      margin: 0 15px 13px;
+    }
+  }
+  
+  &--fixed {
+    display: none;
+    position: fixed;
+    top: 75%;
+    left: 0;
+    right: 0;
+    z-index: $z-4;
+    width: 100%;
+
+    .#{$content-pager}__link {
+      position: absolute;
+      height: 80px;
+      box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 
+                0 2px 10px 0 rgba(0, 0, 0, 0.12);
+
+      &:hover {
+
+        .#{$content-pager}__link-interior {
+          width: 300px;
+        }
+
+        .#{$content-pager}__link {
+          &-title,
+          &-dir {
+            opacity: 1;
+            @include transition(opacity 0.2s common-ease() 0.15s);
+          }
+
+          .pagination-btn {
+            width: 57px;
+          }
+        }
+      }
+    }
+
+    .#{$content-pager}__link-interior {
+      width: 0;
+      height: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+      @include transition(width 0.15s common-ease());
+
+      .#{$content-pager}__image {
+        max-width: 80px;
+      }
+    }
+  }
+
+  &--stationary {
+
+    @include clearfix;
+    position: relative;
+    top: auto;
+    padding-bottom: 20px;
+
+    .#{$content-pager}__link-interior {
+      width: calc(100% - 20px);
+    }
+
+    .#{$content-pager}__link {
+      display: block;
+      width: 50%;
+      height: auto;
+      position: relative;
+      box-shadow: none;
+      border: none;
+
+      .pagination-btn {
+        position: relative;
+        width: 20px;
+        height: 40px;
+        top: -50%;
+        @include transform(translateY(50%));
+      }
+
+      &-dir,
+      &-title {
+        opacity: 1;
+      }
+
+      &--prev {
+        text-align: left;
+        float: left;
+      }
+
+      &--next {
+        text-align: right;
+        float: right;
+      }
+
+      &--has-image {
+        .#{$content-pager}__link-interior {
+          width: calc(100% - 110px);
+        }
+
+        .pagination-btn {
+
+          &--prev {
+            margin-right: 10px;
+          }
+
+          &--next {
+            margin-left: 10px;
+          }
+        }
+      }
+    }
+
+    @include respond-to('up to small') {
+
+      .#{$content-pager}__link {
+        width: 100%;
+
+        &--has-image {
+
+          .#{$content-pager}__link-interior {
+            width: calc(100% - 30px);
+          }
+        }
+      }
+
+      .#{$content-pager}__image {
+        display: none;
+      }
+    }
+  }
+}
+
+@include respond-to('small and up') {
+  .#{$content-pager}--fixed {
+    display: none;
+
+    &.shown-on-scroll {
+      display: block;
+    }
+  }
+}

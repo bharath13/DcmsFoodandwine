@@ -1,0 +1,29 @@
+
+<?php
+
+/**
+ * @file
+ * Install file for FoodAndWine Backend Advanced Search.
+ */
+
+/**
+ * Implements hook_update_N().
+ *
+ * Dynamically create menu to avoid hardcoding mlid in Features.
+ */
+function ti_amg_fw_backend_search_update_7001() {
+  
+$menu_item = array(
+         'link_title' => 'Search Recipes',
+         'link_path' => 'admin/recipe-search',
+         'menu_name' => 'menu-ti-editorial-navbar',
+         'weight' => 6,
+         'expanded' => 0,
+        );
+  
+      $exists = db_query("SELECT mlid from {menu_links} WHERE link_path='admin/recipe-search' AND menu_name='menu-ti-editorial-navbar'")->fetchField();
+      if (!$exists) {
+        menu_link_save($menu_item);
+      }
+}
+

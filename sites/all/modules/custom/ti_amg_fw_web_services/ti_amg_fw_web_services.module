@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Web Services feature.
+ */
+
+include_once 'ti_amg_fw_web_services.features.inc';

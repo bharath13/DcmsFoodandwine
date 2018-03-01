@@ -1,0 +1,666 @@
+@charset "UTF-8";
+/*-----------------------------------------------------------------------------
+Title: Main Screen Style Sheet
+Site:  Food & Wine http://www.foodandwine.com/
+Version: 4.0
+Last Updated: 2012.03.06
+Authors:  Kevin Stoelb, David DeParolesa
+Validation: This CSS document validates for conformance to W3C recommendations. 
+Validate upon changes - http://jigsaw.w3.org/css-validator
+-----------------------------------------------------------------------------*/
+
+/* General Layout and Styling */
+
+
+body{
+  font:14px/1.6em 'Droid Serif', serif;color:#7d7d7d;
+}
+a{
+  text-decoration:none;color:#3a89ac;
+}
+a:hover{
+  text-decoration:underline;
+}
+h1,h2,h3{
+  margin:0;padding:0;
+}
+h1,h2,h3,h1 a,h2 a,h3 a{
+  color:#000;
+}
+h2.theme{
+  font-weight:normal;
+}
+h3{
+  font-size:15px;line-height:1.3em;
+}
+img{
+  border:0;
+}
+.clearer{
+  clear:both;
+}
+.node-type-page p {
+    margin: 10px 0 0;
+    padding: 0;
+    color:#7d7d7d;
+}
+.node-type-page h1, .node-type-page h2 {
+    line-height: 1.3em;
+}
+
+/* Timeinc HAT */
+#time_inc_hat { max-height:35px;}
+
+
+/* daily news */
+.news-bits{margin-bottom:30px;}
+.news-bits .carousel{float:left;}
+.news-bits .carousel .frames{width: auto;}
+.news-bits p{margin-top:2px;font-size:12px;line-height:16px;}
+.news-bits p a{color:#000;}
+
+
+/* 6 column grid layout */
+.section,
+.carousel{position:relative;}
+.section{overflow:hidden;}
+.one-column,.three-columns,.two-columns,.four-columns,.five-columns,.six-columns{float:left;margin-right:20px;}
+.one-column{width:90px;}
+.two-columns{width:200px;}
+
+.three-columns{width:310px;}
+.four-columns{width:420px;margin-right:0;}
+.five-columns{width:100px;height:200px;margin:0 30px 30px 0;}
+/*.five-columns{width:100px;height:190px;margin:0 30px 30px 0;}*/
+.six-columns{width:660px;padding-right:0;}
+
+
+/* carousel */
+.carousel{margin-top:30px;overflow:hidden;}
+.carousel .slug{font:10px/1em 'Droid Sans', sans-serif;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.viewport{overflow:hidden;margin:0 -5px;padding:5px 5px 0;}
+.frames{position:relative;width:3000px;}
+.carousel h3{margin:0;padding:0 0 10px;line-height:1.65em;font-size:20px;font-weight:normal;}
+.carousel .lists-link{float:right;margin:36px 20px 0 0;text-transform:uppercase;font:9px/1em 'Droid Sans', sans-serif;letter-spacing:1px;}
+/*.frame a img:hover{box-shadow:0 0 8px 2px rgba(0,0,0,0.2);}*/
+.frame p{font:11px/1.4em 'Droid Sans', sans-serif;}
+.frame a{color:#7d7d7d;display:block;}
+.frame p.nav-link{text-transform:uppercase;}
+
+
+
+/* featured and promo link styles */
+.links{list-style:none;margin:0;padding:17px 0 0;}
+.links li{margin:0;padding:0 0 8px;text-transform:uppercase;font:9px/1em 'Droid Sans', sans-serif;letter-spacing:1px;}
+.links li a,.lmore,.rel-articles a{padding-right:10px;background:url("../images/link-blue.png") no-repeat 100% 0;}
+.rel-articles a,.lmore{background-position:100% center;}
+.caption .lmore a{font-size:10px; line-height:15px; margin:0; padding:0; padding-right:10px;}
+.section-separator{clear:left;padding-top:29px;border-bottom:1px solid #e1e1e1;margin:0 20px 30px 0;}
+
+#departments p{text-transform:uppercase;}
+
+/* Article modules */
+.feature-separator{border:2px solid #000;border-left:0;border-right:0;height:4px;margin-right:20px;clear:left;}
+
+
+/* Venues */
+#geo-children{border-top:2px solid #000;margin-top:12px;overflow:hidden;padding:30px 0 0;}
+#geo-children ul{list-style:none;padding:0;width:681px;margin:0;overflow:hidden;}
+#geo-children li{border-bottom:1px solid #E1E1E1;font:10px/2.2 'Droid Sans', sans-serif;letter-spacing:1px;text-transform:uppercase;float:left;width:207px;margin: 0 20px 0 0;}
+#geo-results-children span,#geo-children span{color:#7D7D7D}
+#geo-results-children a:hover span,#geo-children a:hover span{border-bottom:#7D7D7D;}
+#geo-children a {color:#000;display:block;padding-left:2px;}
+
+#geo-results-children{float:left;margin-top:20px;}
+#geo-results-children ul{line-height:14px;list-style:none;margin:0 20px 0 0;padding:0;width:160px;}
+#geo-results-children li{padding:0 0 7px;}
+#geo-results-children ul{font-family:'Droid Sans', sans-serif;font-size:12px;}
+#geo-results-children li a:hover span{text-decoration:none;}
+#tab-toggle{border-bottom:1px solid #000;position:relative;height:22px;}
+#tab-toggle ul{float:right;list-style:none;margin:0;padding:0;position:relative;height:21px;}
+#tab-toggle li{float:left;margin-left:6px;}
+#tab-toggle .back{background-color:#e71f3d;color:#FFF;}
+#tab-toggle .front{border-bottom-color:#FFF;color:#000;}
+#tab-toggle a{border:1px solid #000;font-family:'Droid Sans', sans-serif;font-size:10px;font-weight:bold;display:block;letter-spacing:1px;line-height:21px;padding:0 10px;text-transform:uppercase;}
+
+#restaurant-travel-wrapper{margin-right:20px}
+#throp-listings .count{font-size: 12px;font-style:italic;margin:20px 0;line-height:1;}
+#throp-listings {float:left;width:460px;}
+.listing {border-top: 1px solid #e1e1e1;font:12px/1.33 'Droid Serif', serif;color:#000;}
+.listing h3 { font:13px/1 'Droid Sans', sans-serif;margin: 15px 0 10px;font-weight: bold;}
+.listing p {margin:10px 0 15px;}
+.lmore {text-transform:uppercase;font:10px 'Droid Sans', sans-serif;letter-spacing:1px;line-height:15px;}
+
+.lst-address {font: 9px/15px 'Droid Sans', sans-serif;text-transform: uppercase;letter-spacing: 1px;margin: 0 0 10px;color:#7d7d7d;}
+#throp-header h1 { font-size:26px; font-weight:normal; line-height:30px;padding: 0; margin: -5px 0 10px}
+#throp-header h3 { font-size:18px; font-weight:normal; line-height:21px;padding: 0; margin: -5px 0 10px}
+.vcard{font:12px/16px 'Droid Sans', sans-serif;}
+.locality{display:block;margin-bottom:15px;}
+.thropDetail{font-size:14px;line-height:21px;color:#000;}
+.thropDetail h3 a{color:#3a89ac;}
+.featured-in{margin-top:30px;border-top:2px solid #000;padding:4px 0 0 0;}
+.featured-in .thropDetail,.thropDetail .update{font:12px/1.3 'Droid Sans', sans-serif;}
+
+/* recipe theme landing / general landing*/
+.landing.tlp.section .feature-separator{margin-right:0}
+.lnd-recipe h3,.landing h3{font-size:20px;font-weight:normal;line-height:1.25;font-family: 'Droid Serif', serif;}
+.hero{
+    background: none no-repeat scroll 0 0 transparent;
+    color: #000;
+    height: 220px;
+    padding: 20px 250px 0 25px;
+   }
+   #fwsitemap .col {
+    width: 280px!important;
+}
+.hero.wide{padding:20px 20px 0 25px;}
+.herohd{font:normal 12px 'Droid Sans', sans-serif;letter-spacing:1px;text-transform:uppercase;margin:0;padding:0;}
+.hero-magnify{display:block;font:italic 40px/48px 'Droid Serif', serif;letter-spacing:0;text-transform:lowercase;padding:5px 0 0;}
+.hero-magnify.small-font{font:italic 34px/42px 'Droid Serif', serif;}
+.red{color:#e8344f;}
+.hero p {margin: 11px 0 5px;line-height:21px;}
+.hero-recipe{color:#7D7D7D;font:10px/1.6 'Droid Sans', sans-serif;}
+.lnd-recipe, .landing{margin:30px 20px 21px 0;overflow:visible;color:#000;}
+.lnd-recipe .two-column{margin-right:0;}
+#rec-switcher{border-bottom:2px solid #000;border-top:2px solid #000;position:relative;}
+#rsw-teasers{list-style:none;margin:0;padding:0;overflow:hidden;}
+.rsw-hdr{border-bottom:1px solid #000;line-height:1;overflow:hidden;padding:8px 0 7px;text-transform:uppercase;}
+.rsw-hdr h2{float:left;font-size:10px;font-weight:normal;letter-spacing:3px;padding:0;}
+.rsw-hdr .counter{color:#7D7D7D;display:block;float:right;font:9px/12px 'Droid Sans', sans-serif;}
+.node-type-page .rsw-present{margin-right:10px!important;}
+.rsw-present img {
+    height: 250px;
+    width: 200px;
+    margin-left: 10px;
+}
+.lnd-recipe p, .landing p {
+    color: #000;
+}
+.sbar-inner {
+    border: 1px solid #e1e1e1;
+    padding: 10px 10px 15px;
+}
+.rsw-cont h3{margin-top:7px;}
+.rsw-cont h2{margin-top:7px;}
+.rsw-cont p{line-height:21px;margin:5px 0 10px;color: #000;}
+.rsw-nav{background: #A1A1A1 url("../images/next-prev.png") no-repeat 0 0;display:block;height:36px;line-height:36px;overflow:hidden;position:absolute;text-indent:-9999px;top:146px;width:21px;}
+.rsw-nav{background-color:rgba(161,161,161,.6);}
+.rsw-nav[rel=prev]{border-radius:0 2px 2px 0;left:220px;}
+.rsw-nav[rel=next]{background-position:-177px 0;border-radius:2px 0 0 2px;right:0;}
+.rsw-nav:hover{background-color:#000;background-color:rgba(0,0,0,.6);}
+.rsw-teaser{overflow:hidden;padding-right:20px;width:420px;display:none;}
+#rsw-teasers .current{display:block;}
+.rsw-viewport{margin:10px 0;overflow:hidden;width:420px;min-height: 250px;}
+.lnd-recipe .rsw-viewport h2 {font-size: 20px;font-weight: normal;line-height: 1.25;margin:17px 0 2px;padding:0;}
+.lnd-separator{width:640px}
+.lnd-recipe .sidebar{margin: 0 0 0 8px;}
+.top-picks{background:transparent url("../images/search_bg.gif") repeat 0 0;padding:15px;position:relative;margin-bottom:20px;}
+.tp-icon{height:42px;left:30px;margin:0;overflow:hidden;padding:0;position:absolute;text-indent:-9999px;top:-12px;width:42px;}
+.tp-icon img{position:absolute;left:0;top:0;}
+.tp-inner{background-color:#FFF;padding:16px 10px 20px;text-align:center;}
+.tp-inner h2{font-size:18px;letter-spacing: 1px;line-height:23px;margin:0;text-transform:uppercase;font-weight:normal;padding:0px}
+.tp-inner h3{font-size:18px;letter-spacing: 1px;line-height:23px;margin:0;text-transform:uppercase;}
+.tp-inner ul{font:12px/1.3 'Droid Sans', sans-serif;list-style:none;margin:12px 0 0;padding:0;}
+.tp-inner hr{background-color:#E1E1E1;border:1px none #E1E1E1;color:#E1E1E1;height:1px;width:110px;margin:6px auto;}
+.slim-cols{border-bottom:1px solid #000;margin-bottom:30px;overflow:hidden;}
+.slim-cols .section{padding:0;margin:0;list-style:none;width:105%;}
+.slim-cols img{display:block;height:112px;margin-bottom: 7px;width:90px;}
+.slim-cols p {color:#000;font-size:12px;line-height:1.3;margin-top:0;}
+.slim-cols a:hover p{text-decoration:underline;}
+.slim-cols h2{line-height:1;margin:28px 0 18px;font-size:20px;font-weight:normal;padding:0;}
+.slim-cols h3{line-height:1;margin:28px 0 18px;}
+.slim-cols .ep-row2{padding-top:39px;padding-bottom:27px;}
+/* People Profile Landing */
+.profile-hero{background:transparent url("../images/profile_header.jpg") no-repeat 0 0;height:190px;line-height:1;padding:50px 0 0;text-align:center;width:640px;}
+.profile-hero h1{color:#FFF;font-weight:normal;padding:0;letter-spacing:2px;margin:0;text-transform:uppercase;}
+.profile-hero em{display:block;height:69px;margin:0 auto;overflow:hidden;text-indent:-9999px;width:323px;}
+.profile-hero p{color:#deea7d;font-size:15px;font-style:italic;letter-spacing:1px;line-height:20px;margin:9px auto 0;width:250px;}
+.tp-inner h4{margin:8px 0 0;font-size:10px;line-height:15px;text-transform:uppercase;letter-spacing:1px;}
+.tp-inner ul ul{margin:1px 0;}
+.tp-inner ul ul li{line-height:20px;}
+.tp-btn-see-more{background:transparent url("../images/list_see_all_button.gif") no-repeat 0 0;display:block;height:23px;overflow:hidden;margin:9px auto 0;text-indent:-9999px;width:135px;}
+.land-photo{display:block;height:75px;float:left;margin:0 15px 15px 0;width:60px;}
+.land-feat h3{color: #000;font-size:16px;font-weight:bold;line-height:21px;margin:5px 0 8px;}
+.land-feat p{clear:both;}
+.land-feat{color:#7D7D7D;margin-bottom:22px;}
+.pplp .slim-cols{border-bottom:none;}
+.fs-top{margin-top: 20px;}
+.feats{clear:both;padding-top:30px;}
+#vid-switcher{background:transparent url("../images/search_bg.gif");height:330px;overflow:hidden;position:relative;width:420px;}
+#vid-switcher .counter{color:#7D7D7D;display:block;font:10px/1 'Droid Sans', sans-serif;text-align:center;text-transform:uppercase;}
+#vid-switcher [rel=prev]{left:0;}
+.vid-viewport{overflow:hidden;margin:13px auto;}
+.vid-teaser,
+.vid-teaser img,
+.vid-viewport{display:block;height:241px;width:321px!important;}
+.vid-teaser{margin:0;position:relative;}
+.vid-teaser figcaption{background-color:#000;background-color:rgba(0,0,0,.4);bottom:0;color:#FFF;font:bold 9px/13px 'Droid Sans', sans-serif;height:50px;left:0;padding:10px 10px 0;letter-spacing:1px;position:absolute;right:0;text-transform:uppercase;}
+.vid-teaser cite{display:block;font-style:normal;font-weight:normal;}
+/*.feat-vid{background:transparent url(../chrome/headers.png) no-repeat 0 -88px;height:13px;margin:18px auto 6px;overflow:hidden;padding:0;text-indent:-9999px;width:155px;}*/
+.feat-vid{margin:18px 0 6px; text-align: center;padding:0!important;font:bold 14px/1 'Droid Sans', sans-serif;text-transform:uppercase;letter-spacing:1px;}
+.vid-play{background:transparent url("../images/video_play_lg.png") no-repeat center center;bottom:0;display:block;left:0;overflow:hidden;position:absolute;right:0;text-indent:-9999px;top:0;}
+
+
+
+/* Carousel */
+.carousel{position:relative;}
+.carousel .rsw-nav{top:108px;}
+.carousel .rsw-nav[rel=prev]{left:0;}
+
+/* Side and footer menus */
+
+/* feature-front */
+.section-body,
+.feature-front{overflow:visible;}
+.feature-front{border-bottom:1px solid #e1e1e1;margin-bottom:10px;}
+.feature-front .image{margin-right:20px;float:left;padding-bottom: 15px;}
+.feature-front .image img{width:140px;height:175px;display:block;}
+.feature-front .slug{text-transform:uppercase;padding-top:10px;font:11px/1 'Droid Sans', sans-serif;letter-spacing:1px;color:#000;}
+.feature-front h2{font-size:20px;font-weight:normal;line-height:1.25;padding:8px 0 0;}
+.feature-front .bubble{position:absolute;right:0;top:-3px;z-index:10;}
+.bubble .pointer{background:url("../images/red_bubble_pointer.gif") no-repeat 0 0;position:absolute;left:15px;bottom:-7px;width:7px;height:7px}
+
+.links li{font-size:10px;line-height:16px;}
+.links li a{background-position: 100% 2px;}
+
+.lnd-recipe .feature-front h3, .landing .feature-front h3{margin:7px 0 0;}
+.lnd-recipe .teaser,.landing .teaser{line-height:21px;margin-top:6px;}
+.lnd-recipe .links,.landing .links{padding:10px 0 0;}
+.lnd-recipe .feature-front,.landing.feature-front{padding:0 0 10px;}
+
+/* shared pages styles */
+#breadcrumbs{font:9px/1em 'Droid Sans', sans-serif;letter-spacing:1px;text-transform:uppercase;margin-right:20px;position:relative;overflow:hidden;}
+#breadcrumbs a{color:#7d7d7d}
+#breadcrumbs .sponsor-logo{float: right;position: relative;}
+#right-ad-tag{padding-bottom:10px;}
+#right-ad-tag p {margin:0}
+.breadcrumbs-divider{margin-top:20px;margin-bottom:10px;width:100%;border-bottom:1px solid #E1E1E1}
+.related-links{border-top:2px solid #000;border-bottom:2px solid #000;padding:2px 2px 5px;margin-top:30px;margin-right:20px;position:relative;}
+.related-links h4{margin:0;padding:8px 0 10px;font:bold 10px/1em 'Droid Sans', sans-serif;color:#000;text-transform:uppercase;letter-spacing:1px;}
+.related-empty{margin-top:30px;}
+.related-links p{float:left;width:50%;font:12px/20px 'Droid Sans', sans-serif;padding:0;margin:0;}
+.related-links p.more-content{display:none;}
+.related-links p a{padding-right:10px;background:url("../images/link-blue.png") no-repeat right center;}
+#more-content-link{display:block;background:#000;font: 9px/16px 'Droid Sans', sans-serif;color:#fff;letter-spacing:1px;text-transform:uppercase;position:absolute;right:0;bottom:-18px;padding: 0 5px;}
+
+.byline{font:9px/1em 'Droid Sans', sans-serif;text-transform:uppercase;letter-spacing:1px;padding:10px 0 25px;}
+.subsection{font-size:26px;line-height:30px;font-weight:normal;}
+.credit{color:#7d7d7d;font:9px/15px 'Droid Sans', sans-serif;}
+.plus{color:#000;font-weight:normal;font-style:italic;margin-top:10px;}
+
+/*styles for chef-dynamic pages*/
+
+h1.chefs {font-size:26px;font-weight:normal;color:#000;padding:0;margin:0;height:26px}
+.subsection-banner{border-top: 2px solid #000; border-bottom: 1px solid #000; margin: 20px 0 30px; padding:0; font-family:'Droid Serif', serif; text-transform:uppercase;font-size:10px;color:#000;letter-spacing:3px;}
+#frames.chefs  p { color:#000;margin:0; font-size:12px;line-height:16px;font-family:'Droid Sans', sans-serif;} 
+#frames.chefs p a { color:#000;}
+#chefs-wrapper{margin:0 20px 0 0}
+#chefs-wrapper .five-columns{height:190px} 
+.five-columns.last{margin:0 0 30px 0;} /*slideshows landing page uses the same class  on a different branch so one of the se  can be deleted when all branches are merged*/
+
+/* related articles */
+.hdr-related{background: transparent url("../images/headers.png") no-repeat 0 -60px;height:11px;line-height:1;margin:20px 0 17px;overflow:hidden;padding:0;text-indent:-9999px;width:153px;}
+.rel-articles{font:12px/1.66 'Droid Sans', sans-serif;list-style:none;overflow:hidden;padding:0;position:relative;}
+.rel-articles li{float:left;width:50%;}
+
+
+/* border overrides */
+.no-bottom-border{border-bottom:none !important;}
+.med-dark-bottom-border{border-bottom:2px solid #000 !important;}
+.thin-dark-bottom-border{border-bottom:1px solid #000 !important;}
+.thin-light-bottom-border{border-bottom:1px solid #e1e1e1 !important;}
+.no-bottom-margin{margin-bottom:0 !important;}
+.no-bottom-padding{padding-bottom:0 !important;}
+
+.inspiration{margin-top:30px;}
+.inspiration img{display:block;height:250px;width:200px;}
+.inspiration h3{margin-top:16px;}
+.inspiration .links{padding-top:12px;}
+
+/* =GENERAL=========================================== */
+.surlatable-link {font-family:'Droid Sans', sans-serif; font-size:11px; color: #d10702;line-height:16px}
+.surlatable-link a:link {color: #d10702; text-decoration: none; outline:none;}
+.surlatable-link a:visited {color: #d10702; text-decoration: none; outline:none;}
+.surlatable-link a:hover {color: #d10702; text-decoration: underline; outline:none;}
+.surlatable-link a:active {color: #d10702; text-decoration: none; outline:none;}
+
+#container-surlatable { width:657px;margin: 0 auto; background:url("../images/bg.jpg") no-repeat 0 0;}
+
+#content-surlatable { width:657px; line-height:16px }
+#content-surlatable-header { width: 657px; height: 150px; margin: 0 20px 20px 0; clear:both}
+#content-surlatable-photo1 { width: 124px; height: 113px; margin: 0 0 60px 3px; border-right: 1px solid #eaeaea; float:left; }
+#content-surlatable-photo2 { width: 124px; height: 113px; margin: 0 0 20px 3px; border-right: 1px solid #eaeaea; float:left; }
+#content-surlatable-photo3 { width: 124px; height: 113px; margin: 0 0 20px 3px; border-right: 1px solid #eaeaea; float:left; }
+#content-surlatable-photo4 { width: 124px; height: 113px; margin: 0 0 20px 3px; border-right: 1px solid #eaeaea; float:left; }
+#content-surlatable-photo5 { width: 124px; height: 113px; margin: 0 0 20px 3px; float:left; }
+
+#content-surlatable-link { width: 124px; margin: 0 0 20px 3px; float:left; }
+#content-surlatable-bar { width: 657px; height:5px; margin: 0 0 20px 0; }
+
+
+/*native advertisement */
+.native-ad .featured-article { border-bottom:1px solid #000;padding:25px 0;width:100%;overflow:hidden;}
+.native-ad img{display:block;}
+.native-ad .featured-image { float:left; width:140px;margin:0 20px 0 0;}
+.native-ad .featured-content { float:left; width:450px;}
+
+.featured-content span {font-family:'Droid Sans', sans-serif;text-transform:uppercase;line-height:9px;letter-spacing:1px;color:#000;font-size:9px;}
+.featured-content span a {font-family:'Droid Sans', sans-serif;text-transform:lowercase;color:#7d7d7d;font-size:10px;line-height:10px;text-decoration:underline;}
+
+.featured-content #fw-connect{background:url('../images/fw-connect.png') 0 0 no-repeat;height:16px;width:177px;margin:5px 0 0 0;}
+.featured-content h2 {font-family:'Droid Serif', serif;font-size:18px;line-height:24px;margin:20px 0 0 0;padding:0;}
+.featured-content p {margin:0 0 20px 0;font-family:'Droid Serif', serif;font-size:14px;line-height:20px;padding:0;}
+.featured-content p a {color:#3a89ac;}
+.native-ad .slug{text-transform:uppercase;margin-top:20px;font:10px/12px 'Droid Sans', sans-serif;letter-spacing:1px;color:#000;}
+
+#sponsored-content {width:100%; overflow:hidden;}
+#sponsored-content p {float:left;font-family:'Droid Sans', sans-serif;text-transform:uppercase;line-height:25px;letter-spacing:1px;color:#000;font-size:9px;margin:0 5px 0 0;padding:0;}
+.homepage-content-container #sponsored-content img { height:25px;width:auto; float:left;}
+
+
+
+#sponsored-content-fw-connect {
+  width: 100%;
+  overflow: hidden;
+  margin: 10px 0 10px 0;
+  font-family:'Droid Sans', sans-serif;
+}
+
+#sponsored-content-fw-connect .fw-connect-logo {
+  float:left;
+}
+
+#sponsored-content-fw-connect .fw-connect-logo p {
+  font-family:'Droid Sans', sans-serif;
+  text-transform:uppercase;
+  line-height:9px;
+  color:#7d7d7d;
+  font-size:9px; 
+  margin:0;
+}
+
+#sponsored-content-fw-connect .fw-connect-logo a {
+  background: url('../images/fw-connect.png') 0 0 no-repeat;
+  padding-left: 185px;
+  line-height: 19px;
+  height: 16px;
+  display:inline-block;
+  float:left;
+  font-family:'Droid Sans', sans-serif;
+  text-transform:lowercase;
+  color:#7d7d7d;
+  font-size:10px;
+  text-decoration:underline;
+}
+
+#sponsored-content-fw-connect .sponsor-info {
+  float:right;
+}
+#sponsored-content-fw-connect .sponsor-info p {
+  float: left;
+  font-family: 'Droid Sans', sans-serif;
+  text-transform: uppercase;
+  color: #7d7d7d;
+  margin:0;
+  line-height:31px;
+  font-size: 10px;
+}
+#sponsored-content-fw-connect .sponsor-info a, #sponsored-content-fw-connect .sponsor-info img {
+  float:left;
+}
+
+/** slideshow modification to fw-connect **/
+#slideshow-head #sponsored-content-fw-connect {
+  width:575px;
+  float:left;
+  margin-top:0;
+}
+figure {
+    clear: both;
+    margin: 0;
+    min-height: 250px;
+    padding: 0;
+    position: absolute;
+    right: 0;
+}
+
+.cg-hero {
+    background: url("../images/hdr-city-guide.png") no-repeat scroll 0 0 / 99% auto transparent;
+    color: #000;
+    padding: 13px 40px 0;
+    text-align: center;
+}
+.cg-hero h1 {
+    height: 25px;
+    margin: 0 auto;
+    overflow: hidden;
+    padding: 0;
+    text-indent: -9999px;
+    width: 79px;
+}
+.cg-hero h2 {
+    font-size: 30px;
+    font-weight: normal;
+    letter-spacing: 3px;
+    line-height: 32px;
+    margin: 4px 0 9px;
+    padding: 0;
+    text-transform: uppercase;
+}
+.cg-hero hr {
+    background-color: #e1e1e1;
+    border: 1px none #e1e1e1;
+    color: #e1e1e1;
+    height: 1px;
+    margin: 6px auto;
+    width: 150px;
+}
+.cg-hero p {
+    font-style: italic;
+    line-height: 21px;
+    margin-bottom: 10px;
+}
+.cg-hero {
+    color: #000;
+    text-align: center;
+}
+.hero p{
+    color: #000;
+}
+.tpl-epick {
+    border: 3px solid #000;
+    margin: 0 0 30px;
+    padding: 0;
+    position: relative;
+}
+.tpl-epick img {
+    display: block;
+    height: 245px;
+    width: 414px;
+}
+.tpl-epick figcaption {
+    background-color: #000;
+    color: #fff;
+    font: bold 10px/1.2 'Droid Sans', sans-serif;
+    margin-top: -4px;
+    padding: 7px 12px 3px 41px;
+    position: relative;
+}
+.epick-banner {
+    left: -12px;
+    padding: 0;
+    position: absolute;
+    top: -235px;
+}
+.epick-banner img, .epick-banner {
+    display: block;
+    height: 42px;
+    width: 115px;
+}
+.epick-bull {
+    background: url("../images/top-picks.png") no-repeat scroll -224px 0 transparent;
+    display: block;
+    height: 12px;
+    left: 9px;
+    position: absolute;
+    top: 12px;
+    width: 28px;
+}
+.node-type-page .rsw-hdr h2 {
+    float: left;
+    font-size: 10px!important;
+    font-weight: normal!important;
+    letter-spacing: 3px!important;
+    padding: 0!important;
+    margin: 0 !important;
+}
+.sbar-callout {
+    border: 1px solid #e1e1e1;
+    margin-bottom: 30px;
+    padding: 3px;
+    text-align: center;
+}
+.tp-inner ul ul li a {
+    line-height: 14px;
+}
+.tlp .sbar-callout {
+    margin-top: 30px;
+}
+.tlp .land-feat h3 {
+    font-size: 18px;
+    line-height: 23px;
+}
+.how-to h2 {
+    background-position: 0 -30px;
+    width: 92px;
+}
+.sbar-callout h2 {
+    background: url("../images/headers.png") no-repeat scroll 0 0 transparent;
+    display: block;
+    height: 16px;
+    margin: 0 auto 10px;
+    overflow: hidden;
+    padding: 0;
+    text-indent: -9999px;
+}
+.sbar-callout img {
+    border: 3px solid #000;
+    height: 175px;
+    width: 140px;
+}
+.sbar-callout h3 {
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 21px;
+    margin: 3px 0 0;
+}
+.sbar-callout p {
+    font-size: 13px;
+    line-height: 19px;
+    margin: 7px 0 3px;
+}
+.snooth-offscreen {
+    left: -10000px;
+    position: absolute;
+}
+p.snooth-recommends {
+    color: #252525;
+    font-size: 12px;
+    height: auto;
+    left: 82px;
+    position: absolute;
+    top: 75px;
+    width: 330px;
+}
+.landing-page-breadcrumb ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0 0 0.3em;
+}
+.landing-page-breadcrumb ul li {
+    color: #000;
+    display: inline;
+    margin: 0;
+    padding: 0 0.25em 0 0;
+}
+.landing-page-breadcrumb a, .landing-page-breadcrumb a:visited {
+    color: #7d7d7d;
+    font: 10px/15px 'Droid Sans', sans-serif;
+    letter-spacing: 1px;
+    text-decoration: underline;
+    text-transform: uppercase;
+}
+.landing-page-breadcrumb ul li.current-page {
+    color: #7d7d7d;
+    font: 10px/15px 'Droid Sans', sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.sbar-callout h3 {
+    font-size: 14px!important;
+    font-weight: bold!important;
+    line-height: 21px!important;
+    margin: 3px 0 0!important;
+}
+.sbar-callout p {
+    font-size: 13px;
+    line-height: 19px;
+    margin: 7px 0 3px;
+    color: #000;
+}
+.tpl-epick {
+    border: 3px solid #000;
+    margin: 0 0 30px;
+    padding: 0;
+    position: relative;
+}
+.sbar-callout ul {
+    list-style: outside none none;
+    margin-bottom: 0;
+    padding: 0;
+}
+.sbar-callout li {
+    background: url("../images/red-bullet.png") no-repeat scroll 0 4px transparent;
+    font-size: 14px;
+    line-height: 18px;
+    margin: 10px 0 0;
+    padding: 0 0 0 10px;
+    text-align: left;
+}
+.sbar-callout li a {
+    color: #000;
+}
+.sweepsBox p {
+    font-size: 11px;
+}
+.sweepsBox {
+    height: 180px!important;
+}
+#container_b {
+    width: 985px!important;
+}
+.node-type-page h2 {
+    font-size: 18px;
+    line-height: 1.3em;
+    padding: 10px 0 3px;
+}
+.app-module .copy {
+    float: none!important;
+    margin-left: 30px;
+    width: 100%!important;
+}
+.app-module {
+    height: 100%!important;
+ }
+ .sbar-inner hr {
+    border-bottom: 1px solid;
+    margin: 5px;
+}
+.how-to h2 {
+    background-position: 0 -30px;
+    width: 92px;
+}
+.more-recipes h2 {
+    width: 100px;
+}
+

@@ -1,0 +1,6 @@
+name = FW AMG Google News Site Map
+description = This custom module used for generating sitemap for google news.
+package = Foodandwine
+core = 7.x
+
+

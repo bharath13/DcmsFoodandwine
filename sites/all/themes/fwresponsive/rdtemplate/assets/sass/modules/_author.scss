@@ -1,0 +1,44 @@
+$block: author;
+
+.#{$block} {
+  @include clearfix;
+
+  &__image {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+
+    img {
+      display: block;
+      border-radius: 50%;
+    }
+  }
+
+  &__info {
+    display: inline-block;
+    vertical-align: middle;
+
+    &-name,
+    &-posted {
+      display: block;
+      clear: both;
+      font-size: rem(16);
+      line-height: 1.125;
+      margin-bottom: 10px;
+      color: $color-dark-grey;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+    }
+    
+    &-social {
+      width: 17px;
+      margin: 0 2px;
+      display: inline-block;
+      color: $color-dark-grey;
+      line-height: 1;
+    }
+  }
+}

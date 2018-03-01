@@ -1,0 +1,1630 @@
+<?php
+
+/**
+ * @file
+ * ti_amg_ads.module
+ *
+ * \defgroup ti_amg_ads Advertisements
+ * \ingroup Modules
+ * \brief Provides blocks for advertisments throughout the site
+ * \authors Brian McMurray <bmcmurray@phase2technology.com>, Joseph Cheek
+ *
+ * @{
+ */
+// Defines a set of default sizes and attributes for placeholder ads.
+define('TI_AMG_AD_SIZES_DEFAULTS', serialize(array(
+      /* // jwc 16Jul2014 -- commenting out all SL ads.  Will add our ads
+    // back in.
+
+    // Right Rail ads.
+    '300x250' => array('width' => 300, 'height' => 250, 'show_label' => TRUE),
+    '300x100' => array('width' => 300, 'height' => 100),
+    '114x83' => array('width' => 114, 'height' => 83),
+    // Google Ads Place holder.
+    '300x275' => array('width' => 300, 'height' => 275),
+    // Bottom page pencil.
+    '994x50' => array('width' => 994, 'height' => 50),
+    // Footer ads.
+    '218x330' => array('width' => 218, 'height' => 330),
+    '80x96' => array('width' => 80, 'height' => 96),
+    '180x90' => array('width' => 180, 'height' => 90),
+    // Top bar nav.
+    '245x32' => array('width' => 245, 'height' => 32),
+    // Header.
+    '728x90' => array('width' => 728, 'height' => 90),
+    // Gallery.
+    '150x150' => array('width' => 150, 'height' => 150),
+    // Franchise Left Rail.
+    '150x185' => array('width' => 150, 'height' => 185),
+    // Cross Promotional Ad.
+    '290x200' => array('width' => 290, 'height' => 200),
+    // Before content.
+    '101x1' => array('width' => 101, 'height' => 1),
+    // Channel OPA.
+    '478x75' => array('width' => 478, 'height' => 75),
+    // Articles and Galleries
+    '300x300' => array('width' => 300, 'height' => 300, 'show_label' => FALSE),
+    // MultiAds.
+    'multiad_300x250' => array(
+    'width' => 300,
+    'height' => 250,
+    'show_label' => TRUE,
+    ),
+    // Consumer Marketing Advertisements.
+    'cmad_80x96' => array(
+    'width' => 80,
+    'height' => 96,
+    'position' => 'tablettout',
+    'type' => 'tout',
+    ),
+    'cmad_114x83' => array(
+    'width' => 114,
+    'height' => 83,
+    'position' => 'global',
+    'type' => 'tout',
+    ),
+    'cmad_120x30' => array(
+    'width' => 120,
+    'height' => 30,
+    'position' => 'subscribe',
+    'type' => 'text',
+    ),
+    'cmad_150x150' => array(
+    'width' => 150,
+    'height' => 150,
+    'position' => 'gallery',
+    'type' => 'tout',
+    ),
+    'cmad_180x90' => array(
+    'width' => 180,
+    'height' => 90,
+    'position' => 'sitefooter',
+    'type' => 'tout',
+    ),
+    'cmad_245x32' => array(
+    'width' => 245,
+    'height' => 32,
+    'position' => 'spcsitenav',
+    'type' => 'tout',
+    ),
+    'cmad_240x90' => array(
+    'width' => 240,
+    'height' => 90,
+    'position' => 'globalheader',
+    'type' => 'tout',
+    ),
+    'cmad_290x200' => array(
+    'width' => 290,
+    'height' => 200,
+    'position' => 'channel',
+    'type' => 'tout',
+    ),
+    'cmad_300x250' => array(
+    'width' => 300,
+    'height' => 250,
+    'position' => 'gallery',
+    'type' => 'tout',
+    ),
+    'cmad_300x250_ofie' => array(
+    'width' => 300,
+    'height' => 250,
+    'position' => 'article',
+    'type' => 'ofie',
+    'show_label' => TRUE,
+    ),
+    'cmad_300x280_ofie' => array(
+    'width' => 300,
+    'height' => 280,
+    'position' => 'gallery',
+    'type' => 'ofie',
+    ),
+    'cmad_555x160' => array(
+    'width' => 555,
+    'height' => 160,
+    'position' => 'homepage',
+    'type' => 'tout',
+    ),
+    'cmad_994x50' => array(
+    'width' => 994,
+    'height' => 50,
+    'position' => 'global',
+    'type' => 'footer',
+    ),
+    // Google Ads.
+    'google_homepage' => array(
+    'width' => 277,
+    'height' => 275,
+    'channel' => 'home_page',
+    ),
+    'google_section_front' => array(
+    'width' => 277,
+    'height' => 275,
+    'channel' => 'section_front',
+    ),
+    'google_article' => array(
+    'width' => 277,
+    'height' => 275,
+    'channel' => 'article',
+    ),
+    'google_gallery' => array(
+    'width' => 277,
+    'height' => 275,
+    'channel' => 'gallery',
+    ),
+    'google_other' => array('width' => 277, 'height' => 275, 'channel' => 'other'),
+    // Mobile.
+    'mobile_300x50' => array('width' => 300, 'height' => 50),
+    'mobile_300x250' => array('width' => 300, 'height' => 250),
+    'mobile_320x320' => array('width' => 320, 'height' => 320),
+    // IFrame ads - Circular Roundup.
+    'iframe_170x30' => array('width' => 170, 'height' => 30),
+    'gcr_170x30' => array('width' => 170, 'height' => 30),
+    // Multiads.
+    'gcr_300x250' => array('width' => 300, 'height' => 250),
+    'gcr_728x90' => array('width' => 728, 'height' => 90),
+    // */
+      // 1.0 and 1.1
+      'gcr_728x90' => array(
+        'width' => 728,
+        'height' => 90,
+      ),
+      // TopAd For Slideshow Pages
+      'gcrsld_728x90' => array(
+        'width' => 728,
+        'height' => 90,
+      ),
+      //Top Leaderboard Ad for Tablet with 728x90 and 101x1 only
+      'gcr_tablet_ld_728x90' => array(
+        'width' => 728,
+        'height' => 90,
+      ),
+      // 1.2
+      'multiad_300x250' => array(
+        'width' => 300,
+        'height' => 250,
+        'show_label' => TRUE,
+      ),
+      'nativo_multiad_300x250' => array(
+        'width' => 300,
+        'height' => 250,
+        'show_label' => TRUE,
+      ),
+      // 1.3
+      '300x60' => array(
+        'width' => 300,
+        'height' => 60,
+        'show_label' => TRUE,
+      ),
+      // 1.4
+      /**
+  '300x100' => array(
+    'width' => 300,
+    'height' => 100,
+  ),
+  */
+      // 1.5
+      'cmad_300x250_ofie' => array(
+        'width' => 300,
+        'height' => 250,
+        'position' => 'globalsidebar',
+        'type' => 'ofie',
+      ),
+      // Consumer Marketing Ad for HP and Section Fronts
+      'cmtoutad_300x250' => array(
+        'width' => 300,
+        'height' => 250,
+        'position' => 'globalsidebar',
+        'type' => 'tout',
+      ),
+      // Consumer Marketing Ad for Recipe Pages
+      'cmad_460x70' => array(
+        'width' => 460,
+        'height' => 70,
+        'position' => 'recipe',
+        'type' => 'tout',
+      ),
+      // 1.6
+      'normal_300x250' => array(
+        'width' => 300,
+        'height' => 250,
+      ),
+      // 1.7
+      '142x70_1' => array(
+        'width' => 142,
+        'height' => 70,
+      ),
+      '142x70_2' => array(
+        'width' => 142,
+        'height' => 70,
+      ),
+      '142x70_3' => array(
+        'width' => 142,
+        'height' => 70,
+      ),
+      // 1.8
+      '88x31' => array(
+        'width' => 88,
+        'height' => 31,
+      ),
+      //1.9 video player companion Ad
+      /**
+  '300x250' => array(
+    'width' => 300,
+    'height' => 250,
+  ),
+  */
+      // TLLOCALEXP-341
+      'cmad_220x100' => array(
+        'width' => 220,
+        'height' => 100,
+        'position' => 'globalheader',
+        'type' => 'tout',
+      ),
+      'cmad_300x250' => array(
+        'width' => 300,
+        'height' => 250,
+        'position' => 'slideshow',
+        'type' => 'tout',
+      ),
+      //Slideshow Pages Tout Ad
+      'cmad_650x100' => array(
+        'width' => 650,
+        'height' => 100,
+        'position' => 'slideshowbtm',
+        'type' => 'tout',
+      ),
+      // Native ad635x267
+      'nativo_635x267' => array(
+        'width' => 635,
+        'height' => 267,
+      ),
+      // Native ad300x100
+      'nativo_300x100' => array(
+        'width' => 300,
+        'height' => 100,
+      ),// Native Mobile ad300x500
+      'mobile_300x500' => array(
+        'width' => 300,
+        'height' => 500,
+      ),
+      // TLLE-1081
+      'mobile_320x50' => array(
+        'width' => 320,
+        'height' => 50,
+      ),
+      // TLLE-1082
+      'mobile_320x320' => array(
+        'width' => 320,
+        'height' => 320,
+      ),
+      // Recipe Mobile Ad 300x250 
+      'mobile_300x250' => array(
+        'width' => 300,
+        'height' => 250,
+      ),
+      // Homepage Single Ad 300x250 pos 2
+      'homepage_300x250_2' => array(
+        'width' => 300,
+        'height' => 250,
+        'show_label' => TRUE,
+      ),       
+      // Tablet Ad 300x250 pos 1.
+      'tablet_300x250' => array(
+        'width' => 300,
+        'height' => 250,
+        'show_label' => TRUE,
+      ),      
+      // Homepage Mobile Ad 300x250 pos 1
+      'mobile_homepage_300x250_1' => array(
+        'width' => 300,
+        'height' => 250,
+        'show_label' => TRUE,
+      ),
+      // Homepage Mobile Ad 300x250 pos 2
+      'mobile_homepage_300x250_2' => array(
+        'width' => 300,
+        'height' => 250,
+        'show_label' => TRUE,
+      ),
+  
+      //Interstitial mobile Ad "320x250","300x300","320x320","600x600"
+      'mobile_interstitial_320x250' => array(
+        'width' => 320,
+        'height' => 250,
+      ),
+      // Dummy ad for firefox browser
+      'dummy_ffx_2x9' => array(
+        'width' => 2,
+        'height' => 9,
+      ),
+      // GumGum ad 
+      'gumgum_ad_1x6' => array(
+        'width' => 1,
+        'height' => 6,
+      ),
+      // Teads ad 
+      'teads_ad_5x5' => array(
+        'width' => 5,
+        'height' => 5,
+      ),
+    )));
+
+/**
+ * Implements hook_init().
+ */
+function ti_amg_ads_init() {
+  global $theme_key;  
+  // Adds the config script to the head.
+  if ($theme_key == 'foodandwine' && arg(0) != 'search' && arg(0) != 'search.mobi' && !path_is_admin(current_path())) {
+    ti_amg_ads_print_ad_config();
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_ads_block_info() {
+
+  $ad_sizes = variable_get('ti_amg_ad_sizes',
+    unserialize(TI_AMG_AD_SIZES_DEFAULTS)
+  );
+
+  foreach ($ad_sizes as $key => $settings) {
+    $blocks[$key] = array(
+      'info' => t('Advertisement: !key', array('!key' => $key)),
+      'cache' => DRUPAL_CACHE_GLOBAL,
+    );
+  }
+  /* // No Google Adsense ads for Phase 1 -- jwc 14Ju2014
+
+    $blocks['search_google_adsense'] = array(
+    'info' => t('Advertisement: search_google_adsense'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+    );
+    $blocks['ads_adsense_top_unit'] = array(
+    'info' => t('Advertisement: Search ads_adsense_top_unit'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+    );
+    $blocks['ads_adsense_bottom_unit'] = array(
+    'info' => t('Advertisement: Search ads_adsense_bottom_unit'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+    );
+    // */
+
+
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_ads_block_view($delta = '') {
+  global $_ti_amg_ads_current_page;
+  $block = $settings = array();
+  $zone = FALSE;
+
+  $ad_settings = variable_get('ti_amg_ad_sizes', unserialize(TI_AMG_AD_SIZES_DEFAULTS));
+  $context = (isset($_ti_amg_ads_current_page['context']) ?
+    $_ti_amg_ads_current_page['context'] : FALSE
+  );
+
+  if (in_array($delta, array_keys($ad_settings))) {
+    // Get settings for current dimensions.
+    $settings = $ad_settings[$delta];
+
+    // General Variables.
+    $block['title'] = NULL;
+    $settings['show_label'] = (isset($settings['show_label']) ?
+      $settings['show_label'] : FALSE
+    );
+    $block['content'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array(
+          'advertisement',
+          'advertisement-' . drupal_html_class($delta),
+        ),
+      ),
+    );
+
+
+    // Multi Ads Mobile
+    if ($delta == 'mobile_320x50' &&
+      $_ti_amg_ads_current_page['display'] == 'mobile'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div id="ad_mobile_320x50">
+                        <script type="text/javascript">
+                          ad = adFactory.getMultiAd(new Array("320x50", "300x50"));
+                          ad.setPosition("1");
+                          ad.write("ad_mobile_320x50");
+                        </script>
+                      </div>',
+      );
+    }
+
+    // Multi Ads Mobile 2
+    elseif ($delta == 'mobile_320x320' &&
+      $_ti_amg_ads_current_page['display'] == 'mobile'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div id="ad_mobile_320x320">
+                        <script type="text/javascript">
+                          ad = adFactory.getMultiAd(
+                            new Array("320x320", "320x50", "300x250", "300x50")
+                          );
+                          ad.setPosition("2");
+                          ad.write("ad_mobile_320x320");
+                        </script>
+                      </div>',
+      );
+    }
+    
+    // Multi Ads Mobile 300x250
+    elseif ($delta == 'mobile_300x250' &&
+      $_ti_amg_ads_current_page['display'] == 'mobile'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div id="ad_mobile_300x250">
+                        <script type="text/javascript">
+                          ad = adFactory.getMultiAd(
+                            new Array("320x320", "320x50", "300x250", "300x50")
+                          );
+                          ad.setPosition("3");
+                          ad.write("ad_mobile_300x250");
+                        </script>
+                      </div>',
+      );
+    }
+    
+    // Homepage Mobile Ad 300x250 Pos 1
+    elseif ($delta == 'mobile_homepage_300x250_1' &&
+      $_ti_amg_ads_current_page['display'] == 'mobile'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div id="ad_mobile_homepage_300x250_1">
+                        <script type="text/javascript">
+                          ad = adFactory.getMultiAd(
+                            new Array("320x320", "320x50", "300x250", "300x50")
+                          );
+                          ad.setPosition("2");
+                          ad.write("ad_mobile_homepage_300x250_1");
+                        </script>
+                      </div>',
+      );
+    }
+    
+    // Homepage Mobile Ad 300x250 Pos 2
+    elseif ($delta == 'mobile_homepage_300x250_2' &&
+      $_ti_amg_ads_current_page['display'] == 'mobile'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div id="ad_mobile_homepage_300x250_2">
+                        <script type="text/javascript">
+                          ad = adFactory.getMultiAd(
+                            new Array("320x320", "320x50", "300x250", "300x50")
+                          );
+                          ad.setPosition("3");
+                          ad.write("ad_mobile_homepage_300x250_2");
+                        </script>
+                      </div>',
+      );
+    }
+    
+    // Multi Ads Mobile - Interstitial
+    elseif ($delta == 'mobile_interstitial_320x250' &&
+      $_ti_amg_ads_current_page['display'] == 'mobile'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div id="mobile-ad-interstitial">
+                        <script type="text/javascript">
+                          var interstitialAd = adFactory.getMultiAd(new Array("320x250","300x300","320x320")); interstitialAd.setZone("interstitial"); interstitialAd.write();
+                        </script>
+                      </div>',
+      );
+    }
+    
+    // Nativo Ad Mobile - 300x500
+    elseif ($delta == 'mobile_300x500' &&
+      $_ti_amg_ads_current_page['display'] == 'mobile'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div id="ad_mobile_300x500_1">
+                        <script type="text/javascript">
+                          ad = adFactory.getAd("300","500");
+                          ad.setPosition("1");
+                          ad.write("ad_mobile_300x500_1");
+                        </script>
+                      </div>',
+      );
+    }
+
+    // Mobile blocks.
+    elseif (substr($delta, 0, 6) == 'mobile' &&
+      $_ti_amg_ads_current_page['display'] == 'mobile'
+    ) {
+      // Process Mobile Variables.
+      $settings_key = $settings['width'] . 'x' . $settings['height'];
+      if (isset($context) && isset($context['mobile'])) {
+        $zone = (isset($context['mobile'][$settings_key]) ?
+          $context['mobile'][$settings_key] : NULL
+        );
+      }
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div id="ad' . $settings['width'] . 'x' .
+        $settings['height'] . '" class="cmAd">' .
+        '<script type="text/javascript">' .
+        'ad = adFactory.getAd(' . $settings['width'] . ',' .
+        $settings['height'] . ');ad.write();' .
+        '</script></div>',
+      );
+    }
+
+    //Consumer Marketing Advertisement for Home Page and Section Fronts Pages
+    elseif (substr($delta, 0, 8) == 'cmtoutad' &&
+      $_ti_amg_ads_current_page['display'] == 'desktop'
+    ) {
+      $block['content']['#attributes']['class'][] = 'MulticmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div id="cmtoutad_300x250">
+                        <script type="text/javascript">
+                          ad = adFactory.getMultiCmAd(new Array("300x250", "300x150"), "globalsidebar", "tout");
+                          ad.write();
+                        </script>
+                      </div>',
+      );
+    }
+
+    // Consumer Marketing Advertisement.
+    elseif (substr($delta, 0, 4) == 'cmad' &&
+      $_ti_amg_ads_current_page['display'] == 'desktop'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<script type="text/javascript">ad = adFactory.getCmAd(' .
+        $settings['width'] . ',' . $settings['height'] . ',"' .
+        $settings['position'] . '","' . $settings['type'] .
+        '");ad.write();</script>',
+      );
+    }
+
+    // Google Ads.
+    elseif (substr($delta, 0, 6) == 'google') {
+      $block['content']['#attributes']['class'][] = 'adGoogle';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div class="quigo ad300 adGoogle mod">' . '<script type="text/javascript">' . "\n" . '  google_ad_width = ' . $settings['width'] . ';' . "\n" . '  google_ad_height = ' . $settings['height'] . ';' . "\n" . '  google_ad_client = "' . ti_amg_ads_get_conf('google_client') . '";' . "\n" . '  google_ad_channel = "' . $settings['channel'] . '";' . "\n" . '</script>' . "\n" . '<script type="text/javascript" ' . 'src="//pagead2.googlesyndication.com/pagead/show_ads.js"></script>' . '</div>',
+      );
+    }
+
+    // GCR.
+    elseif (substr($delta, 0, 3) == 'gcr') {
+      if ($delta == 'gcr_170x30') {
+        $block['content']['advertisement'] = array(
+          '#type' => 'markup',
+          '#markup' => '<div id="ad' . $settings['width'] . 'x' . $settings['height'] . '" class="sponsor">' . '<script type="text/javascript">' . '  ad = adFactory.getAd(170,30);ad.write("ad170x30");' . '</script></div>',
+        );
+      }
+      elseif ($delta == 'gcr_300x250') {
+        $block['content']['#attributes']['class'][] = 'cmAd';
+        $block['content']['advertisement'] = array(
+          '#type' => 'markup',
+          '#markup' => '<div id="ad' . $settings['width'] . '" class="ad' . $settings['width'] . 'x' . $settings['height'] . '">' . '<script type="text/javascript">' . '  ad=adFactory.getMultiAd(new Array("300x250", "300x600"));' . '  ad.setPosition("1");ad.write("ad300");' . "\n" . '</script>' . '</div>',
+        );
+      }
+      elseif ($delta == 'gcr_728x90') {
+        if (arg(0) == 'node' && is_numeric(arg(1))) {
+          $node = node_load(arg(1));
+          if ($node && $node->type == 'gallery') {
+            $top_ad_cntxt = FALSE;
+          }
+          else {
+            $top_ad_cntxt = TRUE;
+          }
+        }
+        else {
+          $top_ad_cntxt = TRUE;
+        }
+        if ($top_ad_cntxt == TRUE) {
+          $block['content']['advertisement'] = array(
+            '#type' => 'markup',
+            '#markup' => '<div id="adTop">
+                            <script type="text/javascript">
+                              ad = adFactory.getMultiAd(
+                                new Array("728x90", "101x1", "970x90", "970x66", "970x250")
+                              );
+                              ad.setPosition("1");
+                              ad.write("adTop");
+                            </script>
+                          </div>',
+          );
+        }
+      }
+      elseif ($delta == 'gcrsld_728x90') {
+        $block['content']['advertisement'] = array(
+          '#type' => 'markup',
+          '#markup' => '<div id="adTop">
+                          <script type="text/javascript">
+                            ad = adFactory.getMultiAd(
+                              new Array("728x90", "101x1", "970x90", "970x66")
+                            );
+                            ad.setPosition("1");
+                            ad.write("adTop");
+                          </script>
+                        </div>',
+        );
+      }
+      elseif ($delta == 'gcr_tablet_ld_728x90') {
+        $block['content']['advertisement'] = array(
+          '#type' => 'markup',
+          '#markup' => '<div id="adTop">
+                          <script type="text/javascript">
+                            ad = adFactory.getMultiAd(
+                              new Array("728x90")
+                            );
+                            ad.setPosition("1");
+                            ad.write("adTop");
+                          </script>
+                        </div>',
+        );
+      }
+    }
+    elseif ($delta == 'multiad_300x250' &&
+      $_ti_amg_ads_current_page['display'] == 'desktop'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '
+<div id="ad_multiad_300x250">
+  <script type="text/javascript">
+    ad = adFactory.getMultiAd(new Array("300x250", "300x600","300x1050"));
+    ad.setPosition("1");
+    ad.write("ad_multiad_300x250","companion");
+  </script>
+</div>
+',
+      );
+    }
+    // A Multi Ad for Nativo page only.
+    elseif ($delta == 'nativo_multiad_300x250' &&
+      $_ti_amg_ads_current_page['display'] == 'desktop') {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '
+          <div id="ad_multiad_300x250">
+          <script type="text/javascript">
+            ad = adFactory.getMultiAd(new Array("300x600", "300x1050", "300x250"));
+            ad.setPosition("1");
+            ad.write("ad_multiad_300x250","companion");
+          </script>
+          </div>',
+        );
+    }
+    // For Tablet Multi ad 300x250 pos 1
+    elseif ($delta == 'tablet_300x250' &&
+      $_ti_amg_ads_current_page['display'] == 'desktop'
+    ) {
+      $block['content']['#attributes']['class'][] = 'cmAd';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '
+<div id="ad_tablet_300x250">
+  <script type="text/javascript">
+    ad = adFactory.getMultiAd(new Array("300x250", "300x600"));
+    ad.setPosition("1");
+    ad.write("ad_tablet_300x250","companion");
+  </script>
+</div>
+',
+      );
+    }
+    // For noraml_300x250 ad block
+    elseif ($delta == 'normal_300x250' &&
+      $_ti_amg_ads_current_page['display'] == 'desktop'
+    ) {
+      $block['content']['#attributes']['class'][] = '';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '
+<div id="ad_normal_300x250">
+  <script type="text/javascript">
+    ad = adFactory.getAd("300", "250");
+    ad.setPosition("2");
+    ad.write("ad_normal_300x250");
+  </script>
+</div>
+',
+      );
+    }  
+    
+    // For Homepage Single 300x250 ad block
+    elseif ($delta == 'homepage_300x250_2' &&
+      $_ti_amg_ads_current_page['display'] == 'desktop'
+    ) {
+      $block['content']['#attributes']['class'][] = '';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '
+<div id="ad_homepage_300x250_2">
+  <script type="text/javascript">
+    ad = adFactory.getAd("300", "250");
+    ad.setPosition("2");
+    ad.write("ad_homepage_300x250_2");
+  </script>
+</div>
+',
+      );
+    }
+    
+    // For dummy_ffx_2x9 ad block
+    elseif ($delta == 'dummy_ffx_2x9' &&
+      $_ti_amg_ads_current_page['display'] == 'desktop'
+    ) {
+      $block['content']['#attributes']['class'][] = '';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '
+<div id="ad_dummy_ffx_2x9">
+  <script type="text/javascript">
+    ad = adFactory.getAd("2", "9");
+    ad.setPosition("1");
+    ad.write("ad_dummy_ffx_2x9");
+  </script>
+</div>
+',
+      );
+    }
+    
+    // For GumGum ad block
+    elseif ($delta == 'gumgum_ad_1x6') {
+      $block['content']['#attributes']['class'][] = '';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '
+                      <div id="gumgum_ad_1x6">
+                        <script type="text/javascript">
+                          ad = adFactory.getAd("1", "6");
+                          ad.setPosition("1");
+                          ad.write("gumgum_ad_1x6");
+                        </script>
+                      </div>
+                      ',
+      );
+    }
+    
+    // For Teads ad block
+    elseif ($delta == 'teads_ad_5x5') {
+      $block['content']['#attributes']['class'][] = '';
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '
+                      <div id="teads_ad_5x5">
+                        <script type="text/javascript">
+                          ad = adFactory.getAd("5", "5");
+                          ad.setPosition("1");
+                          ad.write("teads_ad_5x5");
+                        </script>
+                      </div>
+                      ',
+      );
+    }    
+    
+    // Internal Advertisement.
+    elseif ($_ti_amg_ads_current_page['display'] == 'desktop') {
+
+      $wid = $settings['width'];
+      $hgt = $settings['height'];
+      static $ad_div_num = array('300x250' => 1);
+      // AdOps considers the 300x250 MultiAd to be Pos '1'
+      @$ad_div_num[$wid . 'x' . $hgt]++;
+      $ad_div = 'ad_' . $wid . 'x' . $hgt . '_' . $ad_div_num[$wid . 'x' . $hgt];
+
+      $block['content']['advertisement'] = array(
+        '#type' => 'markup',
+        '#markup' => '
+<div id="' . $ad_div . '">
+  <script type="text/javascript">
+    ad = adFactory.getAd("' . $wid . '", "' . $hgt . '");
+    ad.setPosition("' . $ad_div_num[$wid . 'x' . $hgt] . '");
+    ad.write("' . $ad_div . '");
+  </script>
+</div>
+',
+      );
+    }
+  }
+  elseif ($delta == 'search_google_adsense') {
+    global $_ti_amg_ads_current_page;
+    if (!$_ti_amg_ads_current_page['is_search']) {
+      return;
+    }
+    $keywords = (isset($_ti_amg_ads_current_page['search_query']) ?
+      $_ti_amg_ads_current_page['search_query'] : 'FALSE'
+    );
+    $head_script = array(
+      '#type' => 'markup',
+      '#markup' => "  <script type=\"text/javascript\" charset=\"utf-8\">\n
+        (function (G, o, O, g, L, e) {
+        G[g] = G[g] || function ()
+        { (G[g]['q'] = G[g]['q'] || []).push( arguments) }
+        , G[g]['t'] = 1 * new Date;
+        L = o.createElement(O), e = o.getElementsByTagName(
+        O)[0];
+        L.async = 1;
+        L.src = '//www.google.com/adsense/search/async-ads.js';
+        e.parentNode.insertBefore(L, e)
+        })(window, document, 'script', '_googCsa');
+  </script>\n",
+      '#weight' => 10,
+    );
+    drupal_add_html_head($head_script, 'google_adsense');
+    $block['content']['advertisement'] = array(
+      '#type' => 'markup',
+      '#markup' => "<div style=\"display:none\" id=\"google-ads\">
+	<script type=\"text/javascript\">
+		var decodedSearchString = decodeURIComponent('" . rawurlencode($keywords) . "');
+		var googleAdPageOptions = {
+			'query': decodedSearchString,
+			'pubId': 'time-southernprogress',
+			'channel': 'southernliving_spc',
+			'adtest': 'off',
+			'sellerRatings': true,
+			'siteLinks': true,
+			'adPage': 1,
+			'plusOnes': true,
+			'longerHeadlines': true,
+			'offerExtension': true
+		};
+		var googleAdblock1 = {
+			'container': 'google-ad-top-unit',
+			'number': 3,
+			'lines': 2,
+			'width': '474',
+			'fontSizeTitle': 12,
+			'fontSizeDescription': 11,
+			'fontSizeDomainLink': 11,
+			'colorTitleLink': '#737373',
+			'colorText': '#737373',
+			'colorDomainLink': '#737373',
+			'colorBorder': '#eaeaea',
+			'verticalSpacing': 3,
+			'colorAttribution': '#000',
+			'fontSizeAttribution': 10,
+			'lineHeightTitle': 14,
+			'lineHeightDescription': 13,
+			'titleBold': true,
+			'rightHandAttribution': true,
+			'attributionSpacingBelow' : 0,
+			'attributionText': 'SPONSORED LINKS'
+		};
+  var googleAdblock2 = {
+    'container': 'google-ad-bottom-unit',
+			'number': 4,
+			'lines': 2,
+			'width': '474',
+			'fontSizeTitle': 12,
+			'fontSizeDescription': 11,
+			'fontSizeDomainLink': 11,
+			'colorTitleLink': '#737373',
+			'colorText': '#737373',
+			'colorDomainLink': '#737373',
+			'colorBorder': '#eaeaea',
+			'verticalSpacing': 3,
+			'colorAttribution': '#000',
+			'fontSizeAttribution': 10,
+			'lineHeightTitle': 14,
+			'lineHeightDescription': 13,
+			'titleBold': true,
+			'rightHandAttribution': true,
+			'attributionSpacingBelow' : 0,
+			'attributionText': 'SPONSORED LINKS'
+		};
+		_googCsa('ads', googleAdPageOptions, googleAdblock1, googleAdblock2);
+	</script>
+</div>",
+    );
+  }
+  elseif ($delta == 'ads_adsense_top_unit') {
+    $block['content']['advertisement'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div xmlns="http://www.w3.org/1999/xhtml"' . ' id="google-ad-top-unit"></div>',
+    );
+  }
+  elseif ($delta == 'ads_adsense_bottom_unit') {
+    $block['content']['advertisement'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div xmlns="http://www.w3.org/1999/xhtml"' . ' id="google-ad-bottom-unit"></div>',
+    );
+  }
+
+  if (isset($_GET['adPlaceholders']) && isset($settings['width']) &&
+    isset($settings['width']) && user_is_logged_in()
+  ) {
+    $block['content']['advertisement'] = array(
+      '#theme' => 'image',
+      '#path' => '//placehold.it/' . $settings['width'] . 'x' . $settings['height'] . '&text={Ad: ' . $delta . '}',
+      '#width' => $settings['width'],
+      '#height' => $settings['height'],
+    );
+    $_ti_amg_ads_current_page['current_ad'] = $settings;
+    if (module_exists('devel')) {
+      $block['content']['tooltip'] = array(
+        '#type' => 'markup',
+        '#markup' => kpr($_ti_amg_ads_current_page, TRUE, 'Settings for ' . $delta
+        ),
+      );
+    }
+    else {
+      $block['content']['tooltip'] = array(
+        '#type' => 'markup',
+        '#markup' => '<h4>Settings for ' . $delta . '</h4><pre>' . var_export($_ti_amg_ads_current_page, TRUE) . '</pre>',
+      );
+    }
+  }
+
+  if (isset($settings['show_label']) && $settings['show_label'] == TRUE) {
+    $block['content']['label'] = array(
+      '#type' => 'markup',
+      '#weight' => -10,
+      '#markup' => '<p class="adtxt"><span>Advertisement</span></p>',
+    );
+  }
+
+  return $block;
+}
+
+/**
+ * Helper function. Loads configuration settings into an array.
+ */
+function ti_amg_ads_load_conf() {
+
+  // Defaults.
+  $settings = array(
+    'adMode' => '',
+    'TiiAdConfig' => '3475.fw',
+    'CmSitename' => 'cm.fw',
+    'RevSciTracking' => 'true',
+    'google_client' => 'ca-timeinc-foodandwine',
+    'mobile_site' => '24083',
+  );
+
+  if (isset($_COOKIE['TI_PREFS']) && ($_COOKIE['TI_PREFS'] == 'phone')) {
+
+    $settings['TiiAdConfig'] = '3475.fw_mob';
+  }
+
+  // Check for overridden variables.
+  foreach ($settings as $name => $default) {
+    $settings[$name] = variable_get($name, $default);
+  }
+
+  return $settings;
+}
+
+/**
+ * Helper function retrieves one or all configuration settings.
+ */
+function ti_amg_ads_get_conf($key = NULL, $reset = FALSE) {
+  $settings = &drupal_static(__FUNCTION__);
+  if (!isset($settings) || $reset == TRUE) {
+    $settings = ti_amg_ads_load_conf();
+  }
+
+  if (isset($key)) {
+    if (isset($settings[$key])) {
+      return $settings[$key];
+    }
+    else {
+      return NULL;
+    }
+  }
+  else {
+    return $settings;
+  }
+}
+
+/**
+ * Maps existing channel + subchannel tags to the appropriate js equivalents.
+ */
+function ti_amg_ads_property_map($key = NULL) {
+
+  $map = array();
+  $map[$key] = _ti_amg_ads_map_values($key, FALSE);
+
+  // Allow other modules to alter this mapping
+  drupal_alter('ad_property_map', $map);
+
+  if (isset($key)) {
+
+    if (isset($map[$key])) {
+
+      return $map[$key];
+    }
+
+    return FALSE;
+  }
+
+  return $map;
+}
+
+/**
+ * Helper function to return a formatted array to the ads property map.
+ */
+function _ti_amg_ads_map_values($zone = NULL, $channel_zone = NULL, $mobile_300x50 = NULL, $mobile_300x250 = NULL, $mobile_320x320 = NULL) {
+  return array(
+    'zone' => (isset($zone) ? $zone : FALSE),
+    'channel_zone' => (isset($channel_zone) ? $channel_zone : FALSE),
+    'mobile' => array(
+      '320x50' => (isset($mobile_320x50) ? $mobile_320x50 : FALSE),
+      '300x250' => (isset($mobile_300x250) ? $mobile_300x250 : FALSE),
+      '320x320' => (isset($mobile_320x320) ? $mobile_320x320 : FALSE),
+    ),
+  );
+}
+
+/**
+ * Helper function. Adds the configuration js to the top of the page.
+ */
+function ti_amg_ads_print_ad_config() {
+  global $theme, $_ti_amg_ads_current_page, $is_https;
+
+  // Global array to hold all the different variables that need to be carried
+  // from ad to ad.
+  $_ti_amg_ads_current_page = array();
+
+  // Collect the theme name.
+  $_ti_amg_ads_current_page['theme'] = $theme;
+
+  // Load the site's configuration.
+  $conf = ti_amg_ads_get_conf();
+
+  $_ti_amg_ads_current_page['display'] = ((isset($_COOKIE['TI_PREFS']) && ($_COOKIE['TI_PREFS'] == 'phone')) ? 'mobile' : 'desktop');
+
+  // Add the TGX script.
+  $tgx = '';
+  
+  if (!path_is_admin(current_path())) {
+        drupal_add_js($tgx, 'external',
+        array('scope' => 'header', 'weight' => 0, 'defer' => TRUE)
+    );
+    }
+    $cmsitename = $setrevscitracking = '';
+
+  // TiiAdConfig. Removed GCR per SL-20
+  $adconfig = 'var adConfig = new TiiAdConfig(' . ((isset($conf['TiiAdConfig'])) ? '"' . $conf['TiiAdConfig'] . '"' : '') . ');';
+
+  // CmSitename
+  if (isset($conf['CmSitename'])) {
+    $cmsitename = 'adConfig.setCmSitename("' . $conf['CmSitename'] . '");';
+  }
+
+  // RevSciTracking header
+  if (isset($conf['RevSciTracking'])) {
+    $revscitracking = 'adConfig.setRevSciTracking(' . (string)$conf['RevSciTracking'] . ');';
+  }
+  $data = <<< EOF
+$adconfig
+$cmsitename
+$revscitracking
+EOF;
+
+  // Add it to the head of the page.
+  if (!path_is_admin(current_path())) {
+        drupal_add_js($data, array(
+          'type' => 'inline',
+          'scope' => 'header',
+          'weight' => -10,
+          'group' => JS_THEME,
+          'every_page' => TRUE,
+        ));
+    }
+    // Now add the per-page, context-aware settings.
+  _ti_amg_ads_context_aware_settings();
+
+  // RevSciTracking footer
+  if (isset($conf['RevSciTracking'])) {
+      if (!path_is_admin(current_path())) {
+            drupal_add_js('http://js.revsci.net/gateway/gw.js?csid=H07710', array(
+              'type' => 'external',
+              'scope' => 'footer',
+              'group' => JS_THEME,
+              'every_page' => TRUE,
+            ));
+
+            drupal_add_js('TiiAdTrackRevSci();', array(
+              'type' => 'inline',
+              'scope' => 'footer',
+              'group' => JS_THEME,
+              'every_page' => TRUE,
+            ));
+        }
+    }
+  // RevSciTracking footer
+}
+
+/**
+ * Print the context aware settings on the header.
+ */
+function _ti_amg_ads_context_aware_settings() {
+
+  global $_ti_amg_ads_current_page, $node;
+
+  $channel = $data = $spons = $zone = '';
+  $property = '';
+  $nid = '';
+
+  if (isset($_GET['q'])) {
+
+    $path = drupal_strtolower(drupal_get_path_alias($_GET['q']));
+  }
+
+  $_ti_amg_ads_current_page['context'] = $settings = ti_amg_ads_property_map($property);
+
+  (!empty($settings['zone'])) && $zone = $settings['zone'];
+  (!empty($settings['channel_zone'])) && $zone = $settings['channel_zone'];
+
+  // set pType
+  if (arg(0) != 'node' || drupal_is_front_page()) {
+    $ptype = 'main';
+  }
+  else {
+    $ptype = 'content';
+  }
+
+  if (arg(0) == 'node') {
+
+    $node = node_load(arg(1));
+  }
+  //Assign page title to front title variable for updating to channel value
+  if (isset($node)) {
+    //$ch = decode_entities($node->title); 
+    $ch = '';
+    $nid = $node->nid;
+  } 
+  else {
+    $ch = '';
+    $nid = '';
+  }
+// exceptions to handle slideshow views of pages 2..N
+  if (arg(0) == 'slideshows') {
+    $node_path = explode('/', drupal_get_normal_path('slideshows/' . arg(1)));
+    $node = node_load($node_path[1]);
+    $ptype = 'content';
+  } // slideshows exception
+
+// set content-type (cType)
+  if (drupal_is_front_page()) {
+    $ch = $ctype = $zone = 'homepage';
+  } 
+  else {
+    $ctype = strtolower(node_type_get_name($node));
+    // @FIXME jwc 30Jan2015 -- what if page isn't a node?
+    $channel = arg(1, request_path());
+  }
+  // Updating home_page_responsive ad zone and key values.
+  if ($ctype == 'home page responsive') {
+    $zone = 'homepage';
+    $ptype = 'main';
+    $ch = 'homepage';
+  }
+  // Updateing channel_landing_page_responsive ad zone and key values.
+  if ($ctype == 'channel landing page responsive') {
+    $ch = arg(0, request_path());
+    $zone = $ch . '/main';
+    $ptype = 'main';
+    $ctype = 'landing-page';
+  }
+   // Updateing category ad zone and key values.
+  if ($ctype == 'category') {
+    $ch = arg(0, request_path());
+    $zone = $ch . '/main';
+    $ptype = 'main';
+    $ctype = 'category page';
+  }
+  if ($ctype == 'basic page') {
+    $zone = 'flat_pages';
+    $ptype = 'content';
+  } 
+  if ($ctype == 'person') {
+    $ctype = 'contributors';
+    $zone = 'chef_pages';
+    $ptype = 'content';
+  }
+
+  if (($ctype == 'gallery') && (!empty($node->field_gallery_template[LANGUAGE_NONE][0]['value']))) {
+    if ($node->field_gallery_template[LANGUAGE_NONE][0]['value'] == 'Vertical') {
+    $ctype = 'vertical_gallery';
+    }
+  }
+
+  $ctype_array = array('article',
+    'blog',
+    'gallery',
+    'vertical_gallery',
+    'video',
+    'recipe',
+    'contributors',
+    'landing-page'
+  );
+  //Assign ctype values to the specified content types.
+  if (in_array($ctype, $ctype_array)) {
+    $ctype = $ctype; 
+  }
+  else {
+    $ctype = '';
+  }
+
+  // THEMES {
+  $theme = array();
+
+  if (!empty($node->field_tags[LANGUAGE_NONE][0]['tid'])) foreach ($node->field_tags[LANGUAGE_NONE] as $cat) {
+
+    $theme[] = $cat['tid'];
+  }
+
+  if (!empty($node->field_topic[LANGUAGE_NONE][0]['tid'])) foreach ($node->field_topic[LANGUAGE_NONE] as $cat) {
+
+    $theme[] = $cat['tid'];
+  }
+
+  if (!empty($node->field_issue[LANGUAGE_NONE][0]['tid'])) foreach ($node->field_issue[LANGUAGE_NONE] as $cat) {
+
+    $theme[] = $cat['tid'];
+  }
+
+  // add themes/sponsors
+  if (!empty($theme)) {
+
+    $themes = taxonomy_term_load_multiple($theme);
+    $theme = array();
+
+    // (module_exists('devel')) && (!empty($themes)) &&
+    //   dpm($themes, 'theme terms raw');
+
+    foreach ($themes as $term) {
+
+      @$term_val = $term->field_taxo_category_label[LANGUAGE_NONE][0]['safe_value'] . $term->field_taxo_tags_label[LANGUAGE_NONE][0]['safe_value'] . $term->field_taxo_issue_label[LANGUAGE_NONE][0]['safe_value'] . $term->field_taxo_topic_label[LANGUAGE_NONE][0]['safe_value'];
+
+      if ($term_val != '') {
+
+        $theme[] = '"' . $term_val . '"';
+      }
+    }
+  }
+  // add themes/sponsors
+
+  // keywords?
+  if (isset($node->metatags[LANGUAGE_NONE]['keywords']['value']) && $node->metatags[LANGUAGE_NONE]['keywords']['value']) {
+
+    $keywords = explode(',',
+      $node->metatags[LANGUAGE_NONE]['keywords']['value']
+    );
+
+    // trim and add words
+    foreach ($keywords as $word) {
+      $tword = trim($word);
+      ($tword) && $theme[] = '"' . $tword . '"';
+    }
+  }
+  // keywords?
+
+  // (module_exists('devel')) && (!empty($theme)) && dpm($theme, 'theme terms');
+
+  // themes
+
+  // Ads param from field_ad_keys.
+  $ad_key_value = '';
+  if (isset($node->field_ad_keys) && !empty($node->field_ad_keys)) {
+    $ads_string = $node->field_ad_keys[LANGUAGE_NONE][0]['value'];
+    $ads_params = explode(';', $ads_string);
+    foreach ($ads_params as $ads_param) {
+      $param_value = explode('=', $ads_param);
+      if (!empty($param_value) && isset($param_value[0]) && isset($param_value[1])) {
+        if (strpos($param_value[1], '"') !== FALSE) {
+          $ad_key_value .= <<< EOF
+adFactory.setParam("$param_value[0]", '$param_value[1]');
+EOF;
+        }
+        else {
+          $ad_key_value .= <<< EOF
+adFactory.setParam("$param_value[0]", "$param_value[1]");
+EOF;
+        }
+      }
+    }
+  }
+
+  // Tags
+  $tags = '';
+  if (isset($node->field_fw_tags[LANGUAGE_NONE]) && !empty($node->field_fw_tags[LANGUAGE_NONE])) {
+    $tag_field = $node->field_fw_tags[LANGUAGE_NONE];
+    foreach($tag_field as $key => $term_ids) {
+      $term_name = ti_amg_fwrd_category_get_term_name($term_ids['tid']);
+      $term_name = str_replace(' ', '-', strtolower($term_name));
+      $tags .= (count($tag_field) -1 > $key) ? '"'.$term_name.'",' : '"'.$term_name.'"';
+    }
+  }
+
+  // SUB
+  $sub = '';
+  foreach (arg(NULL, request_path()) as $path_part) {
+    $sub[] = '"' . $path_part . '"';
+  }
+  $check = arg(0, request_path());
+  switch ($check) {
+
+    // ARTICLES
+
+    case 'articles':
+      $zone = 'articles';
+      break;
+
+    // BLOGS
+
+    case 'blogs':
+      // Blog landing page
+      if ($channel == '') {
+        $zone = 'blogs/main';
+      }  
+      else { // Blog Destinations page
+        $zone = 'blogs';
+      }
+      $ctype = 'blog';
+      break;
+
+
+// SLIDESHOWS
+    case 'slideshows': 
+      if ($channel == '') { 
+        $ptype = 'main';
+      }
+      else {
+        $ptype = 'content';
+      }
+      $zone = 'slideshows';
+      break;
+
+    // RECIPES
+    case 'recipes':
+      if ($channel == '') {
+        $zone = 'recipes/main';
+        $channel = 'recipes';
+        $ch = 'recipes';
+        $ctype = '';
+        $ptype = 'main';
+      } 
+      else {
+        $zone = 'recipes';       
+        $ptype = 'content';       
+      }
+      break;
+
+    // VIDEOS
+    case 'video':
+      if ($channel == '') {
+        $ptype = 'main';
+        $zone = 'recipes/video';
+        $ctype = '';  
+        $ch = 'video';
+      } 
+      else {
+        $ptype = 'content';
+        $zone = 'recipes/video';
+        $ctype = 'video';
+        $ch = 'video';
+      }
+      break;
+
+    // TOP CHEFS
+
+    case 'top-chef':
+      $zone = 'flat_pages';
+      $ptype = 'content';
+      $ch = 'recipes';
+      break;
+
+    // Wine
+
+    case 'wine':
+      $zone = 'wine/main';
+      $ctype = '';
+      $ch = 'wine';
+      $ptype = 'main';
+      break;
+
+    // RESTAURANTS
+
+    case 'restaurants':
+      $zone = 'travel/main';
+      $ctype = '';
+      $ch = 'restaurants';
+      $ptype = 'main';
+      break;
+
+    // ENTERTAINING
+
+    case 'entertaining':
+      $zone = 'entertaining/main';
+      $ctype = '';
+      $ch = 'entertaining';
+      $ptype = 'main';
+      break;
+
+    case 'kitchen-design':
+      $zone = 'flat_pages';
+      $ptype = 'content';
+      $ch = 'entertaining';
+      break;    
+
+    // PROMO EVENTS
+
+    case 'promo':
+      if ($channel == '') {
+        $zone = 'flat_pages';
+      } 
+      elseif ($channel == 'events') {
+        $zone = 'events/main';
+      }
+      else {
+        $zone = 'flat_pages';
+      }
+      $ptype = 'content';
+      $ch = 'events';
+      break;
+      
+    case 'classic':
+      $zone = 'flat_pages';
+      $ptype = 'content';
+      $ch = 'events';
+      break;    
+    
+    case 'wineshop':
+      $zone = 'flat_pages';
+      $ptype = 'content';
+      $ch = 'events';
+      break;    
+    
+    case 'growforgood':
+      $zone = 'flat_pages';
+      $ptype = 'content';
+      $ch = 'events';
+      break;
+    
+    // SUBSCRIBE
+    
+    case 'books':
+      $zone = 'flat_pages';
+      $ptype = 'content';
+      $ch = 'subscribe';
+      break; 
+    
+    case 'ebooks':
+      $zone = 'flat_pages';
+      $ptype = 'content';
+      $ch = 'subscribe';
+      break;     
+
+    // PARTNER - NATIVO LANDING PAGE
+
+    case 'partner':
+      $zone = 'sponsoredcontent';
+      $channel = 'sponsor';
+      $ctype = 'sponsor';
+      $ptype = 'main';
+      $spons = 'SaMBAuBMCAczoLA';
+      break;
+
+    // Mobile - Recipe Finder PAGE
+
+    case 'recipe-finder':
+      $zone = 'recipes';
+      $rcpres = arg(1, request_path()); 
+      if (isset($rcpres)) {      
+        $ptype = 'content';
+      } 
+      else {
+        $ptype = 'main';
+      }
+      $ch = 'recipes';
+      $ctype = '';
+      break;      
+
+  } // switch on arg(1)
+
+  $adfactory = 'var adFactory = new TiiAdFactory(adConfig, "' . $zone . '");';
+  $siteparam = 'adFactory.setParam("site", "fw");';
+
+  $ptype = <<< EOF
+adFactory.setParam("ptype", "$ptype");
+EOF;
+
+  $ctype = <<< EOF
+adFactory.setParam("ctype", "$ctype");
+EOF;
+
+  $ch = str_replace(array('(', ')'), array('', ''), $ch);
+    $channel = <<< EOF
+adFactory.setParam("ch", "$ch");
+EOF;
+
+  $sub = @implode(',', array_unique($sub));
+  $sub = str_replace(array('(', ')'), array('', ''), $sub);
+  $sub = <<< EOF
+adFactory.setParam("sub", new Array($sub));
+EOF;
+
+    $theme = @implode(',', $theme);
+    $theme = <<< EOF
+adFactory.setParam("theme", new Array($theme));
+EOF;
+
+  $spons = <<< EOF
+adFactory.setParam("spons", "$spons");
+EOF;
+
+  $nid = <<< EOF
+adFactory.setParam("nid", "$nid");
+EOF;
+
+  $tags = <<< EOF
+adFactory.setParam("tags", new Array($tags));
+EOF;
+
+  $data .= <<< EOF
+$adfactory
+$channel
+$ctype
+$ptype
+$siteparam
+$sub
+$theme
+$nid
+$ad_key_value
+$tags 
+EOF;
+  
+$data .= <<< EOF
+$spons
+adFactory.setParam("as", TiiAdGetRevSciSegments());
+EOF;
+  
+  if (!path_is_admin(current_path())) {
+        drupal_add_js($data, array(
+          'type' => 'inline',
+          'scope' => 'header',
+          'weight' => -5,
+          'group' => JS_THEME,
+          'every_page' => FALSE,
+        ));
+    }
+
+}
+
+/**
+ * Helper function strips all non-alpha characters.
+ */
+function _ti_amg_ads_normalize_str($string = '') {
+  return drupal_strtolower(preg_replace('/\\PL/u', '', $string, -1));
+}
+

@@ -1,0 +1,101 @@
+diff --git a/xmlsitemap.generate.inc b/xmlsitemap.generate.inc
+index 57c3bc1..ebc1191 100644
+--- a/xmlsitemap.generate.inc
++++ b/xmlsitemap.generate.inc
+@@ -168,20 +168,33 @@ function xmlsitemap_generate_chunk(stdClass $sitemap, XMLSitemapWriter $writer,
+   $last_url = '';
+   $link_count = 0;
+ 
+-  $query = db_select('xmlsitemap', 'x');
+-  $query->fields('x', array('id', 'type', 'subtype', 'loc', 'lastmod', 'changefreq', 'changecount', 'priority', 'language', 'access', 'status'));
+-  $query->condition('x.access', 1);
+-  $query->condition('x.status', 1);
+-  $query->orderBy('x.language', 'DESC');
+-  $query->orderBy('x.loc');
+-  $query->addTag('xmlsitemap_generate');
+-  $query->addMetaData('sitemap', $sitemap);
+-
+-  $offset = max($chunk - 1, 0) * xmlsitemap_get_chunk_size();
+-  $limit = xmlsitemap_get_chunk_size();
+-  $query->range($offset, $limit);
+-  $links = $query->execute();
++  // Default empty set.
++  $links = new XMLSitemapViewsResultConverter();
++  if (!empty($sitemap->context['view_name'])) {
++    list ($view_name, $display_id) = explode(':', $sitemap->context['view_name']);
++    if (($view = views_get_view($view_name)) && $view->access($display_id)) {
++
++      // Disabled view cannot run and cannot process links.
++      if (!empty($view->disabled)) {
++        return 0;
++      }
++      $view->set_display($display_id);
++
++      $pager = $view->display_handler->get_option('pager');
++      $view->set_items_per_page($pager['options']['items_per_page']);
++      $offset = max($chunk - 1, 0) * $view->get_items_per_page();
++      $view->set_offset($offset);
++
+ 
++      $view->pre_execute();
++      $view->xmlsitemap = $sitemap;
++      $view->execute();
++
++      $links = new XMLSitemapViewsResultConverter($view->result);
++    }
++  }
++
++  $view_modes = $view->display_handler->get_option('xmlsitemap_view_mode');
+   while ($link = $links->fetchAssoc()) {
+     $link['language'] = $link['language'] != LANGUAGE_NONE ? xmlsitemap_language_load($link['language']) : $url_options['language'];
+     if ($url_options['alias']) {
+@@ -229,9 +242,21 @@ function xmlsitemap_generate_chunk(stdClass $sitemap, XMLSitemapWriter $writer,
+       $element['priority'] = number_format($link['priority'], 1);
+     }
+ 
+-    // @todo Should this be moved to XMLSitemapWritier::writeSitemapElement()?
++    // xmlsitemap works with other data types which are not entities,
++    // ensure we avoid fatal error here.
++    // Additionally we enable configuring view mode per entity type,
++    // as well as disable it entirely for performance reasons.
++    if (entity_get_info($link['type']) && !empty($view_modes[$link['type']])) {
++      $entity = entity_load_single($link['type'], $link['id']);
++      // Assigning by refernece (&) allows $element to be modified
++      // within hook_field_formatter_view().
++      $entity->xmlsitemap_elements = &$element;
++      entity_view($link['type'], array($entity), $view_modes[$link['type']]);
++    }
++
+     drupal_alter('xmlsitemap_element', $element, $link, $sitemap);
+ 
++    // @todo Should this be moved to XMLSitemapWritier::writeSitemapElement()?
+     $writer->writeSitemapElement('url', $element);
+   }
+ 
+diff --git a/xmlsitemap.module b/xmlsitemap.module
+index 09d02ea..8aa2a43 100644
+--- a/xmlsitemap.module
++++ b/xmlsitemap.module
+@@ -526,6 +526,9 @@ function xmlsitemap_sitemap_uri(stdClass $sitemap) {
+     'absolute' => TRUE,
+     'base_url' => variable_get('xmlsitemap_base_url', $GLOBALS['base_url']),
+   );
++
++  drupal_alter('xmlsitemap_context_uri', $uri, $sitemap->context);
++
+   return $uri;
+ }
+ 
+diff --git a/xmlsitemap.xmlsitemap.inc b/xmlsitemap.xmlsitemap.inc
+index 3e23622..7f1afe4 100644
+--- a/xmlsitemap.xmlsitemap.inc
++++ b/xmlsitemap.xmlsitemap.inc
+@@ -200,7 +200,7 @@ class XMLSitemapIndexWriter extends XMLSitemapWriter {
+ 
+     for ($i = 1; $i <= $this->sitemap->chunks; $i++) {
+       $element = array(
+-        'loc' => $this->getSitemapUrl('sitemap.xml', array('query' => array('page' => $i))),
++        'loc' => $this->getSitemapUrl($this->sitemap->uri['path'], array('query' => array('page' => $i))),
+         // @todo Use the actual lastmod value of the chunk file.
+         'lastmod' => gmdate($lastmod_format, REQUEST_TIME),
+       );

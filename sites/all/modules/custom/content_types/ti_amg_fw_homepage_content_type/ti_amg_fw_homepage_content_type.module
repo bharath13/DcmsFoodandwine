@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the TI AMG FW Homepage Content Type feature.
+ */
+
+include_once 'ti_amg_fw_homepage_content_type.features.inc';

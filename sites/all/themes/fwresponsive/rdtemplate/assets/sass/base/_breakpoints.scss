@@ -1,0 +1,70 @@
+/*-----------------------------------------------------------------------------
+ *-----------------------------------------------------------------------------
+ *
+ * BREAKPOINTS
+ *
+ * Define all breakpoint variables below. Breakpoint is included as a vendor
+ * library: http://breakpoint-sass.com/. All media queries should make use of
+ * the @include breakpoint() mixin and reference the variables defined in this
+ * file. When coding a responsive site, mobile first CSS should be used.
+ * See http://www.zell-weekeat.com/how-to-write-mobile-first-css/.
+ *
+ *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------- */
+
+$breakpoints-map: (
+  xxsmall-width: 375px,
+  xsmall-width: 500px,
+  small-width: 700px,
+  medium-width: 980px,
+  rightrail-grid-width: 860px,
+  slideshow-width: 1140px,
+  large-width: 1290px,
+  content-width: 1300px,
+  xlarge-width: 1400px,
+);
+
+$breakpoints: add-breakpoint('xxsmall and up',
+              map-get($breakpoints-map, xxsmall-width));
+$breakpoints: add-breakpoint('xsmall and up',
+              map-get($breakpoints-map, xsmall-width));
+$breakpoints: add-breakpoint('small and up',
+              map-get($breakpoints-map, small-width));
+$breakpoints: add-breakpoint('rightrail grid and up',
+              map-get($breakpoints-map, rightrail-grid-width));
+$breakpoints: add-breakpoint('slideshow and up',
+              map-get($breakpoints-map, slideshow-width));
+$breakpoints: add-breakpoint('medium and up',
+              map-get($breakpoints-map, medium-width));
+$breakpoints: add-breakpoint('large and up',
+              map-get($breakpoints-map, large-width));
+$breakpoints: add-breakpoint('xlarge and up',
+              map-get($breakpoints-map, xlarge-width));
+
+$breakpoints: add-breakpoint('up to xxsmall',
+              max-width map-get($breakpoints-map, xxsmall-width - 1));
+$breakpoints: add-breakpoint('up to xsmall',
+              max-width map-get($breakpoints-map, xsmall-width - 1));
+$breakpoints: add-breakpoint('up to small',
+              max-width map-get($breakpoints-map, small-width ));
+$breakpoints: add-breakpoint('up to medium',
+              max-width map-get($breakpoints-map, medium-width));
+$breakpoints: add-breakpoint('up to rightrail grid',
+              max-width map-get($breakpoints-map, rightrail-grid-width));
+$breakpoints: add-breakpoint('up to large',
+              max-width map-get($breakpoints-map, large-width));
+$breakpoints: add-breakpoint('up to xlarge',
+              max-width map-get($breakpoints-map, xlarge-width));
+
+$breakpoints: add-breakpoint('between small and medium',
+              map-get($breakpoints-map, small-width)
+              map-get($breakpoints-map, medium-width));
+$breakpoints: add-breakpoint('between medium and large',
+              map-get($breakpoints-map, medium-width)
+              map-get($breakpoints-map, large-width));
+$breakpoints: add-breakpoint('between large and xlarge',
+              map-get($breakpoints-map, large-width)
+              map-get($breakpoints-map, xlarge-width));
+
+$breakpoints: add-breakpoint('content width', map-get($breakpoints-map, content-width));
+$breakpoints: add-breakpoint('recipe image width', 550px);

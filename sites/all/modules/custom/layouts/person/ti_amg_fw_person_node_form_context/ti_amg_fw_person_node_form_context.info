@@ -1,0 +1,17 @@
+name = TI AMG FW Person Node Form Context
+description = Context for Person content type node forms
+core = 7.x
+package = FoodandWine Layouts
+version = 7.x-1.2
+project = ti_amg_fw_person_node_form_context
+dependencies[] = context
+dependencies[] = ctools
+dependencies[] = features
+dependencies[] = strongarm
+dependencies[] = ti_person_content_type
+dependencies[] = views
+features[context][] = ti_amg_fw_person_node_form_context
+features[ctools][] = context:context:3
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+mtime = 1419633030

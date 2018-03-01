@@ -1,0 +1,650 @@
+<?php
+
+/**
+ * @file
+ * Code for the TI AMG FW Gallery feature.
+ *
+ * \defgroup ti_amg_fw_gallery Gallery Feature
+ * \ingroup Features
+ * \brief Provides the Gallery content type and fields for COOK.com.
+ *
+ * @{
+ */
+
+include_once 'ti_amg_fw_gallery.features.inc';
+
+/**
+ * Implements hook_block_info().
+ */
+function ti_amg_fw_gallery_block_info() {
+  $blocks['all_slides'] = array(
+    'info' => t('Gallery: All Slides Data'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ti_amg_fw_gallery_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'all_slides':
+      $block['subject'] = NULL;
+      $block['content'] = _ti_amg_fw_gallery_all_slides_data();
+      break;
+
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function ti_amg_fw_gallery_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function ti_amg_fw_gallery_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes'] += array(
+    'tout_gallery_related_content' => array(
+      'label' => t('Gallery: Related Content'),
+      'custom settings' => FALSE,
+    ),
+    'gallery_print' => array(
+      'label' => t('Gallery: Print'),
+      'custom settings' => FALSE,
+    ),
+    'gallery_franchise_tout_600x300' => array(
+      'label' => t('Gallery: Franchise Tout 600x300'),
+      'custom settings' => FALSE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_html_head_alter().
+ */
+function ti_amg_fw_gallery_html_head_alter(&$head_elements) {
+  $node = menu_get_object();
+
+  if (!empty($node) && $node->type == 'gallery') {
+    if (count(arg()) > 2 && in_array(arg(2), array('view-all', 'print'))) {
+      if (isset($head_elements['metatag_canonical'])) {
+        $head_elements['metatag_canonical']['#value'] = url('node/' . $node->nid, array('absolute' => TRUE));
+      }
+    }
+  }
+}
+
+/**
+ * Return array of social media meta data for a gallery slide.
+ *
+ * Given a $gallery_node or current node will out put current
+ * gallery slide metadata for social tools (e.g. Pinterest)
+ */
+function ti_amg_fw_gallery_slide_social_metadata($gallery_node = NULL) {
+  global $base_url;
+
+  if ($gallery_node == NULL) {
+    $gallery_node = menu_get_object();
+  }
+
+  if (isset($gallery_node) && $gallery_node->type == "gallery") {
+    $slide_nid = ti_amg_fw_gallery_current_slide_nid();
+    if (!empty($slide_nid) && $slide_node = node_load($slide_nid)) {
+      switch ($slide_node->type) {
+        case 'image':
+          $image_uri = $slide_node->field_image[LANGUAGE_NONE][0]['uri'];
+          break;
+
+        default:
+          $image_uri = ti_amg_fw_base_components_get_image($slide_node, 'field_image', 'field_image');
+          break;
+      }
+      $image_url = image_style_url('420x420', $image_uri);
+
+      $slide_headline_array = array();
+      if (isset($slide_node->field_headline[LANGUAGE_NONE][0])) {
+        $slide_headline_array = field_view_value('node', $slide_node, 'field_headline', $slide_node->field_headline[LANGUAGE_NONE][0]);
+      }
+      $slide_headline = drupal_render($slide_headline_array);
+
+      $meta_data = array(
+        'image' => $image_url,
+        'url' => $base_url . '/' . request_path(),
+        'description' => $slide_headline,
+      );
+      return $meta_data;
+    }
+  }
+
+  return NULL;
+}
+
+/**
+ * Helper function to store and retrieve the node ID of the current slide.
+ *
+ * Set when a gallery slide is identified in
+ * ti_amg_fw_gallery_paged_display().
+ */
+function ti_amg_fw_gallery_current_slide_nid($set_slide_nid = NULL) {
+  static $slide_nid;
+
+  if (!empty($set_slide_nid)) {
+    $slide_nid = $set_slide_nid;
+  }
+
+  if (empty($slide_nid)) {
+    $node = menu_get_object();
+    if (!empty($node) && $node->type == 'gallery') {
+      $gallery_slides = field_get_items('node', $node, 'field_gallery_slides_grid');
+      if (array_key_exists('p', $_GET)) {
+        $index = $_GET['p'];
+      }
+      else {
+        $index = 0;
+      }
+      // Set the current slide node ID to the first slide.
+      if (!empty($gallery_slides) && $index < count($gallery_slides)) {
+        $current_slide = entity_load('field_collection_item', $gallery_slides[$index]);
+        $current_slide = array_shift($current_slide);
+
+        $current_slide_reference = field_get_items('field_collection_item', $current_slide, 'field_slides');
+
+        if (!empty($current_slide_reference)) {
+          $current_slide_reference = array_shift($current_slide_reference);
+          $slide_nid = $current_slide_reference['target_id'];
+        }
+      }
+    }
+  }
+
+  return $slide_nid;
+}
+
+/**
+ * Helper function to return the URL to a particular slide of a gallery.
+ *
+ * Helper function to return the URL to a particular slide of a gallery given
+ * the gallery node and the index of the slide to visit.
+ *
+ * @param object $node
+ *   The gallery node object.
+ * @param int $slide_id
+ *   The numerical index of the slide to show.
+ *
+ * @return string
+ *   The internal path to the particular slide in a gallery, can be used in l()
+ *   or url().
+ */
+function _ti_amg_fw_gallery_get_slide_url($node, $slide_id) {
+  $slides = field_get_items('node', $node, 'field_gallery_slides_grid');
+
+  if (!is_numeric($slide_id)) {
+    return FALSE;
+  }
+
+  if ($slide_id < count($slides)) {
+
+    if ($slide_id > 0) {
+      $current_slide = entity_load('field_collection_item', $slides[$slide_id]);
+      $current_slide = array_shift($current_slide);
+
+      $current_slide_reference = field_get_items('field_collection_item', $current_slide, 'field_slides');
+
+      $current_slide_node = node_load($current_slide_reference[0]['target_id']);
+
+      $field_seo_path = field_get_items('node', $current_slide_node, 'field_seo_path');
+
+      $seo_path_value = field_view_value('node', $current_slide_node, 'field_seo_path', array_pop($field_seo_path), array());
+
+      $seo_path = drupal_render($seo_path_value);
+
+      return 'node/' . $node->nid . '/' . $seo_path;
+    }
+
+    return 'node/' . $node->nid;
+  }
+}
+
+/**
+ * Helper function to return the correct headline given
+ * the field collection item entity.
+ *
+ * Defaults to using the headline provided in the field collection, then the referenced
+ * node's tout headline, then finally the referenced node's headline.
+ */
+function _ti_amg_fw_gallery_get_slide_headline($field_collection_item) {
+  $slide_wrapper = entity_metadata_wrapper('field_collection_item', $field_collection_item);
+  $slide_reference = $slide_wrapper->field_slides->value();
+  $ref_wrapper = entity_metadata_wrapper('node', $slide_reference);
+
+  $headline = '';
+  if ($slide_wrapper->__isset('field_slide_title') && $slide_wrapper->field_slide_title->value()) {
+    $headline = $slide_wrapper->field_slide_title->value(array('sanitize' => TRUE));
+    $headline = strip_tags($headline['value']);
+  }
+
+  if (empty($headline) && $ref_wrapper->__isset('field_tout_headline') && $ref_wrapper->field_tout_headline->value()) {
+    $headline = $ref_wrapper->field_tout_headline->value(array('sanitize' => TRUE));
+    $headline = strip_tags($headline['value']);
+  }
+
+  if (empty($headline) && $ref_wrapper->__isset('field_headline') && $ref_wrapper->field_headline->value()) {
+    $headline = $ref_wrapper->field_headline->value(array('sanitize' => TRUE));
+    $headline = strip_tags($headline['value']);
+  }
+
+  if (empty($headline)) {
+    $headline = $ref_wrapper->title->value(array('sanitize' => TRUE));
+    $headline = strip_tags($headline);
+  }
+
+  return $headline;
+}
+
+/**
+ * Helper function to return the correct dek given
+ * the field collection item entity.
+ *
+ * Defaults to using the dek provided in the field collection, then the referenced
+ * node's tout dek, then finally the referenced node's dek.
+ */
+function _ti_amg_fw_gallery_get_slide_dek($field_collection_item) {
+  $slide_wrapper = entity_metadata_wrapper('field_collection_item', $field_collection_item);
+  $slide_reference = $slide_wrapper->field_slides->value();
+  $ref_wrapper = entity_metadata_wrapper('node', $slide_reference);
+
+  $dek = '';
+
+  if ($slide_wrapper->__isset('field_slide_deck') && $slide_wrapper->field_slide_deck->value()) {
+    $dek = $slide_wrapper->field_slide_deck->value(array('sanitize' => TRUE));
+  }
+
+  if (empty($dek) && $ref_wrapper->__isset('field_tout_deck') && $ref_wrapper->field_tout_deck->value()) {
+    $dek = $ref_wrapper->field_tout_deck->value(array('sanitize' => TRUE));
+    $dek = check_markup($dek['value'], $dek['format']);
+  }
+
+  if (empty($dek) && $ref_wrapper->__isset('field_deck') && $ref_wrapper->field_deck->value()) {
+    $dek = $ref_wrapper->field_deck->value(array('sanitize' => TRUE));
+    $dek = check_markup($dek['value'], $dek['format']);
+  }
+
+  return $dek;
+}
+
+/**
+ * Helper function to return the correct more link given
+ * the field collection item entity.
+ *
+ * Defaults to being a link to the referenced node in the field collection item if it is a foodandwine,
+ * if the referenced node is a tout, find the next referenced node from the tout.
+ * If the referenced node is an image, return nothing.
+ */
+function _ti_amg_fw_gallery_get_slide_foodandwine_link($field_collection_item) {
+  $slide_wrapper = entity_metadata_wrapper('field_collection_item', $field_collection_item);
+  $slide_reference = $slide_wrapper->field_slides->value();
+  $ref_wrapper = entity_metadata_wrapper('node', $slide_reference);
+
+  $link = '';
+
+  if ($slide_reference->type == 'image') {
+    // Intentionally return nothing.
+    return '';
+  }
+
+  if ($slide_reference->type == 'tout') {
+    // Fetch the item referenced by the tout and return a link to that.
+    $touted_node = $ref_wrapper->field_tout_item->value();
+    // There won't always be a tout_item, there could be an entry in field_external_link instead.
+    if ($touted_node) {
+      if ($touted_node->type == 'foodandwine') {
+        $link = l(t('!headline Foodandwine', array('!headline' => ti_amg_fw_base_components_get_headline($touted_node))), 'node/' . $touted_node->nid, array('html' => TRUE));
+      }
+      if ($touted_node->type == 'video') {
+        $link = l(t('Watch !headline Video', array('!headline' => ti_amg_fw_base_components_get_headline($touted_node))), 'node/' . $touted_node->nid, array('html' => TRUE));
+      }
+      if ($touted_node->type == 'menu') {
+        $link = l(t('!headline', array('!headline' => ti_amg_fw_base_components_get_headline($touted_node))), 'node/' . $touted_node->nid, array('html' => TRUE));
+      }
+    }
+    else {
+      $external_link = $ref_wrapper->field_external_link->value();
+      $link = l(t('!headline', array('!headline' => ti_amg_fw_base_components_get_headline($slide_reference))), $external_link['url'], array('external' => TRUE, 'html' => TRUE));
+    }
+  }
+  elseif ($slide_reference->type == 'foodandwine') {
+    $link = l(t('!headline Foodandwine', array('!headline' => strip_tags(ti_amg_fw_base_components_get_headline($slide_reference)), '<a>')), 'node/' . $slide_reference->nid, array('html' => TRUE));
+  }
+  elseif ($slide_reference->type == 'video') {
+    $link = l(t('Watch !headline Video', array('!headline' => strip_tags(ti_amg_fw_base_components_get_headline($slide_reference)), '<a>')), 'node/' . $slide_reference->nid, array('html' => TRUE));
+  }
+  elseif ($slide_reference->type == 'menu') {
+    $link = l(t('!headline', array('!headline' => strip_tags(ti_amg_fw_base_components_get_headline($slide_reference)), '<a>')), 'node/' . $slide_reference->nid, array('html' => TRUE));
+  }
+
+  return $link;
+}
+
+/**
+ * Helper function to return the node url of the referenced item in the slide
+ * unless the item is a tout, which should instead return the node url
+ * of the touted item.
+ */
+function _ti_amg_fw_gallery_get_slide_node_link($slide) {
+  if ($slide->type == 'tout') {
+    if (!empty($slide->field_tout_item[LANGUAGE_NONE][0]['target_id'])) {
+      return 'node/' . $slide->field_tout_item[LANGUAGE_NONE][0]['target_id'];
+    }
+    else {
+      return $slide->field_external_link[LANGUAGE_NONE][0]['url'];
+    }
+  }
+  return 'node/' . $slide->nid;
+}
+
+/**
+ * Helper function to return either just the themed image or, if the
+ * slide is not referencing an Image node, a link to the final destination.
+ */
+function _ti_amg_fw_gallery_get_slide_image_link($slide, $image) {
+  if (_ti_amg_fw_gallery_slide_is_type($slide, 'image')) {
+    return $image;
+  }
+  return l($image, _ti_amg_fw_gallery_get_slide_node_link($slide), array('html' => TRUE, 'attributes' => array('class' => array(_ti_amg_fw_gallery_slide_is_type($slide, 'video') ? 'videoLinkOverlay' : ''))));
+}
+
+/**
+ * Helper function to determine if the referenced item in the slide
+ * is a video, or, if it's a tout, if the item referenced in the tout
+ * is a video.
+ */
+function _ti_amg_fw_gallery_slide_is_type($slide, $type) {
+  if ($slide->type == $type) {
+    return TRUE;
+  }
+
+  if ($slide->type == 'tout') {
+    $slide_wrapper = entity_metadata_wrapper('node', $slide);
+    $touted_node = $slide_wrapper->field_tout_item->value();
+    if ($touted_node) {
+      return _ti_amg_fw_gallery_slide_is_type($touted_node, $type);
+    }
+    else {
+      return FALSE;
+    }
+
+  }
+
+  return FALSE;
+}
+
+/**
+ * Block callback. Gathers all the information necessary to power the
+ * single-page javascript gallery and formats it in a way such that the
+ * javascript can understand it for use.
+ */
+function _ti_amg_fw_gallery_all_slides_data() {
+  $node = menu_get_object();
+  if (!empty($node) && $node->type == 'gallery') {
+
+    $slide_items = field_get_items('node', $node, 'field_gallery_slides_grid');
+
+    $slides = array();
+    $items = array();
+    $image_uri = '';
+    foreach ($slide_items as $fc_slide) {
+      $slide = array_pop(entity_load('field_collection_item', array($fc_slide['value'])));
+      $slide_wrapper = entity_metadata_wrapper('field_collection_item', $slide);
+      $slide_reference = $slide_wrapper->field_slides->value();
+
+      switch ($slide_reference->type) {
+        case 'image':
+          $image_uri = $slide_reference->field_image[LANGUAGE_NONE][0]['uri'];
+          break;
+
+        default:
+          $image_uri = ti_amg_fw_base_components_get_image($slide_reference, 'field_image', 'field_image');
+          break;
+      }
+
+      $is_video = _ti_amg_fw_gallery_slide_is_type($slide_reference, 'video');
+      if ($is_video) {
+        $video_icon = array(
+          '#theme' => 'html_tag',
+          '#tag' => 'span',
+          '#attributes' => array(
+            'class' => array(ti_amg_core_is_mobile() ? 'videoPlay300' : 'videoPlay420'),
+          ),
+        );
+      }
+      else {
+        $video_icon = array();
+      }
+
+      $image_node = ti_amg_fw_base_components_get_image_node($slide_reference);
+      if (!empty($image_node)) {
+        $image_credit = field_view_field('node', $image_node, 'field_credit', array('label' => 'hidden'));
+        $image_credit = array(
+          '#type' => 'container',
+          '#attributes' => array(
+            'class' => array('cred'),
+          ),
+          'credit' => $image_credit,
+        );
+      }
+      else {
+        $image_credit = '';
+      }
+
+      $image_urls = array(
+        'img420x420' => image_style_url('420x420', $image_uri),
+        'img300x300' => image_style_url('300x300', $image_uri),
+        'img150x150' => image_style_url('150x150', $image_uri),
+        'img75x75' => image_style_url('75x75', $image_uri),
+      );
+
+      $image_tag_options = array(
+        'style_name' => '420x420',
+        'path' => $image_uri,
+        'alt' => _ti_amg_fw_gallery_get_slide_headline($slide),
+        'attributes' => array(
+          'data-img75x75' => $image_urls['img75x75'],
+          'data-img150x150' => $image_urls['img150x150'],
+          'data-img300x300' => $image_urls['img300x300'],
+          'data-img420x420' => $image_urls['img420x420'],
+        ),
+      );
+
+      $slide_data = array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('tout'),
+        ),
+        'img' => array(
+          '#type' => 'container',
+          '#attributes' => array(
+            'class' => array('img'),
+          ),
+          'link' => array(
+            '#markup' => _ti_amg_fw_gallery_get_slide_image_link($slide_reference, theme('image_style', $image_tag_options) . drupal_render($video_icon)),
+          ),
+          'cred' => $image_credit,
+        ),
+        'txt' => array(
+          '#type' => 'container',
+          '#attributes' => array(
+            'class' => array('txt'),
+          ),
+          'text' => array(
+            'header' => array(
+              '#prefix' => '<h2>',
+              '#markup' => _ti_amg_fw_gallery_get_slide_headline($slide),
+              '#suffix' => '</h2>',
+            ),
+            'dek' => array(
+              '#prefix' => '<div class="dek">',
+              '#markup' => _ti_amg_fw_gallery_get_slide_dek($slide),
+              '#suffix' => '</div>',
+            ),
+            'more' => array(
+              '#prefix' => '<div class="more">',
+              '#markup' => _ti_amg_fw_gallery_get_slide_foodandwine_link($slide),
+              '#suffix' => '</div>',
+            ),
+          ),
+        ),
+      );
+
+      $item = array(
+        'data' => drupal_render($slide_data),
+        'data-hashid' => trim($slide_reference->field_seo_path[LANGUAGE_NONE][0]['value']),
+      );
+      $items[] = $item;
+
+    }
+
+    $all_slides = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('gallery--all-slides'),
+        'id' => 'gallery--all-slides',
+      ),
+      'list' => array(
+        '#theme' => 'item_list',
+        '#items' => $items,
+        '#type' => 'ul',
+      ),
+    );
+
+    // Next Gallery is a tout view of the gallery linked in $node->field_next_slideshow.
+    $node_wrapper = entity_metadata_wrapper('node', $node);
+    $next_gallery = '';
+    if ($node_wrapper->__isset('field_next_slideshow') && $node_wrapper->field_next_slideshow->value()) {
+      $next_gallery_node = node_load($node->field_next_slideshow[LANGUAGE_NONE][0]['target_id']);
+      $next_gallery = node_view($next_gallery_node, 'tout_75x75');
+    }
+
+    // More Galleries is a header and a list of related links from $node->field_last_slide_related_links
+    // The header is optional, but if present is an h3 and comes from $node->field_last_slide_related_header.
+    $more_galleries = '';
+    if ($node_wrapper->__isset('field_last_slide_related_links') && $node_wrapper->field_last_slide_related_links->value()) {
+      $more_links = $node_wrapper->field_last_slide_related_links->value();
+      $more_links_items = array();
+      if (!empty($more_links)) {
+        foreach ($more_links as $more_link_node) {
+          $more_links_items[] = array(
+            'data' => l(ti_amg_fw_base_components_get_headline($more_link_node), 'node/' . $more_link_node->nid, array('html' => TRUE)),
+          );
+        }
+      }
+
+      $more_galleries = array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('gallery--more-galleries'),
+          'id' => 'gallery--more-galleries',
+        ),
+      );
+
+      // If there's a more gallery header, add it to the render array.
+      if ($node_wrapper->__isset('field_last_slide_related_header') && $node_wrapper->field_last_slide_related_header->value()) {
+        $more_headline = $node_wrapper->field_last_slide_related_header->value(array('sanitize' => TRUE));
+        $more_headline = check_markup($more_headline['value'], $more_headline['format']);
+        if (!empty($more_headline)) {
+          $more_galleries['headline'] = array(
+            '#theme' => 'html_tag',
+            '#tag' => 'h3',
+            '#value' => $more_headline,
+          );
+        }
+      }
+      // If there are items to add, add an item list to the render array.
+      if (!empty($more_links_items)) {
+        $more_galleries['list'] = array(
+          '#theme' => 'item_list',
+          '#items' => $more_links_items,
+        );
+      }
+    }
+    // Rendering the outbrain web block for gallery page.
+    if (module_exists('ti_amg_outbrain')) {
+      // Get the Outbrain web block.
+      $outbrain_web['outbrain_web_block'] = array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('gallery--outbrain_web_block'),
+          'id' => 'gallery--outbrain_web_block',
+        ),
+      );
+      $outbrain = 'outbrain_web';
+      if (ti_amg_core_is_mobile()) {
+        $outbrain = 'outbrain_mobile';
+      }
+      $outbrain_block = module_invoke('ti_amg_outbrain', 'block_view', $outbrain);
+      if (!empty($outbrain_block)) {
+        $outbrain_web['outbrain_web_block']['block'] = $outbrain_block;
+      }
+    }
+
+    $output = array(
+      'single_slide' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('gallery--single-slide'),
+          'id' => 'gallery--single-slide',
+        ),
+      ),
+      'all_slides' => $all_slides,
+      'carousel' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('gallery--carousel'),
+          'id' => 'gallery--carousel',
+        ),
+      ),
+      'next_gallery' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('gallery--next-gallery'),
+          'id' => 'gallery--next-gallery',
+        ),
+        'next' => $next_gallery,
+      ),
+      'outbrain_web' => $outbrain_web,
+      'more_galleries' => $more_galleries,
+    );
+
+    if (ti_amg_core_is_mobile()) {
+      $output['#attached'] = array(
+        'js' => array(
+          drupal_get_path('module', 'ti_amg_fw_gallery') . '/js/ti_amg_fw_gallery_mobile.js',
+        ),
+      );
+    }
+    else {
+      $output['#attached'] = array(
+        'js' => array(
+          drupal_get_path('module', 'ti_amg_fw_gallery') . '/js/ti_amg_fw_gallery.js',
+        ),
+      );
+    }
+
+    return $output;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**@}*/
